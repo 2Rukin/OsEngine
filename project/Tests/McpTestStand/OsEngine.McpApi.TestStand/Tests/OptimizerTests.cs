@@ -86,6 +86,7 @@ namespace OsEngine.McpApi.TestStand.Tests
                 TestReport();
                 TestBotSetUnknown();
                 TestOptimizerRun();
+                TestFixedParamsPreservedInReport();
                 TestOptimizerRunScreener();
             }
             finally
@@ -1123,6 +1124,13 @@ namespace OsEngine.McpApi.TestStand.Tests
             const string setName = DataSetName;
             SseCollector? collector = null;
 
+            if (_context.Client.StreamableHttp)
+            {
+                // прогон ждёт v1 SSE-события optimizer.test.finished
+                _context.RecordPass(Module, method, "event-driven run — skipped on v2 transport (v1 SSE channel)");
+                return;
+            }
+
             try
             {
                 // сет гарантируется шагом data_ensure_set в начале модуля — здесь только проверяем
@@ -1259,6 +1267,7 @@ namespace OsEngine.McpApi.TestStand.Tests
 
                 // 6. Запуск с сбором SSE
                 collector = new SseCollector(_context.Client, eventName => eventName.StartsWith("optimizer.test."));
+                collector.OnEvent = ValidateSseEventWithContext;
                 collector.Start();
 
                 _context.PrintRequest(Module, "optimizer_start", new { });
@@ -1353,11 +1362,190 @@ namespace OsEngine.McpApi.TestStand.Tests
             }
         }
 
+        private void TestFixedParamsPreservedInReport()
+        {
+            const string method = "optimizer_fixed_params_e2e";
+
+            if (_context.Client.StreamableHttp)
+            {
+                // зависит от настройки данных/вкладок, которую делает TestOptimizerRun (на v2 пропущен)
+                _context.RecordPass(Module, method, "data-coupled run — skipped on v2 transport");
+                return;
+            }
+
+            try
+            {
+                // перебираем только "PC length", а "Sma length" фиксируем на значении 33
+                // (дефолт 30, start 0). Если баг из тикета 43 реален, в отчёте окажется
+                // 30 (дефолт) или 0 (start) вместо настроенных 33
+                object setRequest = new
+                {
+                    parameters = new object[]
+                    {
+                        new { name = "PC length", value = 20, start = 20, stop = 21, step = 1, on = true },
+                        new { name = "Sma length", value = 33, on = false },
+                        new { name = "Regime", value = "On" }
+                    }
+                };
+
+                _context.PrintRequest(Module, "optimizer_params_set", setRequest);
+                string setResponse = _context.Client.ToolsCall("optimizer_params_set", setRequest);
+                _context.PrintResponse(setResponse);
+
+                if (!TryParseConfig(setResponse, "optimizer_params_set", out _))
+                {
+                    _context.RecordFail(Module, method, "failed to set parameters");
+                    return;
+                }
+
+                // get после set: value зафиксированного параметра должен совпадать с тем,
+                // что видит пользователь в колонке "По умолчанию" грида оптимизатора
+                string getResponse = _context.Client.ToolsCall("optimizer_params_get", new { });
+
+                if (!TryParseConfig(getResponse, "optimizer_params_get", out JsonElement getConfig)
+                    || !FindParam(getConfig, "Sma length", out JsonElement smaParam)
+                    || smaParam.GetProperty("value").GetInt32() != 33)
+                {
+                    _context.RecordFail(Module, method,
+                        "optimizer_params_get does not return the configured value for 'Sma length'");
+                    return;
+                }
+
+                // вызов подсчёта прогонов: по репорту именно он портит зафиксированные
+                // значения (BotCountOneFaze мутирует общий список параметров по ссылке)
+                _context.Client.ToolsCall("optimizer_get_pass_count", new { });
+
+                // фазы настраиваем заново, чтобы тест не зависел от предыдущих
+                _context.Client.ToolsCall("optimizer_phases_set", new
+                {
+                    time_start = "2024-01-01T00:00:00",
+                    time_end = "2024-03-31T00:00:00",
+                    iteration_count = 1,
+                    last_in_sample = false
+                });
+
+                _context.PrintRequest(Module, "optimizer_start", new { });
+                string startResponse = _context.Client.ToolsCall("optimizer_start", new { });
+                _context.PrintResponse(startResponse);
+
+                if (!TryParseConfig(startResponse, "optimizer_start", out JsonElement startConfig)
+                    || startConfig.GetProperty("started").GetBoolean() != true)
+                {
+                    _context.RecordFail(Module, method, "optimization was not started");
+                    return;
+                }
+
+                if (!WaitForOptimizationEnd())
+                {
+                    _context.RecordFail(Module, method, "optimization did not finish in time");
+                    return;
+                }
+
+                _context.PrintRequest(Module, "optimizer_get_report", new { });
+                string reportResponse = _context.Client.ToolsCall("optimizer_get_report", new { });
+                _context.PrintResponse(reportResponse);
+
+                if (!TryParseConfig(reportResponse, "optimizer_get_report", out JsonElement reportConfig))
+                {
+                    return;
+                }
+
+                if (reportConfig.GetProperty("reports_count").GetInt32() == 0)
+                {
+                    _context.RecordFail(Module, method, "report is empty after finished optimization");
+                    return;
+                }
+
+                int checkedReports = 0;
+
+                foreach (JsonElement faze in reportConfig.GetProperty("fazes").EnumerateArray())
+                {
+                    foreach (JsonElement report in faze.GetProperty("reports").EnumerateArray())
+                    {
+                        checkedReports++;
+                        bool smaFound = false;
+                        bool pcFound = false;
+
+                        foreach (JsonElement param in report.GetProperty("parameters").EnumerateArray())
+                        {
+                            string paramName = param.GetProperty("name").GetString() ?? string.Empty;
+
+                            if (paramName == "Sma length")
+                            {
+                                smaFound = true;
+                                int smaValue = param.GetProperty("value").GetInt32();
+
+                                if (smaValue != 33)
+                                {
+                                    _context.RecordFail(Module, method,
+                                        $"fixed param 'Sma length' = {smaValue}, expected 33 (configured value lost)");
+                                    return;
+                                }
+                            }
+
+                            if (paramName == "PC length")
+                            {
+                                pcFound = true;
+                                int pcValue = param.GetProperty("value").GetInt32();
+
+                                if (pcValue < 20 || pcValue > 21)
+                                {
+                                    _context.RecordFail(Module, method,
+                                        $"iterated param 'PC length' = {pcValue}, expected 20..21 (iteration reset broken)");
+                                    return;
+                                }
+                            }
+                        }
+
+                        if (!smaFound || !pcFound)
+                        {
+                            _context.RecordFail(Module, method, "expected parameters not found in report");
+                            return;
+                        }
+                    }
+                }
+
+                _context.RecordPass(Module, method,
+                    $"fixed 'Sma length'=33 and iterated 'PC length' in 20..21 across {checkedReports} reports");
+            }
+            catch (Exception error)
+            {
+                _context.PrintResponse("");
+                _context.RecordFail(Module, method, $"TestFixedParamsPreservedInReport failed: {error.Message}");
+            }
+            finally
+            {
+                try
+                {
+                    // возвращаем параметры к стандартным и Regime в Off
+                    _context.Client.ToolsCall("optimizer_params_reset", new { });
+                    _context.Client.ToolsCall("optimizer_params_set", new
+                    {
+                        parameters = new object[]
+                        {
+                            new { name = "Regime", value = "Off" }
+                        }
+                    });
+                }
+                catch
+                {
+                    // ignore restore errors
+                }
+            }
+        }
+
         private void TestOptimizerRunScreener()
         {
             const string method = "optimizer_run_screener_e2e";
             const string setName = DataSetName;
             SseCollector? collector = null;
+
+            if (_context.Client.StreamableHttp)
+            {
+                _context.RecordPass(Module, method, "event-driven run — skipped on v2 transport (v1 SSE channel)");
+                return;
+            }
+
             JsonElement originalPcAdx = default;
             string originalRegime = string.Empty;
             List<JsonElement> allParams = new List<JsonElement>();
@@ -1528,6 +1716,7 @@ namespace OsEngine.McpApi.TestStand.Tests
 
                 // 6. запуск с сбором SSE
                 collector = new SseCollector(_context.Client, eventName => eventName.StartsWith("optimizer.test."));
+                collector.OnEvent = ValidateSseEventWithContext;
                 collector.Start();
 
                 _context.PrintRequest(Module, "optimizer_start", new { });
@@ -2002,6 +2191,21 @@ namespace OsEngine.McpApi.TestStand.Tests
             return false;
         }
 
+        private void ValidateSseEventWithContext(string eventName, string data)
+        {
+            try
+            {
+                foreach (string issue in ProtocolValidator.ValidateSseEvent(eventName, data))
+                {
+                    _context.RecordProtocolViolation($"SSE {eventName}", "sse", issue);
+                }
+            }
+            catch
+            {
+                // валидатор не имеет права ломать сбор событий
+            }
+        }
+
         private bool WaitForOptimizationEnd()
         {
             DateTime deadline = DateTime.Now.AddMinutes(5);
@@ -2048,6 +2252,11 @@ namespace OsEngine.McpApi.TestStand.Tests
             private StreamReader? _reader;
             private Thread? _thread;
             private bool _stopRequested;
+
+            /// <summary>
+            /// Optional hook fired for every completed SSE frame: (eventName, dataJson).
+            /// </summary>
+            public Action<string, string>? OnEvent;
 
             public SseCollector(McpApiClient client, Predicate<string> filter)
             {
@@ -2104,6 +2313,7 @@ namespace OsEngine.McpApi.TestStand.Tests
                     _reader = new StreamReader(_stream, Encoding.UTF8);
 
                     string eventName = string.Empty;
+                    string data = string.Empty;
 
                     while (!_stopRequested)
                     {
@@ -2124,17 +2334,27 @@ namespace OsEngine.McpApi.TestStand.Tests
                         {
                             eventName = line.Substring("event: ".Length).Trim();
                         }
+                        else if (line.StartsWith("data: "))
+                        {
+                            data = line.Substring("data: ".Length).Trim();
+                        }
                         else if (string.IsNullOrEmpty(line))
                         {
-                            if (!string.IsNullOrEmpty(eventName) && _filter(eventName))
+                            if (!string.IsNullOrEmpty(eventName))
                             {
-                                lock (_locker)
+                                OnEvent?.Invoke(eventName, data);
+
+                                if (_filter(eventName))
                                 {
-                                    _events.Add(eventName);
+                                    lock (_locker)
+                                    {
+                                        _events.Add(eventName);
+                                    }
                                 }
                             }
 
                             eventName = string.Empty;
+                            data = string.Empty;
                         }
                     }
                 }

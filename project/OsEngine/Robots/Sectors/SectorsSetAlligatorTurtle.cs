@@ -253,14 +253,14 @@ namespace OsEngine.Robots.Sectors
             DeleteEvent += SectorsSetAlligatorTurtle_DeleteEvent;
 
             Description = OsLocalization.ConvertToLocString(
-                "Eng:Sectoral trend turtle robot. Nine screeners by economy sectors, sector rating by average RSI, entries only in top sectors. Long breakout of the long PriceChannel above Alligator with lines in Williams order, entry by stop-market iceberg, exit by manual iceberg trailing on the short PriceChannel_" +
-                "Ru:Секторальный трендовый робот-черепаха. Девять скринеров по секторам экономики, рейтинг секторов по среднему RSI, входы только в топ-секторах. Лонг на пробое длинного PriceChannel выше Аллигатора с порядком линий по Вильямсу, вход стоп-айсбергом, выход ручным трейлингом айсбергом по короткому PriceChannel_");
+                "Eng:Sectoral trend turtle robot. Nine screeners by economy sectors, sector rating by average RSI, entries only in top sectors, by default the strongest RSI paper inside the sector is taken. Long breakout of the long PriceChannel above Alligator with lines in Williams order, entry by stop-market iceberg, exit by manual iceberg trailing on the short PriceChannel_" +
+                "Ru:Секторальный трендовый робот-черепаха. Девять скринеров по секторам экономики, рейтинг секторов по среднему RSI, входы только в топ-секторах, внутри сектора по умолчанию берётся сильнейшая по RSI бумага. Лонг на пробое длинного PriceChannel выше Аллигатора с порядком линий по Вильямсу, вход стоп-айсбергом, выход ручным трейлингом айсбергом по короткому PriceChannel_");
         }
 
         private void CreateSectors()
         {
             CreateSector("Oil&Gas", new string[] { "GAZP", "LKOH", "ROSN", "NVTK", "TATN", "SNGS", "SNGSP", "TATNP", "TRNFP", "BANEP" });
-            CreateSector("Finance", new string[] { "SBER", "SBERP", "VTBR", "MOEX", "BSPB" });
+            CreateSector("Finance", new string[] { "SBER", "SBERP", "VTBR", "T", "MOEX", "BSPB" });
             CreateSector("Metals", new string[] { "PLZL", "GMKN", "ALRS", "MAGN", "CHMF", "NLMK", "MTLR", "SELG", "TRMK" });
             CreateSector("Consumer", new string[] { "MGNT", "SVAV" });
             CreateSector("Power", new string[] { "FEES" });
