@@ -50,6 +50,9 @@ bld/
 #*.db-wal
 #*.db-shm
 
+# Isolated offline statistics test build output
+project/Tests/Statistics/bin/
+
 # MCP API test stand secrets
 # This file contains connector credentials and must never be committed.
 test-secrets.json

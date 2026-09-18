@@ -1,0 +1,23 @@
+name: Statistics regression and Windows build
+
+on:
+  push:
+    branches: ["feature/statistics-pair-analysis"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  statistics:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Run isolated calculation and dataset regression tests
+        run: dotnet run --project project/Tests/Statistics/OsEngine.Statistics.Tests.csproj --configuration Release
+      - name: Build solution including WPF application
+        run: dotnet build project/OsEngine.sln --configuration Debug

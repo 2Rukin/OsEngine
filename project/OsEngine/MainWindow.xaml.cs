@@ -12,6 +12,7 @@ using OsEngine.Layout;
 using OsEngine.Market;
 using OsEngine.OsConverter;
 using OsEngine.OsData;
+using OsEngine.OsData.Statistics;
 using OsEngine.OsOptimizer;
 using OsEngine.OsTrader.Gui;
 using OsEngine.OsTrader.Gui.BlockInterface;
@@ -62,6 +63,7 @@ namespace OsEngine
             ps.PriorityClass = ProcessPriorityClass.RealTime;
 
             InitializeComponent();
+            ButtonStatistics.Click += ButtonStatistics_Click;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
 
@@ -179,6 +181,8 @@ namespace OsEngine
         {
             try
             {
+                ButtonStatistics.Click -= ButtonStatistics_Click;
+                _statisticsUi?.Close();
                 _mcpMaster?.SendTerminalStopped("shutting_down");
 
                 StopMcpHost();
@@ -251,6 +255,7 @@ namespace OsEngine
             BlockTestingLabel.Content = OsLocalization.MainWindow.BlockTestingLabel;
             BlockTradingLabel.Content = OsLocalization.MainWindow.BlockTradingLabel;
             ButtonData.Content = OsLocalization.MainWindow.OsDataName;
+            ButtonStatistics.Content = OsLocalization.MainWindow.StatisticsName;
             ButtonConverter.Content = OsLocalization.MainWindow.OsConverter;
             ButtonTester.Content = OsLocalization.MainWindow.OsTesterName;
             ButtonOptimizer.Content = OsLocalization.MainWindow.OsOptimizerName;
@@ -668,6 +673,7 @@ namespace OsEngine
             ButtonRobot.IsEnabled = false;
             ButtonTester.IsEnabled = false;
             ButtonData.IsEnabled = false;
+            ButtonStatistics.IsEnabled = false;
             ButtonCandleConverter.IsEnabled = false;
             ButtonConverter.IsEnabled = false;
             ButtonOptimizer.IsEnabled = false;
@@ -723,6 +729,7 @@ namespace OsEngine
             ButtonRobot.IsEnabled = true;
             ButtonTester.IsEnabled = true;
             ButtonData.IsEnabled = true;
+            ButtonStatistics.IsEnabled = true;
             ButtonCandleConverter.IsEnabled = true;
             ButtonConverter.IsEnabled = true;
             ButtonOptimizer.IsEnabled = true;
@@ -891,6 +898,51 @@ namespace OsEngine
         #endregion
 
         #region Open program buttons
+
+        private StatisticsUi _statisticsUi;
+
+        private void ButtonStatistics_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (!ButtonStatistics.IsEnabled)
+                {
+                    return;
+                }
+                if (_statisticsUi == null)
+                {
+                    _statisticsUi = new StatisticsUi();
+                    _statisticsUi.Owner = this;
+                    _statisticsUi.Closed += StatisticsUi_Closed;
+                    _statisticsUi.Show();
+                }
+                else
+                {
+                    if (_statisticsUi.WindowState == WindowState.Minimized)
+                    {
+                        _statisticsUi.WindowState = WindowState.Normal;
+                    }
+                    _statisticsUi.Activate();
+                }
+            }
+            catch (Exception error)
+            {
+                ServerMaster.SendNewLogMessage(error.ToString(), Logging.LogMessageType.Error);
+            }
+        }
+
+        private void StatisticsUi_Closed(object sender, EventArgs e)
+        {
+            try
+            {
+                _statisticsUi.Closed -= StatisticsUi_Closed;
+                _statisticsUi = null;
+            }
+            catch (Exception error)
+            {
+                ServerMaster.SendNewLogMessage(error.ToString(), Logging.LogMessageType.Error);
+            }
+        }
 
         private void ButtonTesterCandleOne_Click(object sender, RoutedEventArgs e)
         {

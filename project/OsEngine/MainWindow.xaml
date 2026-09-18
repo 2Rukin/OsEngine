@@ -7,6 +7,7 @@
             <Rectangle Margin="429,7,10,0" Height="205" VerticalAlignment="Top" />
             <Rectangle Margin="222,7,202,0" Height="205" VerticalAlignment="Top" />
             <Rectangle Margin="10,7,409,0" Height="205" VerticalAlignment="Top" />
+            <Button Name="ButtonStatistics" Content="Statistics" Margin="448,105,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="146" Height="28" />
             <Button  Name="ButtonRobot" Content="Bot Station" Margin="448,138,0,0" VerticalAlignment="Top" Click="ButtonRobotCandleOne_Click" HorizontalAlignment="Left" Width="146" Height="28" />
             <Button  Name="ButtonTester" Content="Tester" Margin="248,105,0,0" VerticalAlignment="Top" Click="ButtonTesterCandleOne_Click" HorizontalAlignment="Left" Width="146" Height="28"   />
             <Button  Name="ButtonData" Content="Data" Margin="37,105,0,0" VerticalAlignment="Top" Click="ButtonData_Click" HorizontalAlignment="Left" Width="146" Height="28" />

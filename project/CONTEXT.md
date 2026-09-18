@@ -40,6 +40,7 @@
 | Синтетические облигации | `CONTEXT_SYNTHETIC_BOND.md` |
 | Ребалансировщик | `CONTEXT_REBALANCER.md` |
 | Темы / цвета / оформление | `CONTEXT_THEMES.md` |
+| Статистика истории / разность фьючерсов | `Docs/statistics.md` + `Docs/adr/0001-offline-pair-statistics.md` |
 | Удалённые серверы (VPS/VDS) | `CONTEXT_VPS_VDS.md` |
 | Промпты | `CONTEXT_PROMPTS_ROBOTS.md`, `CONTEXT_PROMPTS_INDICATORS.md` |
 
@@ -52,6 +53,8 @@ OsEngine/
   MCP/Modules/OsDataApi.cs              # data_*
   OsData/OsDataMaster.cs                # Сеты данных
   OsData/OsDataSet.cs                   # Один сет
+  OsData/Statistics/StatisticsUi.xaml   # Офлайн-статистика A − B из Settings.txt
+  OsData/Statistics/PairStatisticsAnalyzer.cs # Чистое ядро расчётов без торговых серверов
   OsTrader/Panels/Tab/BotPanel.cs       # Базовый робот
   OsTrader/Panels/Tab/BotTabSimple.cs   # Простой таб
   Market/                               # Коннекторы

@@ -28,6 +28,9 @@ namespace OsEngine.Language
             "Eng:Data_"+
             "Ru:Дата");
 
+        public string StatisticsName => OsLocalization.ConvertToLocString(
+            "Eng:Statistics_Ru:Статистика_");
+
         public string OsConverter => OsLocalization.ConvertToLocString(
             "Eng:Converter_"+
             "Ru:Конвертер");
