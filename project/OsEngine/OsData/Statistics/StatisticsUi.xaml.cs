@@ -20,6 +20,10 @@ namespace OsEngine.OsData.Statistics
         private Forms.DataGridView _daysGrid;
         private Forms.DataGridView _intervalsGrid;
         private Forms.DataGridView _pointsGrid;
+        private StatisticsSortableGrid _daysTable;
+        private StatisticsSortableGrid _intervalsTable;
+        private StatisticsSortableGrid _pointsTable;
+        private List<StatisticsInstrument> _catalog;
         private PairStatisticsResult _result;
         private CancellationTokenSource _cancellation;
         private string _catalogFolder;
@@ -32,15 +36,14 @@ namespace OsEngine.OsData.Statistics
             Layout.StickyBorders.Listen(this);
             Layout.StartupLocation.Start_FitHeightToWorkArea(this);
             Localize();
-            _daysGrid = CreateGrid(new string[] { L("Date", "Дата"), L("Volume A", "Объём A"), L("Volume B", "Объём B"), L("Active A", "Активных A"), L("Active B", "Активных B"), L("Matched", "Совпало"), L("Coverage %", "Покрытие %"), L("Accepted", "Принят"), L("Reason", "Причина"), L("Min", "Мин"), L("Max", "Макс"), L("Range", "Размах") });
-            _intervalsGrid = CreateGrid(new string[] { L("Start", "Начало"), L("End", "Конец"), L("Days", "Дней"), L("Points", "Точек"), L("Min", "Мин"), L("Max", "Макс"), L("Range", "Размах"), L("Mean", "Среднее"), L("Stddev N", "Станд. откл. N") });
-            _pointsGrid = CreateGrid(new string[] { L("Time", "Время"), "Close A − Close B" });
-            HostDays.Child = _daysGrid;
-            HostIntervals.Child = _intervalsGrid;
-            HostPoints.Child = _pointsGrid;
-            _daysGrid.CellValueNeeded += Grid_CellValueNeeded;
-            _intervalsGrid.CellValueNeeded += Grid_CellValueNeeded;
-            _pointsGrid.CellValueNeeded += Grid_CellValueNeeded;
+            _daysTable = new StatisticsSortableGrid(HostDays, new string[] { L("Date", "Дата"), L("Volume A", "Объём A"), L("Volume B", "Объём B"), L("Active A", "Активных A"), L("Active B", "Активных B"), L("Matched", "Совпало"), L("Coverage %", "Покрытие %"), L("Accepted", "Принят"), L("Reason", "Причина"), L("Min", "Мин"), L("Max", "Макс"), L("Range", "Размах") }, GetDayCell);
+            _intervalsTable = new StatisticsSortableGrid(HostIntervals, new string[] { L("Start", "Начало"), L("End", "Конец"), L("Days", "Дней"), L("Points", "Точек"), L("Min", "Мин"), L("Max", "Макс"), L("Range", "Размах"), L("Mean", "Среднее"), L("Stddev N", "Станд. откл. N") }, GetIntervalCell);
+            _pointsTable = new StatisticsSortableGrid(HostPoints, new string[] { L("Time", "Время"), "Close A − Close B" }, GetPointCell);
+            _daysGrid = _daysTable.Grid;
+            _intervalsGrid = _intervalsTable.Grid;
+            _pointsGrid = _pointsTable.Grid;
+            _daysGrid.Columns[0].DefaultCellStyle.Format = "yyyy-MM-dd";
+            ButtonPairs.Click += ButtonPairs_Click;
             ButtonBrowse.Click += ButtonBrowse_Click;
             ButtonLoad.Click += ButtonLoad_Click;
             ButtonRun.Click += ButtonRun_Click;
@@ -78,6 +81,7 @@ namespace OsEngine.OsData.Statistics
             LabelFolder.Content = L("Dataset folder", "Папка датасета");
             ButtonBrowse.Content = L("Browse", "Обзор");
             ButtonLoad.Content = L("Load catalog", "Загрузить каталог");
+            ButtonPairs.Content = L("Pairs by expiry", "Пары по экспирации");
             LabelFirst.Content = L("Leg A — subtract B from A", "Нога A — из A вычитаем B");
             LabelSecond.Content = L("Leg B", "Нога B");
             LabelTimeFrame.Content = L("Common timeframe", "Общий таймфрейм");
@@ -99,66 +103,46 @@ namespace OsEngine.OsData.Statistics
             TextBlockFooter.Text = L("Read-only analysis, no trading. Range uses matched active Close values, not intrabar extrema or PnL. Coverage measures overlap of observed active bars, not completeness of a trading session. Daily filtering is retrospective. All result rows are available in the tables.", "Анализ только для чтения, без торговли. Размах по совпавшим активным Close, не внутрисвечные экстремумы и не PnL. Покрытие — совпадение имеющихся активных свечей, не полнота сессии. Дневной фильтр ретроспективный. В таблицах доступны все строки результата.");
         }
 
-        private Forms.DataGridView CreateGrid(string[] headers)
+        private object GetPointCell(int row, int column)
         {
-            Forms.DataGridView grid = DataGridFactory.GetDataGridView(Forms.DataGridViewSelectionMode.FullRowSelect, Forms.DataGridViewAutoSizeRowsMode.None);
-            grid.ReadOnly = true;
-            grid.AllowUserToAddRows = false;
-            grid.AllowUserToDeleteRows = false;
-            grid.VirtualMode = true;
-            grid.ScrollBars = Forms.ScrollBars.Both;
-            grid.Dock = Forms.DockStyle.Fill;
-            grid.AutoSizeColumnsMode = Forms.DataGridViewAutoSizeColumnsMode.None;
-            for (int index = 0; index < headers.Length; index++)
-            {
-                grid.Columns.Add(new Forms.DataGridViewTextBoxColumn { HeaderText = headers[index], Width = index == 0 ? 145 : 115, SortMode = Forms.DataGridViewColumnSortMode.NotSortable });
-            }
-            grid.DataError += Grid_DataError;
-            return grid;
+            PairStatisticsPoint point = _result.Points[row];
+            return column == 0 ? (object)point.Time : point.Value;
         }
 
-        private void Grid_DataError(object sender, Forms.DataGridViewDataErrorEventArgs e)
+        private object GetDayCell(int row, int column)
         {
-            try
+            PairStatisticsDay day = _result.Days[row];
+            switch (column)
             {
-                ServerMaster.SendNewLogMessage(e.Exception == null ? e.ToString() : e.Exception.ToString(), LogMessageType.Error);
-            }
-            catch (Exception error)
-            {
-                ServerMaster.SendNewLogMessage(error.ToString(), LogMessageType.Error);
+                case 0: return day.Date;
+                case 1: return day.VolumeA;
+                case 2: return day.VolumeB;
+                case 3: return day.ActiveBarsA;
+                case 4: return day.ActiveBarsB;
+                case 5: return day.MatchedBars;
+                case 6: return day.CoveragePercent;
+                case 7: return day.Accepted;
+                case 8: return DayReason(day);
+                case 9: return day.Summary == null ? null : (object)day.Summary.Minimum;
+                case 10: return day.Summary == null ? null : (object)day.Summary.Maximum;
+                default: return day.Summary == null ? null : (object)day.Summary.Range;
             }
         }
 
-        private void Grid_CellValueNeeded(object sender, Forms.DataGridViewCellValueEventArgs e)
+        private object GetIntervalCell(int row, int column)
         {
-            try
+            PairStatisticsInterval interval = _result.Intervals[row];
+            switch (column)
             {
-                if (_result == null || e.RowIndex < 0)
-                {
-                    return;
-                }
-                if (sender == _pointsGrid && e.RowIndex < _result.Points.Count)
-                {
-                    PairStatisticsPoint point = _result.Points[e.RowIndex];
-                    e.Value = e.ColumnIndex == 0 ? point.Time.ToString("yyyy-MM-dd HH:mm:ss") : point.Value.ToString(CultureInfo.CurrentCulture);
-                }
-                else if (sender == _daysGrid && e.RowIndex < _result.Days.Count)
-                {
-                    PairStatisticsDay day = _result.Days[e.RowIndex];
-                    object[] values = new object[] { day.Date.ToString("yyyy-MM-dd"), day.VolumeA, day.VolumeB, day.ActiveBarsA, day.ActiveBarsB, day.MatchedBars, day.CoveragePercent, day.Accepted ? L("Yes", "Да") : L("No", "Нет"), DayReason(day), day.Summary == null ? null : (object)day.Summary.Minimum, day.Summary == null ? null : (object)day.Summary.Maximum, day.Summary == null ? null : (object)day.Summary.Range };
-                    e.Value = values[e.ColumnIndex];
-                }
-                else if (sender == _intervalsGrid && e.RowIndex < _result.Intervals.Count)
-                {
-                    PairStatisticsInterval interval = _result.Intervals[e.RowIndex];
-                    PairStatisticsSummary summary = interval.Summary;
-                    object[] values = new object[] { interval.Start.ToString("yyyy-MM-dd HH:mm:ss"), interval.End.ToString("yyyy-MM-dd HH:mm:ss"), interval.Days, summary.Count, summary.Minimum, summary.Maximum, summary.Range, summary.Mean, summary.StandardDeviation };
-                    e.Value = values[e.ColumnIndex];
-                }
-            }
-            catch (Exception error)
-            {
-                ServerMaster.SendNewLogMessage(error.ToString(), LogMessageType.Error);
+                case 0: return interval.Start;
+                case 1: return interval.End;
+                case 2: return interval.Days;
+                case 3: return interval.Summary.Count;
+                case 4: return interval.Summary.Minimum;
+                case 5: return interval.Summary.Maximum;
+                case 6: return interval.Summary.Range;
+                case 7: return interval.Summary.Mean;
+                default: return interval.Summary.StandardDeviation;
             }
         }
 
@@ -179,9 +163,9 @@ namespace OsEngine.OsData.Statistics
 
         private void ClearResult()
         {
-            _daysGrid.RowCount = 0;
-            _intervalsGrid.RowCount = 0;
-            _pointsGrid.RowCount = 0;
+            _daysTable.SetCount(0);
+            _intervalsTable.SetCount(0);
+            _pointsTable.SetCount(0);
             _result = null;
             TextBlockSummary.Text = "";
             TextBlockStatus.Text = "";
@@ -190,9 +174,9 @@ namespace OsEngine.OsData.Statistics
         private void ShowResult(PairStatisticsResult result)
         {
             _result = result;
-            _daysGrid.RowCount = result.Days.Count;
-            _intervalsGrid.RowCount = result.Intervals.Count;
-            _pointsGrid.RowCount = result.Points.Count;
+            _daysTable.SetCount(result.Days.Count);
+            _intervalsTable.SetCount(result.Intervals.Count);
+            _pointsTable.SetCount(result.Points.Count);
             int acceptedDays = 0;
             foreach (PairStatisticsDay day in result.Days)
             {
@@ -243,6 +227,7 @@ namespace OsEngine.OsData.Statistics
             {
                 ClearResult();
                 _catalogFolder = null;
+                _catalog = null;
                 ComboBoxFirst.ItemsSource = null;
                 ComboBoxSecond.ItemsSource = null;
                 ComboBoxTimeFrame.ItemsSource = null;
@@ -388,6 +373,24 @@ namespace OsEngine.OsData.Statistics
 
         #region Background operations
 
+        private void ButtonPairs_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (_catalog == null || _catalogFolder == null)
+                {
+                    throw new ArgumentException(L("Load the dataset catalog first.", "Сначала загрузите каталог датасета."));
+                }
+                StatisticsPairsUi window = new StatisticsPairsUi(new List<StatisticsInstrument>(_catalog), _catalogFolder, ReadOptions(), ComboBoxTimeFrame.SelectedItem as string);
+                window.Owner = this;
+                window.Show();
+            }
+            catch (Exception error)
+            {
+                ShowError(error);
+            }
+        }
+
         private void ButtonLoad_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -395,6 +398,7 @@ namespace OsEngine.OsData.Statistics
                 string folder = Path.GetFullPath(TextBoxFolder.Text.Trim());
                 ClearResult();
                 _catalogFolder = null;
+                _catalog = null;
                 ComboBoxFirst.ItemsSource = null;
                 ComboBoxSecond.ItemsSource = null;
                 ComboBoxTimeFrame.ItemsSource = null;
@@ -404,6 +408,7 @@ namespace OsEngine.OsData.Statistics
                     return delegate
                     {
                         _catalogFolder = folder;
+                        _catalog = catalog;
                         ComboBoxFirst.ItemsSource = catalog;
                         ComboBoxSecond.ItemsSource = new List<StatisticsInstrument>(catalog);
                         ComboBoxFirst.SelectedIndex = -1;
@@ -644,6 +649,7 @@ namespace OsEngine.OsData.Statistics
                 OsLocalization.LocalizationTypeChangeEvent -= Localization_Changed;
                 Themes.ThemeManager.ThemeChangedEvent -= Theme_Changed;
                 ButtonBrowse.Click -= ButtonBrowse_Click;
+                ButtonPairs.Click -= ButtonPairs_Click;
                 ButtonLoad.Click -= ButtonLoad_Click;
                 ButtonRun.Click -= ButtonRun_Click;
                 ButtonCancel.Click -= ButtonCancel_Click;
@@ -666,9 +672,12 @@ namespace OsEngine.OsData.Statistics
                 HostDays.Child = null;
                 HostIntervals.Child = null;
                 HostPoints.Child = null;
-                DisposeGrid(ref _daysGrid);
-                DisposeGrid(ref _intervalsGrid);
-                DisposeGrid(ref _pointsGrid);
+                _daysTable.Dispose();
+                _intervalsTable.Dispose();
+                _pointsTable.Dispose();
+                _daysGrid = null;
+                _intervalsGrid = null;
+                _pointsGrid = null;
                 HostDays.Dispose();
                 HostIntervals.Dispose();
                 HostPoints.Dispose();
@@ -676,26 +685,12 @@ namespace OsEngine.OsData.Statistics
                 ComboBoxSecond.ItemsSource = null;
                 ComboBoxTimeFrame.ItemsSource = null;
                 _result = null;
+                _catalog = null;
             }
             catch (Exception error)
             {
                 ServerMaster.SendNewLogMessage(error.ToString(), LogMessageType.Error);
             }
-        }
-
-        private void DisposeGrid(ref Forms.DataGridView grid)
-        {
-            if (grid == null)
-            {
-                return;
-            }
-            grid.CellValueNeeded -= Grid_CellValueNeeded;
-            grid.DataError -= Grid_DataError;
-            DataGridFactory.ClearLinks(grid);
-            grid.RowCount = 0;
-            grid.Columns.Clear();
-            grid.Dispose();
-            grid = null;
         }
 
         #endregion

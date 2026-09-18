@@ -23,7 +23,7 @@ namespace OsEngine.Statistics.Tests
 
         private static int Main()
         {
-            Action[] tests =
+            List<Action> tests = new List<Action>
             {
                 FormulaAndPopulationSummary, ReversingLegsReversesSign, ConstantAndSinglePoint,
                 ExactTimestampJoinDoesNotFill, CoverageUsesActiveUnion, ZeroVolumeIsExcluded,
@@ -41,6 +41,7 @@ namespace OsEngine.Statistics.Tests
                 LargePricePrecision, RepresentableMeanDoesNotOverflow,
                 CancellationDuringIteration, CandleLimitIsEnforced, FileIsReleasedAfterReadFailure
             };
+            tests.AddRange(ResearchTests.All);
 
             try
             {
@@ -51,7 +52,7 @@ namespace OsEngine.Statistics.Tests
                     Console.WriteLine("PASS " + test.Method.Name);
                 }
 
-                Console.WriteLine("Passed " + _passed + "/" + tests.Length);
+                Console.WriteLine("Passed " + _passed + "/" + tests.Count);
                 return 0;
             }
             catch (Exception error)

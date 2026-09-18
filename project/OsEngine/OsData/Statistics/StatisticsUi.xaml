@@ -43,6 +43,7 @@
                 <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                 <Label Name="LabelTo"/><DatePicker Name="DatePickerTo" Grid.Column="1"/>
             </Grid>
+            <Button Name="ButtonPairs" Grid.Row="2" Grid.Column="2" Margin="0,0,0,8"/>
             <Grid Grid.Row="3" Grid.ColumnSpan="3">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                 <Grid Margin="0,0,8,0"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><Label Name="LabelVolumeA"/><TextBox Name="TextBoxVolumeA" Grid.Row="1" Text="1"/></Grid>

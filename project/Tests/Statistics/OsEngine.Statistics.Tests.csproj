@@ -10,5 +10,8 @@
     <Compile Include="../../OsEngine/OsData/Statistics/StatisticsModels.cs" Link="Core/StatisticsModels.cs" />
     <Compile Include="../../OsEngine/OsData/Statistics/StatisticsDatasetReader.cs" Link="Core/StatisticsDatasetReader.cs" />
     <Compile Include="../../OsEngine/OsData/Statistics/PairStatisticsAnalyzer.cs" Link="Core/PairStatisticsAnalyzer.cs" />
+    <Compile Include="../../OsEngine/OsData/Statistics/PairResearchModels.cs" Link="Core/PairResearchModels.cs" />
+    <Compile Include="../../OsEngine/OsData/Statistics/PairResearchAnalyzer.cs" Link="Core/PairResearchAnalyzer.cs" />
+    <Compile Include="../../OsEngine/OsData/Statistics/StatisticsPairCatalog.cs" Link="Core/StatisticsPairCatalog.cs" />
   </ItemGroup>
 </Project>
