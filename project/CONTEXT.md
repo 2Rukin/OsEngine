@@ -8,7 +8,8 @@
 |----------|----------|
 | **Платформа** | .NET 10 (`net10.0-windows`), WPF Desktop |
 | **Язык** | C# |
-| **Репозиторий** | https://github.com/AlexWan/OsEngine |
+| **Репозиторий** | https://github.com/2Rukin/OsEngine |
+| **Внешний upstream** | `AlexWan/OsEngine` — не источник current implementation без отдельной задачи |
 | **Сборка** | `dotnet build OsEngine/OsEngine.csproj` (всё решение — `dotnet build OsEngine.sln`) |
 | **Исполняемый файл** | `OsEngine/bin/Debug/OsEngine.exe` |
 | **Стартер** | `OsEngine/bin/Debug/osEngineStarter.exe` |
@@ -36,13 +37,14 @@
 | MCP API | `CONTEXT_MCP.md` |
 | Сценарии MCP | `CONTEXT_MCP_SCENARIO.md` |
 | Защита / пароли / блокировка | `CONTEXT_SECURITY.md` |
-| Дорожная карта MCP | `TempContext/CONTEXT_MCP_API_DEVELOPMENT.md` |
 | Дивиденды в роботах | `CONTEXT_DIVIDENDS.md` |
 | Синтетические облигации | `CONTEXT_SYNTHETIC_BOND.md` |
 | Ребалансировщик | `CONTEXT_REBALANCER.md` |
 | Темы / цвета / оформление | `CONTEXT_THEMES.md` |
 | Удалённые серверы (VPS/VDS) | `CONTEXT_VPS_VDS.md` |
 | Промпты | `CONTEXT_PROMPTS_ROBOTS.md`, `CONTEXT_PROMPTS_INDICATORS.md` |
+| Реестр документации | `Documentation/DOCUMENTATION_MAP.md` |
+| Агентская система | `Documentation/AgentSystem/README.md` |
 
 ## Ключевые файлы
 
@@ -82,4 +84,4 @@ cd Tests/McpTestStand/OsEngine.McpApi.TestStand/bin/Debug/net10.0
 
 ## Ссылки
 
-[CONTEXT_ROBOTS_ARCHITECTURE.md](CONTEXT_ROBOTS_ARCHITECTURE.md) · [CONTEXT_ROBOTS.md](CONTEXT_ROBOTS.md) · [CONTEXT_SECTORS_SET.md](CONTEXT_SECTORS_SET.md) · [CONTEXT_INDICATORS.md](CONTEXT_INDICATORS.md) · [CONTEXT_DIVIDENDS.md](CONTEXT_DIVIDENDS.md) · [CONTEXT_SYNTHETIC_BOND.md](CONTEXT_SYNTHETIC_BOND.md) · [CONTEXT_REBALANCER.md](CONTEXT_REBALANCER.md) · [CONTEXT_THEMES.md](CONTEXT_THEMES.md) · [CONTEXT_VPS_VDS.md](CONTEXT_VPS_VDS.md) · [CONTEXT_CODING_GUIDELINES.md](CONTEXT_CODING_GUIDELINES.md) · [CONTEXT_CONNECTORS.md](CONTEXT_CONNECTORS.md) · [CONTEXT_MCP.md](CONTEXT_MCP.md) · [CONTEXT_MCP_SCENARIO.md](CONTEXT_MCP_SCENARIO.md) · [TempContext/CONTEXT_MCP_API_DEVELOPMENT.md](TempContext/CONTEXT_MCP_API_DEVELOPMENT.md)
+[CONTEXT_ROBOTS_ARCHITECTURE.md](CONTEXT_ROBOTS_ARCHITECTURE.md) · [CONTEXT_ROBOTS.md](CONTEXT_ROBOTS.md) · [CONTEXT_SECTORS_SET.md](CONTEXT_SECTORS_SET.md) · [CONTEXT_INDICATORS.md](CONTEXT_INDICATORS.md) · [CONTEXT_DIVIDENDS.md](CONTEXT_DIVIDENDS.md) · [CONTEXT_SYNTHETIC_BOND.md](CONTEXT_SYNTHETIC_BOND.md) · [CONTEXT_REBALANCER.md](CONTEXT_REBALANCER.md) · [CONTEXT_THEMES.md](CONTEXT_THEMES.md) · [CONTEXT_VPS_VDS.md](CONTEXT_VPS_VDS.md) · [CONTEXT_CODING_GUIDELINES.md](CONTEXT_CODING_GUIDELINES.md) · [CONTEXT_CONNECTORS.md](CONTEXT_CONNECTORS.md) · [CONTEXT_MCP.md](CONTEXT_MCP.md) · [CONTEXT_MCP_SCENARIO.md](CONTEXT_MCP_SCENARIO.md) · [Documentation/DOCUMENTATION_MAP.md](Documentation/DOCUMENTATION_MAP.md) · [Documentation/AgentSystem/README.md](Documentation/AgentSystem/README.md)

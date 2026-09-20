@@ -1,94 +1,99 @@
-# AGENTS.md — Правила для ИИ-агентов
+# AGENTS.md — OsEngine-specific правила
 
-> Действует на корень проекта и подкаталоги. Собственный `AGENTS.md` в подкаталоге имеет приоритет.
+> Действует на `project/` и подкаталоги. Сначала прочитай корневой
+> [`../AGENTS.md`](../AGENTS.md); этот файл только дополняет общий workflow
+> правилами C#/.NET/WPF-кодовой базы.
 
 ## Перед работой
 
 1. [`CONTEXT.md`](CONTEXT.md) — карта проекта.
 2. [`CONTEXT_CODING_GUIDELINES.md`](CONTEXT_CODING_GUIDELINES.md) — стиль кода.
 3. Доменный `CONTEXT_*.md` по задаче.
-4. Работа с коннекторами (`OsEngine/Market/Servers/`) → [`CONTEXT_CONNECTORS.md`](CONTEXT_CONNECTORS.md).
+4. Работа с `OsEngine/Market/Servers/` —
+   [`CONTEXT_CONNECTORS.md`](CONTEXT_CONNECTORS.md).
+5. Архитектурные или documentation claims —
+   [`Documentation/DOCUMENTATION_MAP.md`](Documentation/DOCUMENTATION_MAP.md).
 
-## Принципы
+## Принципы кода
 
-- Код изменяется только через инструменты (`WriteFile`, `StrReplaceFile`, `Shell`). Показать код в чате — не замена.
-- Минимальные изменения. Сохраняй стиль и сигнатуры.
-- Не ломай обратную совместимость без необходимости.
-- Сохраняй кодировку файлов: не снимай UTF-8 BOM, если он был, и не меняй CRLF на LF — это засоряет дифф.
-- Собирай и тестируй после правок.
+- Делай минимальные изменения, сохраняй стиль, signatures и обратную
+  совместимость без отдельного решения о breaking change.
+- Используй существующие `BotPanel`, `BotTabSimple`, `IServer`, `AServer`,
+  `ServerMaster`, `Aindicator`, `Journal`, `RiskManager`, Tester/Optimizer
+  abstractions; не создавай параллельный lifecycle.
+- Сохраняй BOM и исходные line endings. Не форматируй соседний legacy-код ради
+  косметики.
+- Учитывай фоновые callbacks, WPF dispatcher, подписку/отписку событий и
+  thread-safe shared state.
+- Исключения не проглатываются и проходят через штатное логирование.
+- Не используй `var`; подробности и существующие исключения — только в
+  `CONTEXT_CODING_GUIDELINES.md`.
 
 ## Сборка и тесты
 
-```bash
-# Завершить процесс, если запущен
-taskkill /F /IM OsEngine.exe
+Команды ниже выполняются из каталога `project/`:
 
-# Сборка основного проекта (обычный случай)
+```bash
+# Основной production project
 dotnet build OsEngine/OsEngine.csproj
 
-# Полная сборка решения — только если тронуты Tests/*
-# (DividendsUpdater, McpTestStand и т.п.) или перед релизом
+# Всё solution — если затронуты Tests/*, test project files или release scope
 dotnet build OsEngine.sln
 
-# Тестовый стенд MCP
-cd Tests/McpTestStand/OsEngine.McpApi.TestStand/bin/Debug/net10.0
-./OsEngine.McpApi.TestStand.exe
+# Offline agent-system acceptance — из корня репозитория
+cd ..
+bash .agents/validation/validate-agent-system.sh
+```
 
-# Только выбранные модули: номер или подстрока имени, через запятую
-# (1 Protocol, 2 Logs, 3 Settings, 4 Config, 5 ServerManagement,
-#  6 ServerInstance, 7 SSE, 8 Errors, 9 WikiRobots, 10 WikiIndicators,
-#  11 WikiSecurities, 12 WikiDividends, 13 Data, 14 Tester, 15 Terminal,
-#  16 SystemLoad, 17 ComparePositions, 18 Proxy, 19 Optimizer, 20 Encryption)
+Перед `dotnet build` на Windows завершить `OsEngine.exe`, если процесс держит
+output-файлы.
+
+### MCP test stand
+
+```bash
+cd Tests/McpTestStand/OsEngine.McpApi.TestStand/bin/Debug/net10.0
 ./OsEngine.McpApi.TestStand.exe --module Tester
 ./OsEngine.McpApi.TestStand.exe --module 5,6
 ```
 
-Цель стенда: **196/196 passed** (`--transport v2`) и **187/187 passed** (`--transport v1`).
+Целевые totals current context: **196/196** (`--transport v2`) и **187/187**
+(`--transport v1`). Перед запуском перепроверь current test registry, потому что
+totals могут измениться вместе со стендом.
 
-**Важно:** тестовый стенд MCP API (`OsEngine.McpApi.TestStand.exe`) запускать только с **явного разрешения пользователя**.
+MCP test stand запускается только с явного разрешения пользователя. Он работает
+foreground; не скрывай окно и не объявляй PASS до terminal summary. Те же
+границы действуют для `StopOrdersTestStand`, live connectors и real-order
+scenarios.
 
-Стенд работает в foreground. При запуске из Kimi Shell он создаёт собственное видимое консольное окно; вывод дублируется в это окно, в исходный stdout и в лог-файл `mcp-test-stand-yyyyMMdd-HHmmss.log` рядом с `.exe`. Запрещено использовать `run_in_background=true`. Длительность прогона — около 4 минут; дожидаться завершения через `TaskOutput(block=true)` или автоматическое уведомление.
-
-## Исследование кода
-
-- Известный путь / 1–2 запроса: `ReadFile`, `Grep`.
-- Больше 3 запросов или незнакомый модуль: `Agent(subagent_type="explore")`.
-- Планирование: `Agent(subagent_type="plan")`.
-- Сложная задача: `Agent(subagent_type="coder")`.
-
-## Запрещено без разрешения пользователя
-
-- `git commit`, `git push`, `git reset`, `git rebase`.
-- Изменения файлов за пределами рабочей директории.
-- Установка ПО за пределами рабочей директории.
-- Операции с правами администратора.
-
-## Обновляй документацию
+## Документация по области
 
 Если меняешь:
 
-- MCP API → `CONTEXT_MCP.md`, `TempContext/CONTEXT_MCP_API_DEVELOPMENT.md`.
-- Сценарии MCP → `CONTEXT_MCP_SCENARIO.md`.
-- Соглашения → `CONTEXT_CODING_GUIDELINES.md`.
-- Карту проекта → `CONTEXT.md`.
-- Правила агентов → этот файл.
+- MCP API — `CONTEXT_MCP.md` и применимые MCP development docs;
+- MCP scenarios — `CONTEXT_MCP_SCENARIO.md`;
+- engine conventions — `CONTEXT_CODING_GUIDELINES.md`;
+- project map — `CONTEXT.md`;
+- connector behavior — `CONTEXT_CONNECTORS.md`;
+- robot/indicator/tester behavior — соответствующий domain context;
+- Order Flow target — `Documentation/OrderFlow/`;
+- agent workflow — root `AGENTS.md`, `.agents/**` и
+  `Documentation/AgentSystem/` по impact;
+- новый governed document — зарегистрируй его в
+  `Documentation/DOCUMENTATION_MAP.md`.
 
-## Среда
+## Среда и permissions
 
-- Windows, Git Bash.
-- Пути в Shell: используй относительные пути от рабочей директории проекта (`./OsEngine/...`, `./Tests/...`).
-- Долгие операции — с `run_in_background=true`.
-
-## Спрашивай пользователя
-
-- Несколько валидных подходов.
-- Неясный масштаб или требования.
-- Нужны реальные учётные данные для тестов.
+- Целевая среда — Windows + Git Bash; production target — `net10.0-windows`.
+- Реальные credentials не запрашиваются для обычной сборки или offline review.
+- Нужное live/server/account evidence не обходится: остановись с точным
+  `OWNER-RUN` handoff.
+- Commit/push и опасные Git-операции регулируются корневым `AGENTS.md` и
+  разрешением пользователя на текущую задачу.
 
 ## Чек-лист перед ответом
 
-- [ ] Код записан в файловую систему.
-- [ ] Сборка успешна (`dotnet build OsEngine/OsEngine.csproj`; для `Tests/*` — `dotnet build OsEngine.sln`).
-- [ ] Релевантные тесты пройдены.
-- [ ] Документация обновлена при необходимости.
-- [ ] Git не мутировал без разрешения.
+- [ ] Diff ограничен frozen scope и не затёр пользовательские изменения.
+- [ ] Применимые build/tests/validators завершены либо честно помечены `NOT_RUN`.
+- [ ] Документация и C# XML comments обновлены по semantic impact.
+- [ ] Live/test-stand границы и секреты соблюдены.
+- [ ] Commit/push status сообщён точно.

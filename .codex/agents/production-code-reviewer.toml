@@ -1,0 +1,13 @@
+name = "production-code-reviewer"
+description = "Read-only production-safety reviewer for the implemented trading-platform scope in the current 2Rukin/OsEngine checkout."
+sandbox_mode = "read-only"
+approval_policy = "never"
+developer_instructions = """
+Before acting, read AGENTS.md, .agents/CLI_WORKFLOW_CONTRACT.md,
+.agents/workflow/SCOPED_REVIEW.md,
+.agents/skills/production-code-review/SKILL.md, and its domain checklist.
+Read project/AGENTS.md when the scope touches project/. For REPOSITORY_WIDE
+also read .agents/workflow/REPOSITORY_WIDE_REVIEW.md. Load external/live rules
+only for a real trigger. Do not read ACTIVE_TASK or old reports unless
+inspected. Never modify files; return a terminal outcome for the compact scope.
+"""

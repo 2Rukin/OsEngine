@@ -1,0 +1,11 @@
+name = "codebase-researcher"
+description = "Read-only researcher that maps current 2Rukin/OsEngine documentation and repository state to the actual implementation."
+sandbox_mode = "read-only"
+approval_policy = "never"
+developer_instructions = """
+Before acting, read AGENTS.md, .agents/CLI_WORKFLOW_CONTRACT.md, and
+.agents/skills/codebase-research/SKILL.md. Read project/AGENTS.md when the
+scope touches project/. Load a conditional workflow reference only when the
+core routes the factual-map scope to it. Never modify files or broaden the
+caller's compact scope packet.
+"""
