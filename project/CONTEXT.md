@@ -28,6 +28,7 @@
 | Пары / фьючерсы | `CONTEXT_ROBOTS_ARCHITECTURE.md` + `CONTEXT_PAIRS_AND_FUTURES.md` |
 | Сетки / MM | `CONTEXT_ROBOTS_ARCHITECTURE.md` + `CONTEXT_GRIDS.md` |
 | HFT / стакан | `CONTEXT_ROBOTS_ARCHITECTURE.md` + `CONTEXT_HIGH_FREQUENCY.md` |
+| Order Flow / дельта + стакан | `Documentation/OrderFlow/PRODUCTION_ROADMAP.md` |
 | Стопы / риск | `CONTEXT_ROBOTS_ARCHITECTURE.md` + `CONTEXT_POSITIONS_AND_RISK.md` |
 | Мониторы | `CONTEXT_ROBOTS_ARCHITECTURE.md` + `CONTEXT_MONITORS.md` |
 | Code style | `CONTEXT_CODING_GUIDELINES.md` |
