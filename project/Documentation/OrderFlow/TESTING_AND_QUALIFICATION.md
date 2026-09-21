@@ -10,7 +10,11 @@
 В `Tests/OrderFlowResearch` добавлен offline console stand, который сам создаёт
 временные raw/GZip/Deflate QSH пары и проверяет causal association,
 same-timestamp invariants, future isolation, deterministic artifacts и rejection
-повреждённых данных. Наличие stand не означает, что он прошёл на конкретном
+повреждённых данных. Регрессии также проверяют reason-coded bundles при missing,
+locked и malformed-header input, metadata обеих ролей, semantic manifest/quality,
+удержание одного file handle для hash/replay, identity при смене ResearchSpec,
+точные формулы/границы feature window и book age, независимость Short от
+неблагоприятного future label Long. Наличие stand не означает, что он прошёл на конкретном
 commit: факт запуска всегда фиксируется отдельным build/test evidence. Golden
 real-day, performance, execution, historical и live levels ещё не реализованы.
 

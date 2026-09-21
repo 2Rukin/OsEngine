@@ -35,13 +35,14 @@ namespace OsEngine.OsData.OrderFlow
         /// Execution is synchronous on the calling thread. Cancellation is
         /// observed during replay and immediately before export; once export
         /// starts, filesystem completion is not cooperatively cancelled.
+        /// Input access or decoding failures produce a rejected bundle with per-role metadata.
         /// The returned bundle is research evidence, not execution or PnL.
         /// </remarks>
         /// <param name="request">Validated local-file request and output root.</param>
         /// <param name="cancellationToken">Cancellation observed by replay and immediately before export.</param>
         /// <returns>The research result with <c>ArtifactDirectory</c> assigned.</returns>
         /// <exception cref="OperationCanceledException">Cancellation is requested before export starts.</exception>
-        /// <exception cref="IOException">Input or artifact files cannot be read or written.</exception>
+        /// <exception cref="IOException">Artifact files cannot be read or written.</exception>
         /// <exception cref="InvalidOperationException">An existing bundle with the same identity is not byte-identical.</exception>
         public OrderFlowResearchResult RunAndExport(OrderFlowResearchRequest request,
             CancellationToken cancellationToken)
@@ -88,7 +89,7 @@ namespace OsEngine.OsData.OrderFlow
         /// <exception cref="InvalidOperationException">The identity already exists with different bytes.</exception>
         public string Write(OrderFlowResearchRequest request, OrderFlowResearchResult result)
         {
-            string tradingDate = result.DealsHeader == null
+            string tradingDate = result.DealsHeader == null || result.DealsHeader.TradingDate == DateTime.MinValue
                 ? "unknown-date"
                 : result.DealsHeader.TradingDate.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
             string inputPrefix = GetHashPrefix(result.InputHash);

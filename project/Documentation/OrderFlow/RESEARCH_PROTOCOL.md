@@ -87,6 +87,11 @@ Label никогда не входит в feature vector и недоступен
 
 `dataset version + instrument + trading date + bucket ID + observation type + detector version + direction`.
 
+Текущий MVP дополнительно включает полный `ResearchSpecHash` в observation key,
+чтобы разные настройки окна, sampling и labels не разделяли идентичность строки.
+Точный формат и scope локальных IDs приведены в
+[runbook](RESEARCH_MVP_RUNBOOK.md#5-artifact-bundle).
+
 Повторный прогон обязан либо воспроизвести ту же строку, либо завершиться
 ошибкой несовместимости версий.
 

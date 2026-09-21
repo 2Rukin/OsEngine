@@ -13,7 +13,14 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Security.Cryptography;
 using System.Threading;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Markup;
+using System.Xml.Linq;
+using System.Reflection;
 
 namespace OsEngine.OrderFlowResearch.Tests
 {
@@ -38,6 +45,7 @@ namespace OsEngine.OrderFlowResearch.Tests
         private static int _passed;
         private static int _failed;
 
+        [STAThread]
         private static int Main()
         {
             string root = Path.Combine(Path.GetTempPath(),
@@ -61,6 +69,15 @@ namespace OsEngine.OrderFlowResearch.Tests
                 Run("gzip QSH pair is supported", root, TestGzipPair);
                 Run("deflate QSH pair is supported", root, TestDeflatePair);
                 Run("truncated QSH frame is rejected", root, TestTruncatedFrameRejected);
+                Run("missing inputs retain audit artifacts", root, TestMissingInputs);
+                Run("malformed headers retain both role identities", root, TestMalformedHeaders);
+                Run("locked input retains audit artifacts", root, TestLockedInput);
+                Run("hash and replay retain one file handle", root, TestPinnedInput);
+                Run("research spec separates observation identities", root, TestSpecIdentity);
+                Run("exact feature formulas and top N", root, TestFeatureFormulas);
+                Run("book age boundary and missing book", root, TestBookAgeBoundary);
+                Run("summary layout and bilingual values", root, TestSummaryLayout);
+                Run("chart navigation reaches entire history", root, TestChartNavigation);
             }
             finally
             {
@@ -90,6 +107,106 @@ namespace OsEngine.OrderFlowResearch.Tests
                 _failed++;
                 Console.WriteLine("FAIL " + name + Environment.NewLine + error);
             }
+        }
+
+        private static void TestSummaryLayout(string root)
+        {
+            AssertTrue(Application.Current == null, "No application is started by offline layout tests.");
+            XNamespace ns = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+            XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+            Assembly assembly = Assembly.GetExecutingAssembly();
+            XDocument app;
+            XDocument ui;
+            using (Stream stream = assembly.GetManifestResourceStream("Research.App.xaml")) { app = XDocument.Load(stream); }
+            using (Stream stream = assembly.GetManifestResourceStream("Research.Ui.xaml")) { ui = XDocument.Load(stream); }
+            XElement style = app.Descendants(ns + "Style").Single(element =>
+                element.Attribute(x + "Key") == null && (string)element.Attribute("TargetType") == "{x:Type TextBox}");
+            XElement dictionary = new XElement(ns + "ResourceDictionary", new XAttribute(XNamespace.Xmlns + "x", x), new XElement(style));
+            ResourceDictionary resources = (ResourceDictionary)XamlReader.Parse(dictionary.ToString());
+            resources.MergedDictionaries.Add((ResourceDictionary)Application.LoadComponent(
+                new Uri("/OsEngine;component/Themes/ThemeDarkOrange.xaml", UriKind.Relative)));
+            XElement summaryElement = ui.Descendants(ns + "TextBox").Single(element => (string)element.Attribute("Name") == "TextBoxSummary");
+            TextBox summary = (TextBox)XamlReader.Parse(summaryElement.ToString());
+            Grid host = new Grid();
+            host.Resources = resources;
+            host.Children.Add(summary);
+            summary.Text = string.Join(Environment.NewLine, Enumerable.Range(0, 200).Select(i => "Line " + i)) + "\nSUMMARY_END";
+            host.Measure(new Size(900, 480));
+            host.Arrange(new Rect(0, 0, 900, 480));
+            host.UpdateLayout();
+            AssertTrue(ReferenceEquals(resources[typeof(TextBox)], summary.Style), "Real implicit application style is exercised.");
+            AssertTrue(summary.ActualHeight > 300, "Summary overrides the global 23px height.");
+            AssertEqual(VerticalAlignment.Top, summary.VerticalContentAlignment, "Summary starts at the top.");
+            ScrollViewer scroll = (ScrollViewer)summary.Template.FindName("PART_ContentHost", summary);
+            AssertTrue(scroll.ViewportHeight > 100 && scroll.ScrollableHeight > 0, "Multiline viewport can scroll.");
+            summary.ScrollToEnd();
+            host.UpdateLayout();
+            AssertTrue(scroll.VerticalOffset > 0, "Last summary lines are reachable.");
+            AssertEqual(summary.LineCount - 1, summary.GetLastVisibleLineIndex(), "Final line is visible after scrolling.");
+
+            OrderFlowResearchResult result = new OrderFlowResearchResult();
+            result.ArtifactDirectory = @"C:\Research_runs\QSH_STEP_OVERRIDE";
+            result.Quality.FirstDealTime = new DateTime(2026, 9, 18, 12, 34, 56, 789);
+            result.Quality.LastDealTime = result.Quality.FirstDealTime;
+            result.Quality.DealCount = 21194;
+            result.InputHash = "hash_with_underscore:123";
+            result.Quality.Issues.Add(new OrderFlowQualityIssue { ReasonCode = "QSH_STEP_OVERRIDE", Message = "detail:with_underscore" });
+            foreach (bool russian in new bool[] { false, true })
+            {
+                string text = OrderFlowResearchUi.BuildSummary(result, russian);
+                AssertTrue(text.Contains(result.ArtifactDirectory), "Full Windows path survives localization.");
+                AssertTrue(text.Contains("12:34:56.789") && text.Contains("21194"), "Times and totals survive localization.");
+                AssertTrue(text.Contains(result.InputHash) && text.Contains("QSH_STEP_OVERRIDE") && text.Contains("detail:with_underscore"), "Hashes and reasons survive localization.");
+            }
+            AssertTrue(Application.Current == null, "Layout test starts no Application or window.");
+        }
+
+        private static void TestChartNavigation(string root)
+        {
+            OrderFlowResearchResult result = new OrderFlowResearchResult();
+            DateTime start = new DateTime(2026, 9, 18, 10, 0, 0);
+            foreach (OrderFlowDisplayTimeFrame frame in Enum.GetValues<OrderFlowDisplayTimeFrame>())
+            {
+                int seconds = frame == OrderFlowDisplayTimeFrame.Min1 ? 60 : frame == OrderFlowDisplayTimeFrame.Sec30 ? 30 : 15;
+                List<OrderFlowDisplayBar> bars = new List<OrderFlowDisplayBar>();
+                for (int i = 0; i < 900 * 60 / seconds; i++)
+                {
+                    bars.Add(new OrderFlowDisplayBar { TimeStart = start.AddSeconds(i * seconds), TimeEnd = start.AddSeconds((i + 1) * seconds) });
+                }
+                result.Bars.Add(frame, bars);
+            }
+            result.Candidates.Add(new OrderFlowCandidate { CandidateId = "C1", Time = start.AddMinutes(450) });
+            OrderFlowResearchChart chart = new OrderFlowResearchChart();
+            chart.SetResult(result);
+            AssertEqual(780, chart.StartIndex, "Initial viewport shows the last 120 bars.");
+            chart.ScrollTo(-100);
+            AssertEqual(0, chart.StartIndex, "History starts at the first bar.");
+            for (int index = 0; index <= 780; index++)
+            {
+                chart.ScrollTo(index);
+                AssertEqual(index, chart.StartIndex, "Every legal viewport is reachable.");
+            }
+            chart.SelectCandidate("C1");
+            AssertEqual(390, chart.StartIndex, "Selection centers the candidate.");
+            chart.ScrollTo(200);
+            chart.InvalidateVisual();
+            AssertEqual(200, chart.StartIndex, "Redraw must not recenter on selection.");
+            chart.SetTimeFrame(OrderFlowDisplayTimeFrame.Sec30);
+            AssertEqual(start.AddMinutes(260), result.Bars[OrderFlowDisplayTimeFrame.Sec30][chart.StartIndex + chart.VisibleCount / 2].TimeStart,
+                "Timeframe retains viewport midpoint instead of jumping to selection.");
+            chart.Zoom(chart.TotalBars);
+            AssertEqual(0, chart.StartIndex, "Full history starts at zero.");
+            AssertEqual(1800, chart.VisibleCount, "Full history includes every trade bar.");
+            chart.SetTimeFrame(OrderFlowDisplayTimeFrame.Sec15);
+            AssertEqual(3600, chart.VisibleCount, "Full-history view survives timeframe change.");
+            chart.Zoom(30);
+            chart.ScrollTo(int.MaxValue);
+            AssertEqual(chart.TotalBars, chart.StartIndex + chart.VisibleCount, "Right edge reaches final bar after zoom.");
+            chart.SetResult(new OrderFlowResearchResult());
+            chart.ScrollTo(100);
+            chart.Zoom(0);
+            AssertEqual(0, chart.VisibleCount, "Empty result remains navigable without invalid ranges.");
+            AssertEqual(1, result.Candidates.Count, "Navigation does not rewrite research output.");
         }
 
         private static void TestValidCausalReplay(string root)
@@ -131,6 +248,38 @@ namespace OsEngine.OrderFlowResearch.Tests
             AssertFalse(labelHeader.Contains("book_imbalance", StringComparison.OrdinalIgnoreCase),
                 "Label schema must not duplicate causal book features.");
             AssertEqual(3, result.Bars.Count, "Diagnostic timeframe count");
+            AssertManifestRole(result, "Deals", pair.DealsPath, true);
+            AssertManifestRole(result, "Quotes", pair.QuotesPath, true);
+            using (JsonDocument manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(result.ArtifactDirectory, "manifest.json"))))
+            using (JsonDocument quality = JsonDocument.Parse(File.ReadAllText(Path.Combine(result.ArtifactDirectory, "quality.json"))))
+            {
+                JsonElement data = manifest.RootElement;
+                AssertTrue(data.GetProperty("ResearchAccepted").GetBoolean(), "Manifest acceptance");
+                AssertEqual(result.InputHash, data.GetProperty("InputHash").GetString(), "Manifest input identity");
+                AssertEqual(result.ResearchSpecHash, data.GetProperty("ResearchSpecHash").GetString(), "Manifest spec identity");
+                AssertEqual(result.NormalizedEventHash, data.GetProperty("NormalizedEventHash").GetString(), "Manifest event hash");
+                AssertEqual(result.FeatureHash, data.GetProperty("FeatureHash").GetString(), "Manifest feature hash");
+                AssertEqual(result.CandidateHash, data.GetProperty("CandidateHash").GetString(), "Manifest candidate hash");
+                AssertEqual(OrderFlowResearchSchema.ArtifactSchemaVersion, data.GetProperty("ArtifactSchemaVersion").GetString(), "Artifact schema");
+                AssertEqual(OrderFlowResearchSchema.CandidateDetectorVersion, data.GetProperty("CandidateDetectorVersion").GetString(), "Detector version");
+                AssertEqual(10, data.GetProperty("FeatureWindowSeconds").GetInt32(), "Frozen feature window");
+                AssertEqual(100m, data.GetProperty("MinimumAbsoluteDelta").GetDecimal(), "Frozen delta threshold");
+                AssertEqual(5, data.GetProperty("LabelHorizonsSeconds")[0].GetInt32(), "Frozen label horizon");
+                AssertEqual(result.Observations.Count, data.GetProperty("ObservationCount").GetInt32(), "Manifest observations");
+                AssertEqual(result.Candidates.Count, data.GetProperty("CandidateCount").GetInt32(), "Manifest candidates");
+                AssertEqual(result.Labels.Count, data.GetProperty("LabelCount").GetInt32(), "Manifest labels");
+                JsonElement report = quality.RootElement;
+                AssertTrue(report.GetProperty("ResearchAccepted").GetBoolean(), "Quality acceptance");
+                AssertFalse(report.GetProperty("ExecutionMetadataComplete").GetBoolean(), "Execution evidence unavailable");
+                AssertEqual(4L, report.GetProperty("DealCount").GetInt64(), "Serialized Deals count");
+                AssertEqual(3L, report.GetProperty("QuoteCount").GetInt64(), "Serialized Quotes count");
+                AssertEqual(pair.StartTime.AddSeconds(1), report.GetProperty("FirstDealTime").GetDateTime(), "First deal time");
+                AssertEqual(pair.StartTime.AddSeconds(4), report.GetProperty("LastDealTime").GetDateTime(), "Last deal time");
+                AssertEqual(pair.StartTime, report.GetProperty("FirstQuoteTime").GetDateTime(), "First quote time");
+                AssertEqual(pair.StartTime.AddSeconds(8), report.GetProperty("LastQuoteTime").GetDateTime(), "Last quote time");
+                AssertTrue(report.GetProperty("Issues").EnumerateArray().Any(item =>
+                    item.GetProperty("ReasonCode").GetString() == "EXECUTION_METADATA_NOT_COLLECTED"), "Research-only warning");
+            }
         }
 
         private static void TestDeterministicRepeat(string root)
@@ -226,6 +375,11 @@ namespace OsEngine.OrderFlowResearch.Tests
             OrderFlowMarketPathLabel downLabel = downResult.Labels.Single(item => item.HorizonSeconds == 5);
             AssertEqual(OrderFlowBarrierOutcome.TargetFirst, upLabel.Outcome, "Favorable suffix label");
             AssertEqual(OrderFlowBarrierOutcome.InvalidationFirst, downLabel.Outcome, "Adverse suffix label");
+            AssertEqual(OrderFlowDirection.Long, downResult.Candidates.Single().Direction, "Failed Long retains its direction");
+            AssertFalse(downResult.Observations.Any(item => item.Direction == OrderFlowDirection.Short),
+                "A failed Long label must not produce a Short observation.");
+            AssertFalse(downResult.Journal.Any(item => item.ReasonCode == "BUY_FLOW_PRICE_RESILIENCE"),
+                "A failed Long label must not create a Short candidate journal event.");
         }
 
         private static void TestSameTimestampDealOrderIsolation(string root)
@@ -373,7 +527,284 @@ namespace OsEngine.OrderFlowResearch.Tests
                 "Truncated frame reason code");
         }
 
+        private static void TestMissingInputs(string root)
+        {
+            for (int role = 0; role < 2; role++)
+            {
+                SyntheticPair pair = SyntheticQshFactory.Create(root, "missing-" + role, 101, 1000, 10, Side.Sell);
+                string missing = role == 0 ? pair.DealsPath : pair.QuotesPath;
+                File.Delete(missing);
+                missing = Path.Combine(root, "missing-parent-" + role, Path.GetFileName(missing));
+                if (role == 0)
+                {
+                    pair.DealsPath = missing;
+                }
+                else
+                {
+                    pair.QuotesPath = missing;
+                }
+                string output = Path.Combine(root, "output-" + role);
+                OrderFlowResearchResult result = RunPair(pair, output);
+                AssertRejectedBundle(result, "QSH_FILE_MISSING");
+                AssertManifestRole(result, role == 0 ? "Quotes" : "Deals", role == 0 ? pair.QuotesPath : pair.DealsPath, true);
+                using (JsonDocument manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(result.ArtifactDirectory, "manifest.json"))))
+                {
+                    JsonElement unavailable = manifest.RootElement.GetProperty(role == 0 ? "Deals" : "Quotes");
+                    AssertEqual(Path.GetFileName(missing).ToUpperInvariant(), unavailable.GetProperty("FileName").GetString(), "Missing role filename");
+                    AssertEqual(JsonValueKind.Null, unavailable.GetProperty("Sha256").ValueKind, "Missing checksum is unknown");
+                    AssertEqual(JsonValueKind.Null, unavailable.GetProperty("FileSize").ValueKind, "Missing size is unknown");
+                    AssertFalse(unavailable.GetProperty("HeaderComplete").GetBoolean(), "Missing header not decoded");
+                    AssertEqual("QSH_FILE_MISSING", unavailable.GetProperty("FailureReasonCode").GetString(), "Missing role reason");
+                }
+
+                Directory.CreateDirectory(Path.GetDirectoryName(missing));
+                AssertEqual(result.ArtifactDirectory, RunPair(pair, output).ArtifactDirectory,
+                    "Missing directory and missing file reuse the same byte-identical rejection bundle");
+            }
+        }
+
+        private static void TestMalformedHeaders(string root)
+        {
+            for (int role = 0; role < 2; role++)
+            {
+                for (int corruption = 0; corruption < 3; corruption++)
+                {
+                    SyntheticPair pair = SyntheticQshFactory.Create(root, "malformed-" + role + "-" + corruption, 101, 1000, 10, Side.Sell);
+                    string path = role == 0 ? pair.DealsPath : pair.QuotesPath;
+                    byte[] bytes = File.ReadAllBytes(path);
+                    if (corruption == 0)
+                    {
+                        File.WriteAllBytes(path, new byte[] { 0, 1, 2 });
+                    }
+                    else if (corruption == 1)
+                    {
+                        bytes[Encoding.UTF8.GetByteCount("QScalp History Data")] = 3;
+                        File.WriteAllBytes(path, bytes);
+                    }
+                    else
+                    {
+                        File.WriteAllBytes(path, bytes.Take(Encoding.UTF8.GetByteCount("QScalp History Data") + 2).ToArray());
+                    }
+
+                    OrderFlowResearchResult result = RunPair(pair, Path.Combine(root, "output-" + role + "-" + corruption));
+                    AssertRejectedBundle(result, "QSH_INVALID");
+                    AssertManifestRole(result, "Deals", pair.DealsPath, role != 0);
+                    AssertManifestRole(result, "Quotes", pair.QuotesPath, role != 1);
+                    using (FileStream released = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                    {
+                        AssertTrue(released.CanWrite, "Malformed input handle released after rejection");
+                    }
+                }
+            }
+        }
+
+        private static void TestLockedInput(string root)
+        {
+            SyntheticPair pair = SyntheticQshFactory.Create(root, "locked", 101, 1000, 10, Side.Sell);
+            using (FileStream blocker = new FileStream(pair.DealsPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            {
+                OrderFlowResearchResult result = RunPair(pair, Path.Combine(root, "output"));
+                AssertRejectedBundle(result, "QSH_IO_ERROR");
+                AssertManifestRole(result, "Quotes", pair.QuotesPath, true);
+            }
+
+            AssertTrue(RunPair(pair, Path.Combine(root, "output")).Quality.ResearchAccepted,
+                "Releasing an input lock permits a separate accepted bundle.");
+        }
+
+        private static void TestPinnedInput(string root)
+        {
+            SyntheticPair raw = SyntheticQshFactory.Create(root, "pinned", 101, 1000, 10, Side.Sell);
+            SyntheticPair[] pairs = new SyntheticPair[] { raw, SyntheticQshFactory.CompressGzip(root, raw), SyntheticQshFactory.CompressDeflate(root, raw) };
+            foreach (SyntheticPair pair in pairs)
+            {
+                string expected = StoredHash(pair.DealsPath);
+                OrderFlowQshHeader header = new OrderFlowQshHeader();
+                header.FileName = Path.GetFileName(pair.DealsPath).ToUpperInvariant();
+                header.FileType = "Deals";
+                using (OrderFlowDealsQshReader reader = new OrderFlowDealsQshReader(pair.DealsPath, 0, 0, header))
+                {
+                    AssertEqual(expected, header.Sha256, "Hash of stored raw/compressed bytes");
+                    bool writeBlocked = false;
+                    try
+                    {
+                        using (FileStream writer = new FileStream(pair.DealsPath, FileMode.Open, FileAccess.Write, FileShare.ReadWrite))
+                        {
+                            AssertTrue(writer.CanWrite, "Probe owns a writable handle");
+                        }
+                    }
+                    catch (IOException)
+                    {
+                        writeBlocked = true;
+                    }
+
+                    AssertTrue(writeBlocked, "Input must stay protected against writers between hashing and replay.");
+                    OrderFlowDeal deal;
+                    AssertTrue(reader.TryRead(out deal), "Pinned stream remains available for decoding");
+                    AssertEqual(100m, deal.Price, "Pinned payload price");
+                }
+
+                using (FileStream released = new FileStream(pair.DealsPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                {
+                    AssertEqual(header.FileSize.Value, released.Length, "Input handle released after reader disposal");
+                }
+            }
+        }
+
+        private static void TestSpecIdentity(string root)
+        {
+            SyntheticPair pair = SyntheticQshFactory.Create(root, "spec", 101, 1000, 10, Side.Sell);
+            string output = Path.Combine(root, "output");
+            OrderFlowResearchResult first = RunPair(pair, output);
+            OrderFlowResearchRequest changed = CreateRequest(pair, output);
+            changed.TopBookLevels = 4;
+            OrderFlowResearchRunner runner = new OrderFlowResearchRunner();
+            OrderFlowResearchResult second = runner.RunAndExport(changed, CancellationToken.None);
+            OrderFlowResearchResult repeat = runner.RunAndExport(changed, CancellationToken.None);
+            AssertEqual(first.InputHash, second.InputHash, "Spec does not change input identity");
+            AssertEqual(first.NormalizedEventHash, second.NormalizedEventHash, "Spec does not change source events");
+            AssertEqual(first.FeatureHash, second.FeatureHash, "One-level fixture gives identical features at top-4/top-5");
+            AssertFalse(first.ResearchSpecHash == second.ResearchSpecHash, "Specs have distinct hashes");
+            AssertFalse(first.ArtifactDirectory == second.ArtifactDirectory, "Specs have distinct artifact bundles");
+            AssertTrue(first.Observations.Any(item => item.ObservationType == OrderFlowObservationType.Background), "Background identity covered");
+            AssertTrue(first.Observations.Any(item => item.ObservationType == OrderFlowObservationType.Candidate), "Candidate identity covered");
+            HashSet<string> originalKeys = new HashSet<string>(first.Observations.Select(item => item.ObservationKey));
+            AssertFalse(second.Observations.Any(item => originalKeys.Contains(item.ObservationKey)), "Observation identities cannot collide across specs");
+            AssertTrue(second.Observations.Select(item => item.ObservationKey).SequenceEqual(repeat.Observations.Select(item => item.ObservationKey)), "Same spec reproduces identities");
+            AssertTrue(second.Observations.All(item => item.ObservationKey.Contains("|" + OrderFlowResearchSchema.CandidateDetectorVersion + "|", StringComparison.Ordinal)), "Keys explicitly identify detector version");
+        }
+
+        private static void TestFeatureFormulas(string root)
+        {
+            DateTime start = new DateTime(2026, 9, 18, 10, 0, 0, DateTimeKind.Utc);
+            OrderFlowResearchRequest request = new OrderFlowResearchRequest();
+            request.FeatureWindowSeconds = 1;
+            request.TopBookLevels = 2;
+            request.MaximumBookAgeMilliseconds = 2000;
+            OrderFlowBookSnapshot book = FormulaBook(start);
+            OrderFlowFeatureWindow window = new OrderFlowFeatureWindow();
+            window.Build(FormulaBucket(start.AddSeconds(1), 1, 100, 10, Side.Buy), book, request);
+            OrderFlowFeatureSnapshot feature = window.Build(FormulaBucket(start.AddSeconds(2), 2, 102, 30, Side.Sell), book, request);
+            AssertEqual(10m, feature.BuyVolume, "Window includes left boundary");
+            AssertEqual(30m, feature.SellVolume, "Sell volume");
+            AssertEqual(-20m, feature.Delta, "Signed delta");
+            AssertEqual(2, feature.TradeCount, "Window deal count");
+            AssertEqual(102m, feature.ReferencePrice, "Current bucket reference");
+            AssertEqual(2m, feature.PriceChange, "Change from earliest bucket VWAP");
+            AssertEqual(0.1m, feature.PriceResponse, "Response divides by absolute delta");
+            AssertEqual(2m, feature.Spread, "Absolute price spread");
+            AssertEqual(0.5m, feature.BookImbalance, "Top-2 excludes third-level volumes");
+            AssertEqual(2000L, feature.BookAgeMilliseconds, "Book age milliseconds");
+            OrderFlowFeatureSnapshot next = window.Build(FormulaBucket(start.AddMilliseconds(2001), 3, 104, 30, Side.Buy), book, request);
+            AssertEqual(2, next.TradeCount, "Evicts only deals strictly before cutoff");
+            AssertEqual(0m, next.Delta, "Balanced flow after eviction");
+            AssertEqual(2m, next.PriceChange, "Reference moves after oldest bucket eviction");
+            AssertEqual(0m, next.PriceResponse, "Zero delta response avoids division by zero");
+            AssertEqual(10m, feature.BuyVolume, "Earlier snapshot remains detached");
+        }
+
+        private static void TestBookAgeBoundary(string root)
+        {
+            DateTime start = new DateTime(2026, 9, 18, 10, 0, 0, DateTimeKind.Utc);
+            OrderFlowResearchRequest request = new OrderFlowResearchRequest();
+            request.FeatureWindowSeconds = 10;
+            request.TopBookLevels = 2;
+            request.MaximumBookAgeMilliseconds = 2000;
+            OrderFlowFeatureWindow window = new OrderFlowFeatureWindow();
+            OrderFlowBookSnapshot book = FormulaBook(start);
+            OrderFlowFeatureSnapshot exact = window.Build(FormulaBucket(start.AddSeconds(2), 1, 100, 10, Side.Buy), book, request);
+            AssertFalse(exact.BookStale, "Book remains fresh exactly at the age limit");
+            AssertEqual("OK", exact.DataQualityCode, "Boundary quality");
+            OrderFlowFeatureSnapshot stale = window.Build(FormulaBucket(start.AddMilliseconds(2001), 2, 100, 10, Side.Buy), book, request);
+            AssertTrue(stale.BookStale, "Book becomes stale one millisecond beyond limit");
+            AssertEqual(2001L, stale.BookAgeMilliseconds, "Stale age");
+            AssertEqual("BOOK_STALE", stale.DataQualityCode, "Staleness is explicit");
+            OrderFlowBookSnapshot invalid = FormulaBook(start);
+            invalid.IsValid = false;
+            foreach (OrderFlowBookSnapshot unavailable in new OrderFlowBookSnapshot[] { null, invalid, FormulaBook(start.AddSeconds(3)) })
+            {
+                OrderFlowFeatureSnapshot missing = new OrderFlowFeatureWindow().Build(FormulaBucket(start.AddSeconds(3), 3, 100, 10, Side.Buy), unavailable, request);
+                AssertFalse(missing.BookAvailable, "Absent, invalid and same-timestamp book unavailable");
+                AssertEqual(-1L, missing.BookAgeMilliseconds, "Unknown book age sentinel");
+                AssertEqual("BOOK_NOT_CAUSALLY_AVAILABLE", missing.DataQualityCode, "Unavailable reason");
+            }
+        }
+
+        private static OrderFlowBookSnapshot FormulaBook(DateTime time)
+        {
+            OrderFlowBookSnapshot book = new OrderFlowBookSnapshot();
+            book.Time = time;
+            book.IsValid = true;
+            book.Bids.Add(new OrderFlowBookLevel() { Price = 99, Volume = 30 });
+            book.Bids.Add(new OrderFlowBookLevel() { Price = 98, Volume = 120 });
+            book.Bids.Add(new OrderFlowBookLevel() { Price = 97, Volume = 1 });
+            book.Asks.Add(new OrderFlowBookLevel() { Price = 101, Volume = 20 });
+            book.Asks.Add(new OrderFlowBookLevel() { Price = 102, Volume = 30 });
+            book.Asks.Add(new OrderFlowBookLevel() { Price = 103, Volume = 900 });
+            return book;
+        }
+
+        private static OrderFlowBucket FormulaBucket(DateTime time, long sequence, decimal price, decimal volume, Side side)
+        {
+            OrderFlowBucket bucket = new OrderFlowBucket();
+            bucket.Time = time;
+            bucket.BucketSequence = sequence;
+            bucket.Deals.Add(new OrderFlowDeal() { Time = time, Price = price, Volume = volume, Side = side });
+            return bucket;
+        }
+
+        private static void AssertManifestRole(OrderFlowResearchResult result, string role, string path, bool complete)
+        {
+            using (JsonDocument manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(result.ArtifactDirectory, "manifest.json"))))
+            {
+                JsonElement input = manifest.RootElement.GetProperty(role);
+                AssertEqual(role, input.GetProperty("FileType").GetString(), "Manifest role");
+                AssertEqual(Path.GetFileName(path).ToUpperInvariant(), input.GetProperty("FileName").GetString(), "Canonical filename");
+                AssertEqual(StoredHash(path), input.GetProperty("Sha256").GetString(), "Stored file SHA-256");
+                AssertEqual(new FileInfo(path).Length, input.GetProperty("FileSize").GetInt64(), "Stored file size");
+                AssertEqual(complete, input.GetProperty("HeaderComplete").GetBoolean(), "Header completion state");
+                if (complete)
+                {
+                    AssertEqual("TEST", input.GetProperty("FileInstrument").GetString(), "Filename instrument");
+                    AssertEqual("TEST", input.GetProperty("HeaderInstrument").GetString(), "Header instrument");
+                    AssertEqual(new DateTime(2026, 9, 18), input.GetProperty("TradingDate").GetDateTime(), "Trading date");
+                    AssertEqual(1m, input.GetProperty("EffectivePriceStep").GetDecimal(), "Price units");
+                    AssertEqual(1m, input.GetProperty("EffectiveVolumeStep").GetDecimal(), "Volume units");
+                }
+                else
+                {
+                    AssertEqual("QSH_INVALID", input.GetProperty("FailureReasonCode").GetString(), "Malformed header reason");
+                }
+            }
+        }
+
+        private static string StoredHash(string path)
+        {
+            return Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
+        }
+
+        private static void AssertRejectedBundle(OrderFlowResearchResult result, string reason)
+        {
+            AssertFalse(result.Quality.ResearchAccepted, "Invalid input must reject research");
+            AssertEqual(0, result.Candidates.Count, "Header failure must not run the candidate detector");
+            AssertEqual(0, result.Labels.Count, "Header failure must not produce labels");
+            using (JsonDocument manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(result.ArtifactDirectory, "manifest.json"))))
+            using (JsonDocument quality = JsonDocument.Parse(File.ReadAllText(Path.Combine(result.ArtifactDirectory, "quality.json"))))
+            {
+                AssertFalse(manifest.RootElement.GetProperty("ResearchAccepted").GetBoolean(), "Manifest rejection");
+                AssertFalse(quality.RootElement.GetProperty("ResearchAccepted").GetBoolean(), "Quality rejection");
+                AssertTrue(quality.RootElement.GetProperty("Issues").EnumerateArray().Any(item => item.GetProperty("ReasonCode").GetString() == reason), "Serialized rejection reason");
+            }
+
+            AssertTrue(File.ReadAllText(Path.Combine(result.ArtifactDirectory, "event-journal.csv")).Contains("RESEARCH_REJECTED", StringComparison.Ordinal), "Journal terminal rejection");
+        }
+
         private static OrderFlowResearchResult RunPair(SyntheticPair pair, string output)
+        {
+            return new OrderFlowResearchRunner().RunAndExport(CreateRequest(pair, output), CancellationToken.None);
+        }
+
+        private static OrderFlowResearchRequest CreateRequest(SyntheticPair pair, string output)
         {
             OrderFlowResearchRequest request = new OrderFlowResearchRequest();
             request.DealsFilePath = pair.DealsPath;
@@ -390,8 +821,7 @@ namespace OsEngine.OrderFlowResearch.Tests
             request.TargetTicks = 1;
             request.InvalidationTicks = 1;
 
-            OrderFlowResearchRunner runner = new OrderFlowResearchRunner();
-            return runner.RunAndExport(request, CancellationToken.None);
+            return request;
         }
 
         private static OrderFlowFeatureSnapshot GetOnlyCandidateFeature(OrderFlowResearchResult result)

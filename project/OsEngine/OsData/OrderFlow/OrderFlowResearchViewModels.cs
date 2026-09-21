@@ -3,6 +3,7 @@
  * Ваши права на использование кода регулируются данной лицензией http://o-s-a.net/doc/license_simple_engine.pdf
 */
 
+using OsEngine.Language;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -87,25 +88,30 @@ namespace OsEngine.OsData.OrderFlow
             return views;
         }
 
+        private static string L(string english, string russian)
+        {
+            return OsLocalization.CurLocalization == OsLocalization.OsLocalType.Ru ? russian : english;
+        }
+
         private static string BuildDetails(OrderFlowCandidate candidate, OrderFlowFeatureSnapshot feature,
             OrderFlowMarketPathLabel label)
         {
             string labelText = label == null
-                ? "No complete future label"
-                : "Shortest label " + label.HorizonSeconds.ToString(CultureInfo.InvariantCulture) +
-                  " sec · " + label.Outcome + " · MFE " +
-                  label.MaximumFavorableExcursion.ToString("G29", CultureInfo.InvariantCulture) +
-                  " · MAE " + label.MaximumAdverseExcursion.ToString("G29", CultureInfo.InvariantCulture);
+                ? L("No future label", "Нет оценки будущего")
+                : L("Shortest horizon ", "Короткий горизонт ") + label.HorizonSeconds.ToString(CultureInfo.InvariantCulture) +
+                  L(" sec · ", " сек · ") + label.Outcome + " · MFE " +
+                  label.MaximumFavorableExcursion.ToString("0.######", CultureInfo.InvariantCulture) +
+                  " · MAE " + label.MaximumAdverseExcursion.ToString("0.######", CultureInfo.InvariantCulture);
 
-            return candidate.CandidateId + " · " + candidate.Direction + " · " + candidate.ReasonCode +
-                " · price " + candidate.ReferencePrice.ToString("G29", CultureInfo.InvariantCulture) +
-                " · delta " + feature.Delta.ToString("G29", CultureInfo.InvariantCulture) +
-                " · response " + feature.PriceResponse.ToString("G29", CultureInfo.InvariantCulture) +
-                " · spread " + feature.Spread.ToString("G29", CultureInfo.InvariantCulture) +
-                " · imbalance " + feature.BookImbalance.ToString("G29", CultureInfo.InvariantCulture) +
-                " · book age " + feature.BookAgeMilliseconds.ToString(CultureInfo.InvariantCulture) +
+            return candidate.Time.ToString("dd.MM.yyyy HH:mm:ss.fff", CultureInfo.InvariantCulture) + " · " + candidate.CandidateId + " · " + candidate.Direction + " · " + candidate.ReasonCode +
+                L(" · price ", " · цена ") + candidate.ReferencePrice.ToString("0.######", CultureInfo.InvariantCulture) +
+                L(" · delta ", " · дельта окна ") + feature.Delta.ToString("0.######", CultureInfo.InvariantCulture) +
+                L(" · response ", " · отклик окна ") + feature.PriceResponse.ToString("0.######", CultureInfo.InvariantCulture) +
+                L(" · spread ", " · спред ") + feature.Spread.ToString("0.######", CultureInfo.InvariantCulture) +
+                L(" · imbalance ", " · дисбаланс ") + feature.BookImbalance.ToString("0.######", CultureInfo.InvariantCulture) +
+                L(" · book age ", " · возраст стакана ") + feature.BookAgeMilliseconds.ToString(CultureInfo.InvariantCulture) +
                 " ms · " + feature.DataQualityCode + " · " + labelText +
-                ". Candidate and future label are separate; neither is a trade.";
+                L(". MFE/MAE are price distances, not PnL.", ". MFE/MAE — лучшее/худшее отклонение в единицах цены; это не прибыль.");
         }
     }
 }

@@ -44,33 +44,53 @@ namespace OsEngine.OsData.OrderFlow
         public DataBinaryReader Reader { get; private set; }
 
         /// <summary>
-        /// Opens one local QSH file and positions the payload reader immediately
-        /// after the decoded raw/GZip/Deflate signature.
+        /// Opens and hashes the stored bytes on the same read-only handle later used for replay.
         /// </summary>
-        /// <param name="filePath">Existing local QSH file opened read-only.</param>
-        /// <exception cref="IOException">The file or compressed payload cannot be read.</exception>
-        /// <exception cref="InvalidDataException">No supported payload contains the QSH signature.</exception>
-        /// <remarks>The instance owns every opened stream until <see cref="Dispose"/>.</remarks>
-        public OrderFlowQshInputStream(string filePath)
+        /// <remarks>
+        /// Windows FileShare.Read excludes writers and replacement until disposal. The caller
+        /// owns disposal after successful construction, including when OpenReader fails.
+        /// The supplied metadata retains the size and completed hash on decoding failure.
+        /// </remarks>
+        /// <param name="filePath">Local QSH path.</param>
+        /// <param name="header">Run-owned metadata populated before payload decoding.</param>
+        /// <exception cref="IOException">The input cannot be opened or hashed.</exception>
+        /// <exception cref="UnauthorizedAccessException">Read access is denied.</exception>
+        public OrderFlowQshInputStream(string filePath, OrderFlowQshHeader header)
         {
             _fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
             try
             {
-                _payloadStream = OpenPayload(_fileStream);
-                Reader = new DataBinaryReader(_payloadStream);
+                header.FileSize = _fileStream.Length;
+                using (SHA256 sha256 = SHA256.Create())
+                {
+                    header.Sha256 = Convert.ToHexString(sha256.ComputeHash(_fileStream)).ToLowerInvariant();
+                }
+
+                _fileStream.Position = 0;
             }
             catch
             {
-                if (_payloadStream != null && ReferenceEquals(_payloadStream, _fileStream) == false)
-                {
-                    _payloadStream.Dispose();
-                    _payloadStream = null;
-                }
-
-                _fileStream.Dispose();
-                _fileStream = null;
+                Dispose();
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Opens the payload once on the retained handle and consumes its QSH signature.
+        /// The owner must dispose this instance even when probing or decoding fails.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">The payload reader is already open.</exception>
+        /// <exception cref="InvalidDataException">No supported payload contains the QSH signature.</exception>
+        /// <exception cref="IOException">The payload cannot be read.</exception>
+        public void OpenReader()
+        {
+            if (Reader != null)
+            {
+                throw new InvalidOperationException("The QSH payload reader is already open.");
+            }
+
+            _payloadStream = OpenPayload(_fileStream);
+            Reader = new DataBinaryReader(_payloadStream);
         }
 
         private static Stream OpenPayload(FileStream fileStream)
@@ -201,19 +221,21 @@ namespace OsEngine.OsData.OrderFlow
         /// <param name="expectedStreamType">Expected QSH stream byte.</param>
         /// <param name="priceStepOverride">Positive explicit step or zero to require the header value.</param>
         /// <param name="volumeStepOverride">Positive explicit step or zero to require the comment value.</param>
-        /// <param name="sha256">SHA-256 of the exact stored file bytes, calculated before construction.</param>
+        /// <param name="header">Run-owned role metadata retained even when header decoding fails.</param>
         /// <exception cref="InvalidDataException">The signature, header, role or required step is invalid.</exception>
         /// <exception cref="IOException">The local input cannot be read.</exception>
         /// <remarks>Normal EOF is recognized only before a new frame; partial headers and frames fail closed.</remarks>
         protected OrderFlowQshReaderBase(string filePath, string expectedFileType, StreamType expectedStreamType,
-            decimal priceStepOverride, decimal volumeStepOverride, string sha256)
+            decimal priceStepOverride, decimal volumeStepOverride, OrderFlowQshHeader header)
         {
-            _input = new OrderFlowQshInputStream(filePath);
-
+            Header = header;
             try
             {
-                Header = ReadHeader(filePath, expectedFileType, expectedStreamType,
-                    priceStepOverride, volumeStepOverride, sha256);
+                _input = new OrderFlowQshInputStream(filePath, header);
+                ReadFileIdentity(header, expectedFileType);
+                _input.OpenReader();
+                ReadHeader(expectedStreamType, priceStepOverride, volumeStepOverride);
+                header.HeaderComplete = true;
             }
             catch
             {
@@ -222,18 +244,16 @@ namespace OsEngine.OsData.OrderFlow
             }
         }
 
-        private OrderFlowQshHeader ReadHeader(string filePath, string expectedFileType, StreamType expectedStreamType,
-            decimal priceStepOverride, decimal volumeStepOverride, string sha256)
+        private void ReadHeader(StreamType expectedStreamType,
+            decimal priceStepOverride, decimal volumeStepOverride)
         {
+            OrderFlowQshHeader header = Header;
             int version = Reader.BaseStream.ReadByte();
             if (version != 4)
             {
                 throw new InvalidDataException("Only QSH version 4 is supported by the research MVP.");
             }
 
-            OrderFlowQshHeader header = new OrderFlowQshHeader();
-            header.FileName = Path.GetFileName(filePath).ToUpperInvariant();
-            header.FileType = expectedFileType;
             header.ApplicationName = Reader.ReadString();
             header.Comment = Reader.ReadString();
             long headerTicks = Reader.ReadInt64();
@@ -260,7 +280,6 @@ namespace OsEngine.OsData.OrderFlow
             }
 
             header.InstrumentHeader = Reader.ReadString();
-            ReadFileIdentity(header, expectedFileType);
             header.HeaderInstrument = ParseHeaderInstrument(header.InstrumentHeader);
             header.HeaderPriceStep = ParsePriceStep(header.InstrumentHeader);
             header.HeaderVolumeStep = ParseVolumeStep(header.Comment);
@@ -278,11 +297,6 @@ namespace OsEngine.OsData.OrderFlow
             {
                 throw new InvalidDataException("VolumeStep is missing from the QSH header. Provide an explicit override.");
             }
-
-            FileInfo fileInfo = new FileInfo(filePath);
-            header.FileSize = fileInfo.Length;
-            header.Sha256 = sha256;
-            return header;
         }
 
         private static void ReadFileIdentity(OrderFlowQshHeader header, string expectedFileType)
@@ -460,10 +474,10 @@ namespace OsEngine.OsData.OrderFlow
         /// <param name="filePath">Semantic <c>*.Deals.qsh</c> path.</param>
         /// <param name="priceStepOverride">Positive override or zero.</param>
         /// <param name="volumeStepOverride">Positive override or zero.</param>
-        /// <param name="sha256">Hash of the exact stored file bytes.</param>
+        /// <param name="header">Run-owned role metadata, including partial data on failure.</param>
         public OrderFlowDealsQshReader(string filePath, decimal priceStepOverride, decimal volumeStepOverride,
-            string sha256)
-            : base(filePath, "Deals", StreamType.Deals, priceStepOverride, volumeStepOverride, sha256)
+            OrderFlowQshHeader header)
+            : base(filePath, "Deals", StreamType.Deals, priceStepOverride, volumeStepOverride, header)
         {
         }
 
@@ -528,10 +542,10 @@ namespace OsEngine.OsData.OrderFlow
         /// <param name="filePath">Semantic <c>*.Quotes.qsh</c> path.</param>
         /// <param name="priceStepOverride">Positive override or zero.</param>
         /// <param name="volumeStepOverride">Positive override or zero.</param>
-        /// <param name="sha256">Hash of the exact stored file bytes.</param>
+        /// <param name="header">Run-owned role metadata, including partial data on failure.</param>
         public OrderFlowQuotesQshReader(string filePath, decimal priceStepOverride, decimal volumeStepOverride,
-            string sha256)
-            : base(filePath, "Quotes", StreamType.Quotes, priceStepOverride, volumeStepOverride, sha256)
+            OrderFlowQshHeader header)
+            : base(filePath, "Quotes", StreamType.Quotes, priceStepOverride, volumeStepOverride, header)
         {
         }
 

@@ -4,6 +4,7 @@
 */
 
 using OsEngine.Logging;
+using OsEngine.Language;
 using OsEngine.Market;
 using System;
 using System.Collections.Generic;
@@ -11,6 +12,7 @@ using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Input;
 
 namespace OsEngine.OsData.OrderFlow
 {
@@ -19,7 +21,8 @@ namespace OsEngine.OsData.OrderFlow
     /// </summary>
     /// <remarks>
     /// Changing the display timeframe or selected marker never recalculates
-    /// features, candidates or labels. Contract: ORDER-FLOW-RESEARCH-001.
+    /// features, candidates or labels. View changes are UI-thread-only; the owner
+    /// subscribes to ViewChanged and unsubscribes when closing. Contract: ORDER-FLOW-RESEARCH-001.
     /// </remarks>
     internal sealed class OrderFlowResearchChart : FrameworkElement
     {
@@ -27,28 +30,136 @@ namespace OsEngine.OsData.OrderFlow
         private OrderFlowDisplayTimeFrame _timeFrame = OrderFlowDisplayTimeFrame.Min1;
         private string _selectedCandidateId;
 
+        private int _startIndex;
+        private int _visibleCount = 120;
+
+        public event EventHandler ViewChanged;
+
+        public int StartIndex { get { return _startIndex; } }
+        public int VisibleCount { get { return Math.Min(_visibleCount, TotalBars); } }
+        public int TotalBars { get { return CurrentBars.Count; } }
+
+        private List<OrderFlowDisplayBar> CurrentBars
+        {
+            get
+            {
+                List<OrderFlowDisplayBar> bars;
+                return _result != null && _result.Bars.TryGetValue(_timeFrame, out bars)
+                    ? bars : new List<OrderFlowDisplayBar>();
+            }
+        }
+
+        public string RangeText
+        {
+            get
+            {
+                List<OrderFlowDisplayBar> bars = CurrentBars;
+                if (bars.Count == 0) { return L("No trade bars", "Нет свечей со сделками"); }
+                return bars[_startIndex].TimeStart.ToString("dd.MM.yyyy HH:mm:ss", CultureInfo.InvariantCulture) +
+                    " — " + bars[_startIndex + VisibleCount - 1].TimeEnd.ToString("HH:mm:ss", CultureInfo.InvariantCulture) +
+                    " · " + L("bars", "свечи") + " " + (_startIndex + 1) + "–" + (_startIndex + VisibleCount) +
+                    " / " + bars.Count + " · " + L("Entire file", "Весь файл") + " " +
+                    bars[0].TimeStart.ToString("HH:mm:ss", CultureInfo.InvariantCulture) + "–" +
+                    bars[bars.Count - 1].TimeEnd.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+            }
+        }
+
         public OrderFlowResearchChart()
         {
             SnapsToDevicePixels = true;
             MinHeight = 320;
         }
 
+        /// <summary>Resets the display viewport for a new offline result without changing research data.</summary>
+        /// <param name="result">Offline result to display, or null to clear the viewport.</param>
         public void SetResult(OrderFlowResearchResult result)
         {
             _result = result;
-            InvalidateVisual();
+            _selectedCandidateId = null;
+            _visibleCount = 120;
+            ScrollTo(Math.Max(0, TotalBars - _visibleCount));
         }
 
+        /// <summary>Changes display bars, retaining the visible midpoint time when possible.</summary>
+        /// <param name="timeFrame">Precomputed display aggregation.</param>
         public void SetTimeFrame(OrderFlowDisplayTimeFrame timeFrame)
         {
+            List<OrderFlowDisplayBar> previous = CurrentBars;
+            DateTime? anchor = previous.Count == 0 ? null
+                : previous[Math.Min(previous.Count - 1, _startIndex + VisibleCount / 2)].TimeStart;
+            bool allVisible = previous.Count > 0 && VisibleCount == previous.Count;
             _timeFrame = timeFrame;
-            InvalidateVisual();
+            List<OrderFlowDisplayBar> bars = CurrentBars;
+            if (allVisible) { _visibleCount = Math.Max(1, bars.Count); }
+            int index = anchor.HasValue ? bars.FindIndex(bar => bar.TimeEnd > anchor.Value) : bars.Count - 1;
+            if (index < 0) { index = bars.Count - 1; }
+            ScrollTo(index - VisibleCount / 2);
         }
 
+        /// <summary>Centers the viewport on a candidate; subsequent scrolling stays under user control.</summary>
+        /// <param name="candidateId">Local candidate identifier within the current result.</param>
         public void SelectCandidate(string candidateId)
         {
             _selectedCandidateId = candidateId;
+            int index = FindSelectedBarIndex(CurrentBars);
+            ScrollTo(index >= 0 ? index - VisibleCount / 2 : _startIndex);
+        }
+
+        /// <summary>Moves to a clamped bar index without recalculating features, candidates or labels.</summary>
+        /// <param name="startIndex">Requested first bar, clamped to the available range.</param>
+        public void ScrollTo(int startIndex)
+        {
+            _startIndex = Math.Clamp(startIndex, 0, Math.Max(0, TotalBars - VisibleCount));
             InvalidateVisual();
+            ViewChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>Changes the number of visible bars around the current midpoint; the full file is supported.</summary>
+        /// <param name="count">Requested viewport width in bars, clamped to the available range.</param>
+        public void Zoom(int count)
+        {
+            int center = _startIndex + VisibleCount / 2;
+            _visibleCount = Math.Clamp(count, Math.Min(10, Math.Max(1, TotalBars)), Math.Max(1, TotalBars));
+            ScrollTo(center - VisibleCount / 2);
+        }
+
+        /// <summary>Scrolls through existing bars without changing the research result.</summary>
+        /// <param name="e">Mouse wheel input handled by this chart.</param>
+        protected override void OnMouseWheel(MouseWheelEventArgs e)
+        {
+            base.OnMouseWheel(e);
+            try
+            {
+                ScrollTo(_startIndex + (e.Delta > 0 ? -1 : 1) * Math.Max(1, VisibleCount / 10));
+                e.Handled = true;
+            }
+            catch (Exception error)
+            {
+                ServerMaster.SendNewLogMessage(error.ToString(), LogMessageType.Error);
+            }
+        }
+
+        /// <summary>Shows the display bar under the pointer, including its book quality.</summary>
+        /// <param name="e">Pointer coordinates in the chart.</param>
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            base.OnMouseMove(e);
+            try
+            {
+                double position = (e.GetPosition(this).X - 92) / Math.Max(1, ActualWidth - 104);
+                if (position < 0 || position >= 1 || VisibleCount == 0) { ToolTip = null; return; }
+                OrderFlowDisplayBar bar = CurrentBars[_startIndex + Math.Min(VisibleCount - 1, (int)(position * VisibleCount))];
+                ToolTip = bar.TimeStart.ToString("dd.MM.yyyy HH:mm:ss", CultureInfo.InvariantCulture) +
+                    "\nO " + F(bar.Open) + " · H " + F(bar.High) + " · L " + F(bar.Low) + " · C " + F(bar.Close) +
+                    "\n" + L("Bar delta", "Дельта свечи") + " " + F(bar.Delta) +
+                    " · " + L("Window response", "Отклик окна") + " " + F(bar.PriceResponse) +
+                    "\n" + L("Book imbalance", "Дисбаланс стакана") + " " + (bar.BookAvailable ? F(bar.BookImbalance) : L("missing", "нет данных")) +
+                    (bar.BookStale ? " · " + L("stale", "устарел") : "");
+            }
+            catch (Exception error)
+            {
+                ServerMaster.SendNewLogMessage(error.ToString(), LogMessageType.Error);
+            }
         }
 
         protected override void OnRender(DrawingContext drawingContext)
@@ -68,53 +179,42 @@ namespace OsEngine.OsData.OrderFlow
         private void DrawChart(DrawingContext drawingContext)
         {
             Rect bounds = new Rect(0, 0, ActualWidth, ActualHeight);
-            drawingContext.DrawRectangle(SystemColors.WindowBrush, null, bounds);
+            drawingContext.DrawRectangle(BackgroundBrush, null, bounds);
 
             if (_result == null || ActualWidth < 200 || ActualHeight < 200)
             {
-                DrawText(drawingContext, "Run paired QSH research to display diagnostic bars.",
-                    new Point(12, 12), SystemColors.WindowTextBrush, 13);
+                DrawText(drawingContext, L("Run paired QSH research to display diagnostic bars.", "Запустите расчёт по паре QSH для просмотра графика."),
+                    new Point(12, 12), ForegroundBrush, 13);
                 return;
             }
 
             List<OrderFlowDisplayBar> allBars;
             if (_result.Bars.TryGetValue(_timeFrame, out allBars) == false || allBars.Count == 0)
             {
-                DrawText(drawingContext, "No trade bars are available for " + _timeFrame + ".",
-                    new Point(12, 12), SystemColors.WindowTextBrush, 13);
+                DrawText(drawingContext, L("No trade bars are available for ", "Нет свечей со сделками для ") + _timeFrame + ".",
+                    new Point(12, 12), ForegroundBrush, 13);
                 return;
             }
 
-            int selectedIndex = FindSelectedBarIndex(allBars);
-            int startIndex = selectedIndex >= 0
-                ? Math.Max(0, selectedIndex - 60)
-                : Math.Max(0, allBars.Count - 120);
-            int endIndex = Math.Min(allBars.Count - 1, startIndex + 119);
-
-            if (selectedIndex >= 0 && selectedIndex > endIndex)
-            {
-                startIndex = Math.Max(0, selectedIndex - 119);
-                endIndex = selectedIndex;
-            }
-
-            List<OrderFlowDisplayBar> bars = allBars.GetRange(startIndex, endIndex - startIndex + 1);
-            double left = 70;
+            List<OrderFlowDisplayBar> bars = allBars.GetRange(_startIndex, VisibleCount);
+            double left = 92;
             double right = Math.Max(left + 10, ActualWidth - 12);
             double width = right - left;
+            double usable = ActualHeight - 96;
             double priceTop = 24;
-            double priceBottom = ActualHeight * 0.55;
-            double deltaTop = priceBottom + 18;
-            double deltaBottom = ActualHeight * 0.72;
-            double responseTop = deltaBottom + 18;
-            double responseBottom = ActualHeight * 0.85;
-            double bookTop = responseBottom + 18;
-            double bookBottom = ActualHeight - 24;
+            double priceBottom = priceTop + usable * 0.46;
+            double deltaTop = priceBottom + 20;
+            double deltaBottom = deltaTop + usable * 0.18;
+            double responseTop = deltaBottom + 20;
+            double responseBottom = responseTop + usable * 0.18;
+            double bookTop = responseBottom + 20;
+            double bookBottom = bookTop + usable * 0.18;
 
             DrawPanelBoundaries(drawingContext, left, right, priceBottom, deltaBottom, responseBottom, bookBottom);
-            DrawText(drawingContext, "Price", new Point(8, priceTop), SystemColors.WindowTextBrush, 11);
-            DrawText(drawingContext, "Delta", new Point(8, deltaTop), SystemColors.WindowTextBrush, 11);
-            DrawText(drawingContext, "Response", new Point(8, responseTop), SystemColors.WindowTextBrush, 11);
-            DrawText(drawingContext, "Book", new Point(8, bookTop), SystemColors.WindowTextBrush, 11);
+            DrawText(drawingContext, L("Price · OHLC", "Цена · OHLC"), new Point(left, 3), ForegroundBrush, 11);
+            DrawText(drawingContext, L("Bar delta · buy − sell volume", "Дельта свечи · объём покупок − продаж"), new Point(left, deltaTop - 17), ForegroundBrush, 11);
+            DrawText(drawingContext, L("Window response · price change / |delta|", "Отклик окна · изменение цены / |дельта|"), new Point(left, responseTop - 17), ForegroundBrush, 11);
+            DrawText(drawingContext, L("Book imbalance · + bids / − asks", "Дисбаланс стакана · + покупатели / − продавцы"), new Point(left, bookTop - 17), ForegroundBrush, 11);
 
             decimal minPrice = bars.Where(bar => bar.HasTrades).Min(bar => bar.Low);
             decimal maxPrice = bars.Where(bar => bar.HasTrades).Max(bar => bar.High);
@@ -136,6 +236,10 @@ namespace OsEngine.OsData.OrderFlow
                 maxResponse = 1;
             }
 
+            DrawScale(drawingContext, minPrice, maxPrice, priceTop, priceBottom);
+            DrawScale(drawingContext, -maxDelta, maxDelta, deltaTop, deltaBottom);
+            DrawScale(drawingContext, -maxResponse, maxResponse, responseTop, responseBottom);
+            DrawScale(drawingContext, -1, 1, bookTop, bookBottom);
             double slotWidth = width / bars.Count;
             DrawPriceBars(drawingContext, bars, left, slotWidth, priceTop, priceBottom, minPrice, maxPrice);
             DrawDeltaBars(drawingContext, bars, left, slotWidth, deltaTop, deltaBottom, maxDelta);
@@ -144,16 +248,16 @@ namespace OsEngine.OsData.OrderFlow
             DrawCandidates(drawingContext, bars, left, slotWidth, priceTop, priceBottom, minPrice, maxPrice);
 
             DrawText(drawingContext, bars[0].TimeStart.ToString("dd.MM HH:mm:ss", CultureInfo.InvariantCulture),
-                new Point(left, ActualHeight - 18), SystemColors.WindowTextBrush, 10);
+                new Point(left, ActualHeight - 18), ForegroundBrush, 10);
             DrawText(drawingContext, bars[bars.Count - 1].TimeStart.ToString("dd.MM HH:mm:ss", CultureInfo.InvariantCulture),
-                new Point(Math.Max(left, right - 105), ActualHeight - 18), SystemColors.WindowTextBrush, 10);
-            DrawText(drawingContext, _timeFrame + " · display only", new Point(right - 135, 4),
-                Brushes.DimGray, 10);
+                new Point(Math.Max(left, right - 105), ActualHeight - 18), ForegroundBrush, 10);
+            DrawText(drawingContext, _timeFrame + " · " + L("display", "отображение"), new Point(right - 135, 4),
+                ForegroundBrush, 10);
         }
 
         private int FindSelectedBarIndex(List<OrderFlowDisplayBar> bars)
         {
-            if (string.IsNullOrEmpty(_selectedCandidateId))
+            if (_result == null || string.IsNullOrEmpty(_selectedCandidateId))
             {
                 return -1;
             }
@@ -272,6 +376,7 @@ namespace OsEngine.OsData.OrderFlow
                         new Rect(left + slotWidth * i, top, Math.Max(1, slotWidth), bottom - top));
                 }
 
+                if (bar.BookAvailable == false) { previous = null; continue; }
                 double normalized = Math.Max(-1, Math.Min(1, Convert.ToDouble(bar.BookImbalance)));
                 double y = (top + bottom) / 2 - normalized * (bottom - top) / 2;
                 Point current = new Point(x, y);
@@ -372,6 +477,25 @@ namespace OsEngine.OsData.OrderFlow
             }
 
             return Brushes.SteelBlue;
+        }
+
+        private Brush BackgroundBrush { get { return TryFindResource("ControlBackgroundNormalLight") as Brush ?? SystemColors.WindowBrush; } }
+        private Brush ForegroundBrush { get { return TryFindResource("ControlForegroundWhite") as Brush ?? SystemColors.WindowTextBrush; } }
+
+        private static string L(string english, string russian)
+        {
+            return OsLocalization.CurLocalization == OsLocalization.OsLocalType.Ru ? russian : english;
+        }
+
+        private static string F(decimal value)
+        {
+            return value.ToString("0.######", CultureInfo.InvariantCulture);
+        }
+
+        private void DrawScale(DrawingContext context, decimal minimum, decimal maximum, double top, double bottom)
+        {
+            DrawText(context, F(maximum), new Point(4, top - 5), ForegroundBrush, 10);
+            DrawText(context, F(minimum), new Point(4, bottom - 10), ForegroundBrush, 10);
         }
 
         private static double Scale(decimal value, decimal minimum, decimal maximum,

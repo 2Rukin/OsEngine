@@ -29,12 +29,11 @@ namespace OsEngine.OsData.OrderFlow
         /// observations and separately computed future market-path labels.
         /// </summary>
         /// <param name="request">Run-scoped request that must no longer be mutated by its caller.</param>
-        /// <param name="cancellationToken">Cancellation observed between closed buckets.</param>
-        /// <returns>A deterministic research result; malformed QSH is represented by rejection reason codes where decoding can be entered safely.</returns>
+        /// <param name="cancellationToken">Cancellation observed before input preparation and between closed buckets.</param>
+        /// <returns>A deterministic research result; input access and malformed QSH failures retain per-role metadata and rejection reason codes.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="request"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Paths or numeric settings fail request validation.</exception>
         /// <exception cref="OperationCanceledException">Cancellation is requested.</exception>
-        /// <exception cref="IOException">Input hashing fails before guarded decoding starts.</exception>
         /// <remarks>No order, fill, position, execution simulation or PnL is created.</remarks>
         public OrderFlowResearchResult Run(OrderFlowResearchRequest request, CancellationToken cancellationToken)
         {
@@ -44,16 +43,12 @@ namespace OsEngine.OsData.OrderFlow
             }
 
             request.Validate();
+            cancellationToken.ThrowIfCancellationRequested();
 
             OrderFlowResearchResult result = new OrderFlowResearchResult();
             result.ResearchSpecHash = OrderFlowCanonicalHash.Calculate(request.GetCanonicalValue());
-            string dealsFileHash = OrderFlowFileHash.Calculate(request.DealsFilePath);
-            string quotesFileHash = OrderFlowFileHash.Calculate(request.QuotesFilePath);
-            string dealsFileName = Path.GetFileName(request.DealsFilePath).ToUpperInvariant();
-            string quotesFileName = Path.GetFileName(request.QuotesFilePath).ToUpperInvariant();
-            result.InputHash = OrderFlowCanonicalHash.Calculate(
-                "DEALS|" + dealsFileName + "|" + dealsFileHash +
-                "|QUOTES|" + quotesFileName + "|" + quotesFileHash);
+            result.DealsHeader = CreateInputHeader(request.DealsFilePath, "Deals");
+            result.QuotesHeader = CreateInputHeader(request.QuotesFilePath, "Quotes");
 
             using (OrderFlowCanonicalHash eventHash = new OrderFlowCanonicalHash())
             using (OrderFlowCanonicalHash featureHash = new OrderFlowCanonicalHash())
@@ -61,16 +56,23 @@ namespace OsEngine.OsData.OrderFlow
             {
                 try
                 {
-                    using (OrderFlowDealsQshReader dealsReader = new OrderFlowDealsQshReader(
-                        request.DealsFilePath, request.PriceStepOverride, request.VolumeStepOverride,
-                        dealsFileHash))
-                    using (OrderFlowQuotesQshReader quotesReader = new OrderFlowQuotesQshReader(
-                        request.QuotesFilePath, request.PriceStepOverride, request.VolumeStepOverride,
-                        quotesFileHash))
+                    using (OrderFlowDealsQshReader dealsReader = (OrderFlowDealsQshReader)TryOpenReader(
+                        request.DealsFilePath, request, result, result.DealsHeader))
+                    using (OrderFlowQuotesQshReader quotesReader = (OrderFlowQuotesQshReader)TryOpenReader(
+                        request.QuotesFilePath, request, result, result.QuotesHeader))
                     {
-                        result.DealsHeader = dealsReader.Header;
-                        result.QuotesHeader = quotesReader.Header;
-                        ValidatePair(result);
+                        result.InputHash = OrderFlowCanonicalHash.Calculate(
+                            "DEALS|" + result.DealsHeader.FileName + "|" +
+                            (result.DealsHeader.Sha256 ?? result.DealsHeader.FailureReasonCode) +
+                            "|" + result.DealsHeader.FailureReasonCode +
+                            "|QUOTES|" + result.QuotesHeader.FileName + "|" +
+                            (result.QuotesHeader.Sha256 ?? result.QuotesHeader.FailureReasonCode) +
+                            "|" + result.QuotesHeader.FailureReasonCode);
+
+                        if (dealsReader != null && quotesReader != null)
+                        {
+                            ValidatePair(result);
+                        }
 
                         if (HasRejection(result.Quality) == false)
                         {
@@ -104,6 +106,74 @@ namespace OsEngine.OsData.OrderFlow
             FinalizeQuality(result);
             SortResult(result);
             return result;
+        }
+
+        private static OrderFlowQshHeader CreateInputHeader(string path, string role)
+        {
+            OrderFlowQshHeader header = new OrderFlowQshHeader();
+            header.FileName = Path.GetFileName(path).ToUpperInvariant();
+            header.FileType = role;
+            return header;
+        }
+
+        private static OrderFlowQshReaderBase TryOpenReader(string path, OrderFlowResearchRequest request,
+            OrderFlowResearchResult result, OrderFlowQshHeader header)
+        {
+            string detail;
+            try
+            {
+                if (header.FileType == "Deals")
+                {
+                    return new OrderFlowDealsQshReader(path, request.PriceStepOverride,
+                        request.VolumeStepOverride, header);
+                }
+
+                return new OrderFlowQuotesQshReader(path, request.PriceStepOverride,
+                    request.VolumeStepOverride, header);
+            }
+            catch (InvalidDataException error)
+            {
+                header.FailureReasonCode = "QSH_INVALID";
+                detail = error.Message;
+            }
+            catch (EndOfStreamException)
+            {
+                header.FailureReasonCode = "QSH_INVALID";
+                detail = "QSH ends inside its header.";
+            }
+            catch (FormatException)
+            {
+                header.FailureReasonCode = "QSH_INVALID";
+                detail = "QSH header contains an invalid encoded value.";
+            }
+            catch (FileNotFoundException)
+            {
+                header.FailureReasonCode = "QSH_FILE_MISSING";
+                detail = "The selected file or its directory does not exist.";
+            }
+            catch (DirectoryNotFoundException)
+            {
+                header.FailureReasonCode = "QSH_FILE_MISSING";
+                detail = "The selected file or its directory does not exist.";
+            }
+            catch (UnauthorizedAccessException)
+            {
+                header.FailureReasonCode = "QSH_ACCESS_DENIED";
+                detail = "Read access to the selected file was denied.";
+            }
+            catch (IOException)
+            {
+                header.FailureReasonCode = "QSH_IO_ERROR";
+                detail = "The selected file could not be opened or read.";
+            }
+            catch (OverflowException)
+            {
+                header.FailureReasonCode = "QSH_NUMERIC_OVERFLOW";
+                detail = "QSH header metadata exceeds the supported numeric range.";
+            }
+
+            AddQualityIssue(result, null, header.FailureReasonCode, header.FileType + ": " + detail, true);
+            return null;
         }
 
         private static void ValidatePair(OrderFlowResearchResult result)
@@ -480,12 +550,10 @@ namespace OsEngine.OsData.OrderFlow
         private static string CreateObservationKey(OrderFlowRunContext context,
             OrderFlowFeatureSnapshot snapshot, OrderFlowObservationType type, OrderFlowDirection direction)
         {
-            string inputPrefix = string.IsNullOrEmpty(context.Result.InputHash)
-                ? "no-input-hash"
-                : context.Result.InputHash.Substring(0, 16);
-
-            return inputPrefix + "|" + snapshot.Time.ToString("yyyyMMdd", CultureInfo.InvariantCulture) +
-                "|" + snapshot.BucketSequence.ToString(CultureInfo.InvariantCulture) + "|" + type + "|" + direction;
+            return context.Result.InputHash + "|" + context.Result.ResearchSpecHash + "|" +
+                snapshot.Time.ToString("yyyyMMdd", CultureInfo.InvariantCulture) + "|" +
+                snapshot.BucketSequence.ToString(CultureInfo.InvariantCulture) + "|" + type + "|" +
+                OrderFlowResearchSchema.CandidateDetectorVersion + "|" + direction;
         }
 
         private static void HashBucket(OrderFlowCanonicalHash hash, OrderFlowBucket bucket)

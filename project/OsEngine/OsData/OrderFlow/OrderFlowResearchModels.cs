@@ -7,19 +7,18 @@ using OsEngine.Entity;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 
 namespace OsEngine.OsData.OrderFlow
 {
     internal static class OrderFlowResearchSchema
     {
-        public const string ParserVersion = "qsh-v4-paired-1";
+        public const string ParserVersion = "qsh-v4-paired-2";
         public const string NormalizerVersion = "closed-bucket-1";
         public const string FeatureSchemaVersion = "order-flow-features-1";
         public const string CandidateDetectorVersion = "flow-price-resilience-1";
         public const string LabelSchemaVersion = "market-path-1";
-        public const string ArtifactSchemaVersion = "order-flow-research-artifacts-1";
+        public const string ArtifactSchemaVersion = "order-flow-research-artifacts-2";
     }
 
     internal enum OrderFlowDirection
@@ -105,16 +104,21 @@ namespace OsEngine.OsData.OrderFlow
 
         public decimal VolumeStepOverride { get; set; }
 
+        /// <summary>
+        /// Validates required path text and numeric settings and canonicalizes label horizons.
+        /// File availability is checked by the engine so input failures retain an audit bundle.
+        /// </summary>
+        /// <exception cref="ArgumentException">Required text or research settings are invalid.</exception>
         public void Validate()
         {
-            if (string.IsNullOrWhiteSpace(DealsFilePath) || File.Exists(DealsFilePath) == false)
+            if (string.IsNullOrWhiteSpace(DealsFilePath))
             {
-                throw new ArgumentException("Deals QSH file does not exist.", nameof(DealsFilePath));
+                throw new ArgumentException("Deals QSH path is required.", nameof(DealsFilePath));
             }
 
-            if (string.IsNullOrWhiteSpace(QuotesFilePath) || File.Exists(QuotesFilePath) == false)
+            if (string.IsNullOrWhiteSpace(QuotesFilePath))
             {
-                throw new ArgumentException("Quotes QSH file does not exist.", nameof(QuotesFilePath));
+                throw new ArgumentException("Quotes QSH path is required.", nameof(QuotesFilePath));
             }
 
             if (string.IsNullOrWhiteSpace(OutputRootPath))
@@ -221,7 +225,14 @@ namespace OsEngine.OsData.OrderFlow
 
         public string Sha256 { get; set; }
 
-        public long FileSize { get; set; }
+        /// <summary>Stored byte count, or null when the file could not be opened.</summary>
+        public long? FileSize { get; set; }
+
+        /// <summary>True only after all role-specific header checks succeed.</summary>
+        public bool HeaderComplete { get; set; }
+
+        /// <summary>Stable input preparation failure code; null after successful header decoding.</summary>
+        public string FailureReasonCode { get; set; }
     }
 
     internal sealed class OrderFlowDeal

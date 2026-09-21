@@ -7,10 +7,13 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <PlatformTarget>x64</PlatformTarget>
+    <UseWPF>true</UseWPF>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\OsEngine\OsEngine.csproj" />
+    <EmbeddedResource Include="..\..\OsEngine\App.xaml" LogicalName="Research.App.xaml" />
+    <EmbeddedResource Include="..\..\OsEngine\OsData\OrderFlow\OrderFlowResearchUi.xaml" LogicalName="Research.Ui.xaml" />
   </ItemGroup>
 
 </Project>

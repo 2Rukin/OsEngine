@@ -56,6 +56,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <Label Name="LabelWindow" Grid.Row="0" Grid.Column="0" Content="Window sec"/>
@@ -85,7 +86,7 @@
                 <Label Name="LabelVolumeStep" Grid.Row="2" Grid.Column="6" Content="Volume step override"/>
                 <TextBox Name="TextBoxVolumeStep" Grid.Row="2" Grid.Column="7" Margin="3"/>
 
-                <StackPanel Grid.Row="0" Grid.RowSpan="3" Grid.Column="8" Orientation="Horizontal"
+                <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="9" Orientation="Horizontal"
                             HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Name="ButtonRun" Margin="8,2,2,2" MinWidth="105" Height="34" Content="Run research"/>
                     <Button Name="ButtonCancel" Margin="2" MinWidth="80" Height="34" Content="Cancel" IsEnabled="False"/>
@@ -98,7 +99,8 @@
             <TabItem Name="TabItemSummary" Header="Summary">
                 <TextBox Name="TextBoxSummary" IsReadOnly="True" TextWrapping="Wrap"
                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
-                         FontFamily="Consolas" Padding="8"/>
+                         FontFamily="Consolas" Padding="8" Height="Auto"
+                         VerticalAlignment="Stretch" VerticalContentAlignment="Top"/>
             </TabItem>
             <TabItem Name="TabItemCandidates" Header="Candidates">
                 <DataGrid Name="DataGridCandidates" IsReadOnly="True" AutoGenerateColumns="False"
@@ -122,21 +124,37 @@
                 </DataGrid>
             </TabItem>
             <TabItem Name="TabItemChart" Header="Chart">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="4">
-                        <Label Name="LabelTimeFrame" Content="Display timeframe" VerticalAlignment="Center"/>
-                        <ComboBox Name="ComboBoxTimeFrame" Width="110" Margin="4"/>
-                        <TextBlock Name="TextBlockChartBoundary" Margin="12,7,0,0"
-                                   Text="Visualization only. Signals are not recalculated."/>
-                    </StackPanel>
-                    <ContentControl Name="ContentControlChart" Grid.Row="1" Margin="4"/>
-                    <TextBlock Name="TextBlockCandidateDetails" Grid.Row="2" Margin="8" TextWrapping="Wrap"/>
-                </Grid>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <Grid MinHeight="540">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <WrapPanel Grid.Row="0" Margin="4">
+                            <Label Name="LabelTimeFrame" Content="Display timeframe" VerticalAlignment="Center"/>
+                            <ComboBox Name="ComboBoxTimeFrame" Width="110" Margin="4"/>
+                            <Button Name="ButtonChartFirst" Content="| &lt;" Margin="3" MinWidth="65"/>
+                            <Button Name="ButtonChartLast" Content="&gt; |" Margin="3" MinWidth="65"/>
+                            <Button Name="ButtonChartSelected" Content="Candidate" Margin="3" MinWidth="105"/>
+                            <Button Name="ButtonChartZoomIn" Content="+" Margin="3" Width="35"/>
+                            <Button Name="ButtonChartZoomOut" Content="−" Margin="3" Width="35"/>
+                            <Button Name="ButtonChartAll" Content="All history" Margin="3" MinWidth="110"/>
+                        </WrapPanel>
+                        <TextBlock Name="TextBlockChartBoundary" Grid.Row="1" Margin="8,0,8,4" TextWrapping="Wrap"/>
+                        <ContentControl Name="ContentControlChart" Grid.Row="2" Margin="4" MinHeight="320"
+                                        HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
+                        <StackPanel Grid.Row="3" Margin="8,0">
+                            <ScrollBar Name="ScrollBarChart" Orientation="Horizontal" Height="20" Minimum="0"/>
+                            <TextBlock Name="TextBlockChartRange" Margin="0,3" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <TextBlock Name="TextBlockChartLegend" Grid.Row="4" Margin="8,3" TextWrapping="Wrap"/>
+                        <TextBlock Name="TextBlockCandidateDetails" Grid.Row="5" Margin="8,3" TextWrapping="Wrap"/>
+                    </Grid>
+                </ScrollViewer>
             </TabItem>
             <TabItem Name="TabItemJournal" Header="Event journal">
                 <DataGrid Name="DataGridJournal" IsReadOnly="True" AutoGenerateColumns="False"

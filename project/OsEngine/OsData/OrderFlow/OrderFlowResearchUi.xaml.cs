@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Windows;
@@ -34,6 +35,7 @@ namespace OsEngine.OsData.OrderFlow
         private Exception _workerError;
         private bool _workerCancelled;
         private volatile bool _isClosing;
+        private bool _updatingChartRange;
 
         /// <summary>
         /// Creates the research-only workbench. The window does not start a
@@ -61,7 +63,16 @@ namespace OsEngine.OsData.OrderFlow
             DataGridCandidates.MouseDoubleClick += DataGridCandidates_MouseDoubleClick;
             Closing += OrderFlowResearchUi_Closing;
 
+            _chart.ViewChanged += Chart_ViewChanged;
+            ScrollBarChart.ValueChanged += ScrollBarChart_ValueChanged;
+            ButtonChartFirst.Click += ButtonChartNavigation_Click;
+            ButtonChartLast.Click += ButtonChartNavigation_Click;
+            ButtonChartSelected.Click += ButtonChartNavigation_Click;
+            ButtonChartZoomIn.Click += ButtonChartNavigation_Click;
+            ButtonChartZoomOut.Click += ButtonChartNavigation_Click;
+            ButtonChartAll.Click += ButtonChartNavigation_Click;
             ApplyLocalization();
+            Chart_ViewChanged(this, EventArgs.Empty);
         }
 
         private void ApplyLocalization()
@@ -82,7 +93,7 @@ namespace OsEngine.OsData.OrderFlow
             LabelBackground.Content = OsLocalization.ConvertToLocString("Eng:Background sec_Ru:Фон сек_");
             LabelHorizons.Content = OsLocalization.ConvertToLocString("Eng:Horizons sec_Ru:Горизонты сек_");
             LabelTarget.Content = OsLocalization.ConvertToLocString("Eng:Target ticks_Ru:Цель тики_");
-            LabelInvalidation.Content = OsLocalization.ConvertToLocString("Eng:Invalid ticks_Ru:Отмена тики_");
+            LabelInvalidation.Content = OsLocalization.ConvertToLocString("Eng:Adverse ticks_Ru:Против, тики_");
             LabelPriceStep.Content = OsLocalization.ConvertToLocString("Eng:Price step override_Ru:Шаг цены вручную_");
             LabelVolumeStep.Content = OsLocalization.ConvertToLocString("Eng:Volume step override_Ru:Шаг объема вручную_");
             ButtonRun.Content = OsLocalization.ConvertToLocString("Eng:Run research_Ru:Запустить_");
@@ -95,9 +106,99 @@ namespace OsEngine.OsData.OrderFlow
             LabelTimeFrame.Content = OsLocalization.ConvertToLocString("Eng:Display timeframe_Ru:Таймфрейм отображения_");
             TextBlockChartBoundary.Text = OsLocalization.ConvertToLocString(
                 "Eng:Visualization only. Signals are not recalculated._Ru:Только визуализация. Сигналы не пересчитываются._");
+            ButtonChartFirst.Content = L("Start", "Начало");
+            ButtonChartLast.Content = L("End", "Конец");
+            ButtonChartSelected.Content = L("To candidate", "К кандидату");
+            ButtonChartAll.Content = L("All history", "Весь период");
+            ButtonChartZoomIn.ToolTip = L("Zoom in: fewer bars", "Приблизить: меньше свечей");
+            ButtonChartZoomOut.ToolTip = L("Zoom out: more bars", "Отдалить: больше свечей");
+            TextBlockChartBoundary.Text = L("Wheel / scrollbar: move through the file. Timeframe changes display only. Hover for bar values.",
+                "Колесо / полоса прокрутки: перемещение по файлу. Таймфрейм меняет только отображение. Наведите мышь для значений свечи.");
+            SetParameterHelp();
             TextBlockStatus.Text = OsLocalization.ConvertToLocString("Eng:Ready_Ru:Готово_");
             TextBlockEvidence.Text = OsLocalization.ConvertToLocString(
                 "Eng:Research only. No trades or PnL._Ru:Только исследование. Без сделок и PnL._");
+        }
+
+        private static string L(string english, string russian)
+        {
+            return OsLocalization.CurLocalization == OsLocalization.OsLocalType.Ru ? russian : english;
+        }
+
+        private void SetParameterHelp()
+        {
+            TextBoxWindowSeconds.ToolTip = LabelWindow.ToolTip = L("Trailing trade window in seconds. 180 / 540 / 1080 = 3 / 9 / 18 minutes; independent of chart timeframe.",
+                "Сколько секунд сделок брать назад для признаков. 180 / 540 / 1080 = 3 / 9 / 18 минут; не размер свечи.");
+            TextBoxMinimumDelta.ToolTip = LabelDelta.ToolTip = L("Minimum absolute buy minus sell volume. Candidate also requires price resilience against the dominant flow.",
+                "Минимальный перевес объёма покупок или продаж. Дельта = покупки − продажи. Для кандидата дополнительно проверяется цена против потока.");
+            TextBoxMinimumPriceTicks.ToolTip = LabelPriceTicks.ToolTip = L("Minimum price move against the dominant flow in ticks. Long: negative delta and rising/holding price; Short is mirrored. Zero allows unchanged price.",
+                "Минимальное движение цены против потока в тиках. Long: отрицательная дельта и рост/удержание цены; Short зеркально. Ноль допускает неизменную цену. Сравниваются VWAP начального и текущего timestamp окна.");
+            TextBoxTopLevels.ToolTip = LabelBookLevels.ToolTip = L("Number of nearest price levels on EACH side used for book volume imbalance.",
+                "Сколько ближайших ценовых уровней с КАЖДОЙ стороны брать для дисбаланса объёмов стакана.");
+            TextBoxBookAge.ToolTip = LabelBookAge.ToolTip = L("Maximum age of the previous valid book in milliseconds. 1000 = 1 second. Older books are flagged; diagnostic candidates remain.",
+                "Предельный возраст предыдущего валидного стакана, мс. 1000 = 1 секунда. Более старый помечается как устаревший; диагностический кандидат сохраняется.");
+            TextBoxCooldown.ToolTip = LabelCooldown.ToolTip = L("Minimum interval between candidates of the same direction, in milliseconds. Long and Short use separate timers. 5000 = 5 seconds.",
+                "Минимальный интервал между кандидатами одного направления, мс. Для Long и Short отсчёт отдельный. 5000 = 5 секунд.");
+            TextBoxBackground.ToolTip = LabelBackground.ToolTip = L("Interval for background observations in seconds, at available trade times. A candidate at that time replaces the background row.",
+                "Интервал обычных фоновых наблюдений, сек, при наличии сделок. Если в этот момент создан кандидат, отдельная фоновая запись не добавляется.");
+            TextBoxHorizons.ToolTip = LabelHorizons.ToolTip = L("Future intervals after each candidate, separated by semicolons. 60;300;900 = 1, 5, 15 minutes. Separate from the trailing feature window.",
+                "На сколько секунд смотреть вперёд от кандидата. 60;300;900 = 1, 5, 15 минут. Каждому горизонту соответствует отдельная оценка; это не окно признаков.");
+            TextBoxTargetTicks.ToolTip = LabelTarget.ToolTip = L("Favorable distance from candidate reference price in ticks: up for Long, down for Short. Historical label only, no order.",
+                "Расстояние от опорной цены в сторону кандидата, в тиках: вверх для Long, вниз для Short. Только оценка истории, без заявки.");
+            TextBoxInvalidationTicks.ToolTip = LabelInvalidation.ToolTip = L("Adverse distance from candidate reference price in ticks: down for Long, up for Short. Not an order cancellation.",
+                "Расстояние от опорной цены против кандидата, в тиках: вниз для Long, вверх для Short. Это граница неблагоприятного движения, а не отмена заявки.");
+            TextBoxPriceStep.ToolTip = LabelPriceStep.ToolTip = L("Price distance for one tick. Leave blank to use QSH header metadata.",
+                "Размер одного тика в единицах цены. Пусто — взять шаг из QSH header.");
+            TextBoxVolumeStep.ToolTip = LabelVolumeStep.ToolTip = L("Confirmed volume unit override when QSH metadata is absent. Leave blank to use metadata.",
+                "Подтверждённый шаг объёма, если его нет в QSH metadata. Пусто — взять из metadata; не подбирается автоматически.");
+        }
+
+        private void Chart_ViewChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                if (_chart == null) { return; }
+                _updatingChartRange = true;
+                ScrollBarChart.Maximum = Math.Max(0, _chart.TotalBars - _chart.VisibleCount);
+                ScrollBarChart.ViewportSize = _chart.VisibleCount;
+                ScrollBarChart.SmallChange = 1;
+                ScrollBarChart.LargeChange = Math.Max(1, _chart.VisibleCount * 0.8);
+                ScrollBarChart.Value = _chart.StartIndex;
+                TextBlockChartRange.Text = _chart.RangeText;
+            }
+            catch (Exception error) { ShowError(error); }
+            finally { _updatingChartRange = false; }
+        }
+
+        private void ScrollBarChart_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            try
+            {
+                if (_updatingChartRange == false && _chart != null && _chart.StartIndex != (int)e.NewValue)
+                {
+                    _chart.ScrollTo((int)e.NewValue);
+                }
+            }
+            catch (Exception error) { ShowError(error); }
+        }
+
+        private void ButtonChartNavigation_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (_chart == null) { return; }
+                if (sender == ButtonChartFirst) { _chart.ScrollTo(0); }
+                else if (sender == ButtonChartLast) { _chart.ScrollTo(_chart.TotalBars); }
+                else if (sender == ButtonChartZoomIn) { _chart.Zoom(_chart.VisibleCount / 2); }
+                else if (sender == ButtonChartZoomOut) { _chart.Zoom(_chart.VisibleCount * 2); }
+                else if (sender == ButtonChartAll) { _chart.Zoom(_chart.TotalBars); }
+                else
+                {
+                    OrderFlowCandidateView selected = DataGridCandidates.SelectedItem as OrderFlowCandidateView;
+                    if (selected != null) { _chart.SelectCandidate(selected.CandidateId); }
+                }
+            }
+            catch (Exception error) { ShowError(error); }
         }
 
         private void ButtonBrowseDeals_Click(object sender, RoutedEventArgs e)
@@ -291,11 +392,18 @@ namespace OsEngine.OsData.OrderFlow
                 return;
             }
 
-            TextBoxSummary.Text = BuildSummary(result);
+            TextBoxSummary.Text = BuildSummary(result, OsLocalization.CurLocalization == OsLocalization.OsLocalType.Ru);
+            TextBoxSummary.ScrollToHome();
             List<OrderFlowCandidateView> candidateViews = OrderFlowCandidateView.Create(result);
             DataGridCandidates.ItemsSource = candidateViews;
             DataGridJournal.ItemsSource = result.Journal;
             _chart.SetResult(result);
+            string horizon = result.Labels.Count == 0 ? "—" : result.Labels.Min(label => label.HorizonSeconds).ToString(CultureInfo.InvariantCulture);
+            TextBlockChartLegend.Text = L(
+                "▲ Long / ▼ Short. Marker color = future outcome at the shortest horizon ",
+                "▲ Long / ▼ Short. Цвет метки = будущий исход на коротком горизонте ") + horizon + L(" s. ", " сек. ") + L(
+                "Green: target first; red: adverse barrier first; yellow: same timestamp; blue: neither; gray: incomplete / no trades. Gold outline: selected. Markers can overlap within a bar. Red book shading: missing or stale book. Bars with no trades are omitted; time is from QSH without conversion.",
+                "Зелёный: цель раньше; красный: против раньше; жёлтый: один timestamp; синий: ни одна граница; серый: неполный горизонт / нет сделок. Золотой контур: выбранный кандидат. Метки в одной свече могут перекрываться. Красный фон стакана: нет данных или стакан устарел. Свечи без сделок пропущены; время из QSH без пересчёта.");
             ButtonOpenArtifacts.IsEnabled = Directory.Exists(result.ArtifactDirectory);
             TabControlResults.SelectedItem = TabItemSummary;
 
@@ -384,8 +492,10 @@ namespace OsEngine.OsData.OrderFlow
         {
             try
             {
-                if (DataGridCandidates.SelectedItem != null)
+                OrderFlowCandidateView selected = DataGridCandidates.SelectedItem as OrderFlowCandidateView;
+                if (selected != null)
                 {
+                    _chart.SelectCandidate(selected.CandidateId);
                     TabControlResults.SelectedItem = TabItemChart;
                 }
             }
@@ -483,39 +593,40 @@ namespace OsEngine.OsData.OrderFlow
             }
         }
 
-        private static string BuildSummary(OrderFlowResearchResult result)
+        internal static string BuildSummary(OrderFlowResearchResult result, bool russian)
         {
+            Func<string, string, string> text = (english, translated) => russian ? translated : english;
             StringBuilder builder = new StringBuilder();
-            builder.AppendLine(result.Quality.ResearchAccepted ? "RESEARCH ACCEPTED" : "RESEARCH REJECTED");
-            builder.AppendLine("This result contains no order, fill, execution PnL or profitability claim.");
+            builder.AppendLine(result.Quality.ResearchAccepted ? text("RESEARCH ACCEPTED", "ИССЛЕДОВАНИЕ ПРИНЯТО") : text("RESEARCH REJECTED", "ИССЛЕДОВАНИЕ ОТКЛОНЕНО"));
+            builder.AppendLine(text("This result contains no order, fill, execution PnL or profitability claim.", "Оценка исторических данных. Заявки и торговая прибыль не рассчитываются."));
             builder.AppendLine();
-            builder.AppendLine("Deals: " + result.Quality.DealCount.ToString(CultureInfo.InvariantCulture));
-            builder.AppendLine("Quotes: " + result.Quality.QuoteCount.ToString(CultureInfo.InvariantCulture));
-            builder.AppendLine("Valid books: " + result.Quality.ValidBookCount.ToString(CultureInfo.InvariantCulture));
-            builder.AppendLine("Deals range: " + FormatRange(result.Quality.FirstDealTime, result.Quality.LastDealTime));
-            builder.AppendLine("Quotes range: " + FormatRange(result.Quality.FirstQuoteTime, result.Quality.LastQuoteTime));
-            builder.AppendLine("Closed buckets: " + result.Quality.BucketCount.ToString(CultureInfo.InvariantCulture));
-            builder.AppendLine("Observations: " + result.Observations.Count.ToString(CultureInfo.InvariantCulture));
-            builder.AppendLine("Broad candidates: " + result.Candidates.Count.ToString(CultureInfo.InvariantCulture));
-            builder.AppendLine("Market path labels: " + result.Labels.Count.ToString(CultureInfo.InvariantCulture));
-            builder.AppendLine("Invalid deals: " + result.Quality.InvalidDealCount.ToString(CultureInfo.InvariantCulture));
-            builder.AppendLine("Invalid books: " + result.Quality.InvalidBookCount.ToString(CultureInfo.InvariantCulture));
-            builder.AppendLine("Missing book features: " + result.Quality.MissingBookFeatureCount.ToString(CultureInfo.InvariantCulture));
-            builder.AppendLine("Stale book features: " + result.Quality.StaleBookFeatureCount.ToString(CultureInfo.InvariantCulture));
+            builder.AppendLine(text("Deals: ", "Сделки QSH: ") + result.Quality.DealCount.ToString(CultureInfo.InvariantCulture));
+            builder.AppendLine(text("Quotes: ", "Снимки стакана QSH: ") + result.Quality.QuoteCount.ToString(CultureInfo.InvariantCulture));
+            builder.AppendLine(text("Valid books: ", "Валидные стаканы: ") + result.Quality.ValidBookCount.ToString(CultureInfo.InvariantCulture));
+            builder.AppendLine(text("Deals range: ", "Период сделок: ") + FormatRange(result.Quality.FirstDealTime, result.Quality.LastDealTime));
+            builder.AppendLine(text("Quotes range: ", "Период стакана: ") + FormatRange(result.Quality.FirstQuoteTime, result.Quality.LastQuoteTime));
+            builder.AppendLine(text("Closed buckets: ", "Обработанные группы событий с одинаковым временем: ") + result.Quality.BucketCount.ToString(CultureInfo.InvariantCulture));
+            builder.AppendLine(text("Observations: ", "Наблюдения (кандидаты + фон): ") + result.Observations.Count.ToString(CultureInfo.InvariantCulture));
+            builder.AppendLine(text("Broad candidates: ", "Кандидаты Long/Short: ") + result.Candidates.Count.ToString(CultureInfo.InvariantCulture));
+            builder.AppendLine(text("Market path labels: ", "Оценки будущего движения (все горизонты): ") + result.Labels.Count.ToString(CultureInfo.InvariantCulture));
+            builder.AppendLine(text("Invalid deals: ", "Некорректные сделки: ") + result.Quality.InvalidDealCount.ToString(CultureInfo.InvariantCulture));
+            builder.AppendLine(text("Invalid books: ", "Некорректные стаканы: ") + result.Quality.InvalidBookCount.ToString(CultureInfo.InvariantCulture));
+            builder.AppendLine(text("Missing book features: ", "Расчёты признаков без доступного стакана: ") + result.Quality.MissingBookFeatureCount.ToString(CultureInfo.InvariantCulture));
+            builder.AppendLine(text("Stale book features: ", "Расчёты признаков с устаревшим стаканом: ") + result.Quality.StaleBookFeatureCount.ToString(CultureInfo.InvariantCulture));
             builder.AppendLine();
-            builder.AppendLine("Input hash: " + result.InputHash);
-            builder.AppendLine("ResearchSpec hash: " + result.ResearchSpecHash);
-            builder.AppendLine("Normalized event hash: " + result.NormalizedEventHash);
-            builder.AppendLine("Feature hash: " + result.FeatureHash);
-            builder.AppendLine("Candidate hash: " + result.CandidateHash);
-            builder.AppendLine("Artifacts: " + result.ArtifactDirectory);
+            builder.AppendLine(text("Input hash: ", "Хеш входных данных: ") + result.InputHash);
+            builder.AppendLine(text("ResearchSpec hash: ", "Хеш параметров: ") + result.ResearchSpecHash);
+            builder.AppendLine(text("Normalized event hash: ", "Хеш событий: ") + result.NormalizedEventHash);
+            builder.AppendLine(text("Feature hash: ", "Хеш признаков: ") + result.FeatureHash);
+            builder.AppendLine(text("Candidate hash: ", "Хеш кандидатов: ") + result.CandidateHash);
+            builder.AppendLine(text("Artifacts: ", "Папка файлов результата: ") + result.ArtifactDirectory);
             builder.AppendLine();
-            builder.AppendLine("Quality reasons");
+            builder.AppendLine(text("Quality reasons", "Причины качества данных (коды и исходные сообщения)"));
 
             for (int i = 0; i < result.Quality.Issues.Count; i++)
             {
                 OrderFlowQualityIssue issue = result.Quality.Issues[i];
-                builder.AppendLine((issue.IsRejection ? "REJECT" : "WARN") + " · " +
+                builder.AppendLine((issue.IsRejection ? text("REJECT", "ОТКАЗ") : text("WARN", "ПРЕДУПРЕЖДЕНИЕ")) + " · " +
                     issue.ReasonCode + " · " + issue.Message);
             }
 
@@ -588,6 +699,14 @@ namespace OsEngine.OsData.OrderFlow
                 DataGridCandidates.MouseDoubleClick -= DataGridCandidates_MouseDoubleClick;
                 Closing -= OrderFlowResearchUi_Closing;
 
+                _chart.ViewChanged -= Chart_ViewChanged;
+                ScrollBarChart.ValueChanged -= ScrollBarChart_ValueChanged;
+                ButtonChartFirst.Click -= ButtonChartNavigation_Click;
+                ButtonChartLast.Click -= ButtonChartNavigation_Click;
+                ButtonChartSelected.Click -= ButtonChartNavigation_Click;
+                ButtonChartZoomIn.Click -= ButtonChartNavigation_Click;
+                ButtonChartZoomOut.Click -= ButtonChartNavigation_Click;
+                ButtonChartAll.Click -= ButtonChartNavigation_Click;
                 ContentControlChart.Content = null;
                 _chart = null;
             }
