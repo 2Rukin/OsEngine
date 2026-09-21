@@ -1,6 +1,6 @@
 # Production-ready roadmap: Order Flow робот
 
-**Статус:** финальная редакция roadmap для последующего планирования этапов.
+**Статус:** согласованный верхнеуровневый TARGET roadmap — NOT IMPLEMENTED.
 
 **База исследования:** `master` форка `2Rukin/OsEngine`, commit
 [`f54de33961d45f73319ae1c7313f2854bcb27398`](https://github.com/2Rukin/OsEngine/commit/f54de33961d45f73319ae1c7313f2854bcb27398).
@@ -8,6 +8,10 @@
 **Граница:** внешний upstream не рассматривается как источник требований или реализации.
 
 **Текущий этап:** код стратегии не реализуется до отдельного планирования и согласования этапов.
+
+Подробные контракты данных, исследования, стратегии, исполнения и квалификации
+находятся в [индексе Order Flow](README.md). Roadmap задаёт последовательность и
+границы; специализированные документы являются источниками подробной семантики.
 
 ## 1. Цель и границы проекта
 
@@ -54,11 +58,12 @@ Production-ready здесь означает инженерную воспрои
 | Статус | Находка | Исправление в этой редакции |
 |---|---|---|
 | **Блокер** | Наличие двух QSH-файлов было почти приравнено к синхронному потоку | Введён отдельный парный reader, причинный merge и детерминированная политика одинаковых timestamp |
-| **Блокер** | Метрика «ближайший стакан к сделке» может выбрать снимок из будущего | Для признаков и исполнения используется только последний стакан с `quoteTime <= eventTime`; отдельно измеряется его возраст |
+| **Блокер** | Метрика «ближайший стакан к сделке» может выбрать снимок из будущего | Для связи отдельной сделки с признаками используется только quote из предыдущего закрытого bucket; same-timestamp quote доступен лишь post-bucket snapshot, а исполнение использует только причинно последующий quote после activation time |
 | **Блокер** | QSH и текущий QScalp-коннектор не гарантируют корректные `PriceStep`, `PriceStepCost`, `Lot` и календарь | Спецификация контракта стала обязательной частью импорта и тестового manifest |
 | **Блокер** | Live-сделки и стакан могут приходить из разных потоков | Между адаптерами и ядром добавлена одна последовательная очередь с единственным consumer |
 | **Блокер** | План обещал консервативно моделировать очередь лимитных заявок без order-level данных | Пассивное исполнение исключено из версии 1; исследуются taker/marketable заявки и частичные исполнения по видимому стакану |
 | **Блокер** | Переход от общих слов «сильная дельта» к роботу оставался неформальным | Перед торговой реализацией обязателен версионируемый `StrategySpec` с точными состояниями, порогами и правилами отмены |
+| **Блокер** | Candidate, торговый сигнал и сделка могли быть приняты за одно событие, а подбор правил — перенесён сразу в Tester или неформальный «ИИ-анализ» | Разделены causal snapshots, observation dataset, labels, frozen policy, intent и execution; Tester и датасет используются последовательно |
 | **Существенно** | Индикатор назывался необязательным, хотя без него трудно оценить качество точек | Визуализация стала обязательным исследовательским результатом до реализации заявок |
 | **Существенно** | Обычный `Aindicator` мог быть ошибочно принят за место расчёта стратегии | Он получает свечи, поэтому отображает уже рассчитанные снимки ядра и не пересчитывает сигнал самостоятельно |
 | **Существенно** | Временные, объёмные и trade-count окна могли породить неконтролируемый перебор параметров | В одном эксперименте фиксируется один основной способ построения окна; остальные сравниваются как отдельные версии |
@@ -155,11 +160,12 @@ Manifest хранит:
 flowchart TD
     A["QSH replay или live connector"] --> B["Normalizer и single-consumer sequencer"]
     B --> C["OrderFlowEngine"]
-    C --> D["Strategy state machine"]
-    D --> E["Risk и order controller"]
-    E --> F["Tester execution или broker"]
-    C --> G["Diagnostic snapshots"]
-    G --> H["График и исследовательский журнал"]
+    C --> D["Research export и визуализация"]
+    D --> E["ResearchSpec и frozen StrategySpec"]
+    C --> F["Frozen decision policy"]
+    E --> F
+    F --> G["Risk и order controller"]
+    G --> H["Tester execution или broker"]
 ```
 
 | Компонент | Ответственность |
@@ -168,14 +174,18 @@ flowchart TD
 | Normalizer | Приводит инструмент, время, цены, объёмы и стороны к единому контракту |
 | Sequencer | Один consumer, стабильный порядок, buckets одинакового времени, контроль stale data |
 | `OrderFlowEngine` | Скользящие окна, дельта, реакция цены, контекст и диагностические snapshots |
-| Strategy state machine | `Idle → Candidate → Retest/Observation → Confirmed → Invalidated/Cooldown` |
+| Research exporter | Сохраняет causal observations отдельно от будущих labels и результатов исполнения |
+| Decision policy | Frozen rule/model policy переводит candidate в `NoTrade`, ожидание или `TradeIntent` |
+| Strategy state machine | `Idle → Candidate → Confirmed/Invalidated/Expired → Intent/NoTrade → Cooldown` |
 | Visual presenter | Привязывает snapshots к свечам выбранного графического таймфрейма |
 | Risk controller | Размер, дневные лимиты, сессия, stale/disconnect kill switch |
 | Order controller | Жизненный цикл заявки, partial fills, cancel/replace, reconciliation и идемпотентность |
 | Tester execution | Причинное исполнение по последующему стакану с latency и ограниченной ликвидностью |
 
 Ядро не зависит от WPF, `BotTabSimple`, Tester или конкретного коннектора. История и live используют
-одинаковые normalizer events и один `OrderFlowEngine`.
+одинаковые normalizer events и один `OrderFlowEngine`. Подробные границы компонентов заданы в
+[data/replay](DATA_REPLAY_CONTRACT.md), [research](RESEARCH_PROTOCOL.md),
+[strategy](STRATEGY_LIFECYCLE.md) и [execution](EXECUTION_MODEL.md) contracts.
 
 ## 7. Как будет строиться стратегия
 
@@ -219,7 +229,23 @@ flowchart TD
 «Поглощение» является операциональной меткой состояния потока и цены. Она не доказывает
 скрытый iceberg, личность участника или его намерение.
 
-### 7.4. Выход и управление позицией
+### 7.4. От кандидата к торговой политике
+
+Broad detector сначала создаёт исследовательские Long/Short candidates, а не
+заявки. Сохраняются все candidates, включая invalidated, expired и отвергнутые
+policy, после чего будущий путь размечается отдельно от причинных признаков.
+
+На development/validation сравниваются объяснимый rule-based baseline,
+price-only control и, только при достаточном объёме данных, дополнительный
+статистический/ML ranker. Неудавшийся Long candidate не становится Short:
+противоположная сделка требует независимого Short candidate и confirmation.
+
+Tester используется после этого для причинного исполнения frozen policy, а не
+как единственный инструмент ручного просмотра. Полный протокол датасета,
+labels, временных splits и границы автоматического анализа задан в
+[ORDER-FLOW-RESEARCH-001](RESEARCH_PROTOCOL.md).
+
+### 7.5. Выход и управление позицией
 
 Версия 1 до отдельного исследования:
 
@@ -234,9 +260,11 @@ flowchart TD
   сверяется с брокером;
 - изменение визуального таймфрейма не изменяет exit.
 
-Перед тестированием заявок правила замораживаются в `StrategySpec vN`: точные формулы, окна,
-пороги, приоритеты состояний, вход, выход, cooldown и session policy. Изменение правила создаёт
-новую версию, а не переписывает старые результаты.
+Перед historical validation и final OOS одна policy замораживается в
+`StrategySpec vN`: точные формулы, окна, пороги, приоритеты состояний, вход,
+выход, cooldown, model artifact при наличии и session policy. Synthetic
+execution model разрабатывается и тестируется независимо до этого freeze.
+Изменение правила создаёт новую версию, а не переписывает старые результаты.
 
 ## 8. Визуализация точек входа
 
@@ -281,6 +309,9 @@ flowchart TD
 Новый режим Tester должен одновременно держать два reader на инструмент/день и выбирать следующий
 timestamp из обоих потоков.
 
+Полная временная и bucket-семантика задана в
+[ORDER-FLOW-DATA-001](DATA_REPLAY_CONTRACT.md); ниже приведена roadmap-сводка.
+
 Обязательные свойства:
 
 - оба файла относятся к одному контракту и торговой дате;
@@ -297,6 +328,9 @@ timestamp из обоих потоков.
 перестановки, гипотеза для этих данных отклоняется.
 
 ## 10. Модель исполнения версии 1
+
+Канонический подробный контракт находится в
+[ORDER-FLOW-EXECUTION-001](EXECUTION_MODEL.md); ниже приведены границы версии 1.
 
 ### 10.1. Поддерживается
 
@@ -349,6 +383,11 @@ timestamp из обоих потоков.
 
 ## 12. Проверка и исследовательский протокол
 
+Этот раздел является краткой сводкой. Датасет, labels и автоматический анализ
+определяет [ORDER-FLOW-RESEARCH-001](RESEARCH_PROTOCOL.md), а обязательное
+evidence и ворота —
+[ORDER-FLOW-QUALIFICATION-001](TESTING_AND_QUALIFICATION.md).
+
 ### 12.1. Технические тесты
 
 1. Unit: QSH parser, normalizer, bucket policy, окна, state machine, risk и order state.
@@ -371,9 +410,12 @@ timestamp из обоих потоков.
 | B | Цена + агрессивная дельта |
 | C | Цена + дельта + реакция цены на поток |
 | D | Дополнительно стакан, но только при причинно свежем quote |
+| E, если применимо | Лучший простой baseline + frozen ML ranker кандидатов |
 
 Если C не превосходит A после одинаковых издержек, order flow не добавляет полезной информации.
 Если D не превосходит C, стакан не включается в production-сигнал.
+Если E не даёт устойчивого прироста относительно простой policy, ML не включается
+в production-версию.
 
 Данные делятся хронологически:
 
@@ -403,17 +445,18 @@ golden tests. Победитель большого перебора без уч
 
 | Этап | Результат | Ворота перехода |
 |---|---|---|
-| 0. Baseline audit | Закреплённый commit, карта reuse/modify/build, ADR ключевых решений | Все ссылки и ограничения подтверждены на `master` |
-| 1. Data contract | Схема событий, manifest, instrument/session metadata, causal quality report | На контрольных QSH-днях нет неучтённых будущих quotes и двусмысленных полей |
+| 0. Baseline и target contracts | Закреплённый commit, карта reuse/modify/build, комплект документов и ADR ключевых решений | Источники, границы и последовательность согласованы; target не выдан за current implementation |
+| 1. Data contract и fixtures | Схема событий, manifest, instrument/session metadata, synthetic/golden fixtures и causal quality report | На контрольных QSH-днях нет неучтённых будущих quotes и двусмысленных полей |
 | 2. Acquisition/import | Парная загрузка и локальный импорт в OsData, immutable raw files | Повторный импорт идемпотентен, неполная пара отклоняется |
 | 3. Paired replay | Два reader, merge, buckets и single-consumer sequencer | Повторный прогон имеет одинаковый event hash; no-look-ahead тесты зелёные |
-| 4. Feature engine + visualization | `OrderFlowEngine`, snapshots, M1/Sec drill-down, markers и event log; заявок ещё нет | График совпадает с журналом и ручной проверкой golden scenarios |
-| 5. StrategySpec | Точная версия state machine, формулы, вход/выход, session policy | Спецификация заморожена до validation |
-| 6. Execution model | Taker fills, latency, levels, partials, комиссии и stress profiles | Нет fill на событии сигнала; synthetic execution invariants проходят |
-| 7. Historical validation | Контрольные варианты A–D, OOS, walk-forward и отчёт устойчивости | Формальное решение `go/no-go`; не только лучший PnL |
-| 8. Robot + risk | Только после `go`: адаптер BotTab, risk/order state machines, persistence и reconciliation | Тесты дублей, partial fills, restart и emergency exit проходят |
-| 9. Shadow/paper | Live market data через то же ядро, измерение latency и расхождений | Сигналы воспроизводимы, позиции/ордера всегда сверяются |
-| 10. Limited live | Минимальный объём, мониторинг, runbook и постепенный допуск | Выполнены инженерный и экономический критерии; нет критических инцидентов |
+| 4. Feature engine + visualization | `OrderFlowEngine`, causal snapshots, neutral research export, M1/Sec markers и event log; candidates и заявок ещё нет | Формулы и snapshot IDs воспроизводимы; график совпадает с journal/golden scenarios |
+| 5. ResearchSpec, candidates и market-path labels | Frozen `ResearchSpec`, broad candidates/background sample, MFE/MAE/barrier outcomes, temporal split/purge и experiment registry; execution PnL ещё не рассчитывается | Features отделены от future market-path labels, leakage tests зелёные, final OOS не просмотрен |
+| 6. Execution model и simulation results | Taker fills, latency, levels, partials, комиссии, risk interface, stress profiles и отдельные execution outcomes/net PnL | Нет fill на событии сигнала; liquidity ledger и synthetic execution invariants проходят; simulation results не смешаны с raw labels |
+| 7. Policy discovery и StrategySpec | Rule-based/price-only controls, ограниченное исследование filters и optional ML ranker; выбрана одна policy | `StrategySpec` и artifacts заморожены по development/validation до открытия final OOS |
+| 8. Historical qualification | Контрольные варианты A–D/E, final OOS, walk-forward и отчёт устойчивости | Формальное решение `go/no-go`; подтверждён incremental value, а не только лучший PnL |
+| 9. Robot + production risk | Только после `go`: тонкий BotTab adapter, order/risk state machines, persistence и reconciliation | Тесты дублей, partial fills, restart, cutoff и emergency exit проходят |
+| 10. Shadow/paper | Live market data через то же ядро, измерение latency и расхождений | Features/intents воспроизводимы, simulated и broker outcomes различены, позиции/ордера сверяются |
+| 11. Limited live | Минимальный объём, мониторинг, runbook и постепенный допуск | Выполнены инженерный и экономический критерии; нет критических инцидентов |
 
 После согласования roadmap каждый этап планируется отдельно: задачи, интерфейсы, изменяемые файлы,
 тесты, миграции форматов, критерии приёмки и rollback. Реализация следующего этапа не начинается до
