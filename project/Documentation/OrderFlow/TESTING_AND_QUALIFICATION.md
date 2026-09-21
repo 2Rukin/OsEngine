@@ -1,11 +1,18 @@
 # ORDER-FLOW-QUALIFICATION-001: тестирование и критерии допуска
 
-**Статус:** TARGET QUALIFICATION CONTRACT — NOT IMPLEMENTED.
+**Статус:** TARGET QUALIFICATION CONTRACT — SYNTHETIC RESEARCH STAND ADDED.
 
 **Назначение:** определить evidence, необходимое для перехода от данных к
 исследованию, от исследования к роботу и от робота к ограниченному live.
 
 Компиляция или один прибыльный backtest не являются экономическим допуском.
+
+В `Tests/OrderFlowResearch` добавлен offline console stand, который сам создаёт
+временные raw/GZip/Deflate QSH пары и проверяет causal association,
+same-timestamp invariants, future isolation, deterministic artifacts и rejection
+повреждённых данных. Наличие stand не означает, что он прошёл на конкретном
+commit: факт запуска всегда фиксируется отдельным build/test evidence. Golden
+real-day, performance, execution, historical и live levels ещё не реализованы.
 
 ## 1. Уровни доказательства
 

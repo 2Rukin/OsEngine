@@ -3,9 +3,11 @@
 Комплект документации внутридневного робота, использующего парные потоки сделок
 и стакана.
 
-Текущий статус: **target contracts, торговый код не реализован, экономическое
-преимущество не доказано**. Документы определяют порядок будущей реализации и
-проверки, но не описывают уже доступную функцию OsEngine.
+Текущий статус: **изолированный offline Research MVP реализован в OsData;
+торговый робот, Tester execution и экономическое преимущество не реализованы и
+не доказаны**. Точная инструкция и граница доступной функции находятся в
+[runbook первичной проверки](RESEARCH_MVP_RUNBOOK.md); остальные документы
+сохраняют полный target contract.
 
 Roadmap и baseline-аудит зафиксированы относительно ветки `master` форка
 `2Rukin/OsEngine`, commit
@@ -22,6 +24,7 @@ Roadmap и baseline-аудит зафиксированы относительн
 | `ORDER-FLOW-STRATEGY-001` | [Strategy lifecycle](STRATEGY_LIFECYCLE.md) | Candidate, confirmation, no-trade, intent, exit и содержание StrategySpec |
 | `ORDER-FLOW-EXECUTION-001` | [Execution model](EXECUTION_MODEL.md) | Latency, стакан, partial fills, costs, order/risk lifecycle и parity boundary |
 | `ORDER-FLOW-QUALIFICATION-001` | [Testing and qualification](TESTING_AND_QUALIFICATION.md) | Техническое evidence, historical validation, ворота и `go/no-go` |
+| `ORDER-FLOW-MVP-RUNBOOK-001` | [Research MVP runbook](RESEARCH_MVP_RUNBOOK.md) | Текущий OsData workbench, входы, artifacts, reason codes и честная граница evidence |
 
 Если краткое описание roadmap конфликтует с подробным контрактом, применяется
 специализированный документ из таблицы. Статус реализации всегда определяется
@@ -29,13 +32,15 @@ current code и исполняемыми tests, а не target-документ�
 
 ## Рекомендуемый порядок чтения
 
-1. Roadmap — понять цель и последовательность.
-2. Data/replay — понять, какие данные причинно доступны роботу.
-3. Research — понять, почему нужны одновременно датасет наблюдений и Tester.
-4. Strategy lifecycle — отделить candidate от реальной сделки.
-5. Execution model — понять, как signal превращается или не превращается в fill.
-6. Qualification — увидеть доказательства, необходимые перед следующим этапом.
+1. Research MVP runbook — запустить и проверить уже доступный offline slice.
+2. Roadmap — понять цель и последовательность полного проекта.
+3. Data/replay — понять, какие данные причинно доступны роботу.
+4. Research — понять, почему нужны одновременно датасет наблюдений и Tester.
+5. Strategy lifecycle — отделить candidate от реальной сделки.
+6. Execution model — понять, как signal превращается или не превращается в fill.
+7. Qualification — увидеть доказательства, необходимые перед следующим этапом.
 
-Конкретные числовые окна, thresholds, holding horizon и параметры риска пока не
-зафиксированы. Они появляются только в версиях `ResearchSpec` и `StrategySpec`
-после реализации causal replay и исследования данных.
+Workbench уже хеширует параметры одного research run, но его UI defaults не
+являются выбранной политикой. Числовые окна, thresholds, holding horizon и
+параметры риска фиксируются как версия `StrategySpec` только после массового
+исследования и до final out-of-sample.

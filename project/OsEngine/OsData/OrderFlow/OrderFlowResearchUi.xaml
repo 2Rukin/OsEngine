@@ -1,0 +1,165 @@
+<Window x:Class="OsEngine.OsData.OrderFlow.OrderFlowResearchUi"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Order Flow Research" Height="860" Width="1420"
+        MinHeight="650" MinWidth="1050"
+        WindowStartupLocation="CenterScreen"
+        Style="{StaticResource WindowStyleCanResize}"
+        Icon="/Images/OsLogo.ico">
+    <Grid Name="GridPrime" Margin="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Grid Name="GridFiles" Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="110"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="100"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Label Name="LabelDeals" Grid.Row="0" Grid.Column="0" Content="Deals QSH" VerticalAlignment="Center"/>
+            <TextBox Name="TextBoxDealsPath" Grid.Row="0" Grid.Column="1" Margin="4" MinHeight="24"/>
+            <Button Name="ButtonBrowseDeals" Grid.Row="0" Grid.Column="2" Margin="4" Content="Browse"/>
+
+            <Label Name="LabelQuotes" Grid.Row="1" Grid.Column="0" Content="Quotes QSH" VerticalAlignment="Center"/>
+            <TextBox Name="TextBoxQuotesPath" Grid.Row="1" Grid.Column="1" Margin="4" MinHeight="24"/>
+            <Button Name="ButtonBrowseQuotes" Grid.Row="1" Grid.Column="2" Margin="4" Content="Browse"/>
+
+            <Label Name="LabelOutput" Grid.Row="2" Grid.Column="0" Content="Output folder" VerticalAlignment="Center"/>
+            <TextBox Name="TextBoxOutputPath" Grid.Row="2" Grid.Column="1" Margin="4" MinHeight="24"/>
+            <Button Name="ButtonBrowseOutput" Grid.Row="2" Grid.Column="2" Margin="4" Content="Browse"/>
+        </Grid>
+
+        <Border Grid.Row="1" Margin="0,8,0,8" BorderBrush="Gray" BorderThickness="1" Padding="6">
+            <Grid Name="GridSettings">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="75"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="75"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="75"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="95"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Label Name="LabelWindow" Grid.Row="0" Grid.Column="0" Content="Window sec"/>
+                <TextBox Name="TextBoxWindowSeconds" Grid.Row="0" Grid.Column="1" Margin="3" Text="30"/>
+                <Label Name="LabelDelta" Grid.Row="0" Grid.Column="2" Content="Min delta"/>
+                <TextBox Name="TextBoxMinimumDelta" Grid.Row="0" Grid.Column="3" Margin="3" Text="100"/>
+                <Label Name="LabelPriceTicks" Grid.Row="0" Grid.Column="4" Content="Price ticks"/>
+                <TextBox Name="TextBoxMinimumPriceTicks" Grid.Row="0" Grid.Column="5" Margin="3" Text="0"/>
+                <Label Name="LabelBookLevels" Grid.Row="0" Grid.Column="6" Content="Book levels"/>
+                <TextBox Name="TextBoxTopLevels" Grid.Row="0" Grid.Column="7" Margin="3" Text="5"/>
+
+                <Label Name="LabelBookAge" Grid.Row="1" Grid.Column="0" Content="Book age ms"/>
+                <TextBox Name="TextBoxBookAge" Grid.Row="1" Grid.Column="1" Margin="3" Text="1000"/>
+                <Label Name="LabelCooldown" Grid.Row="1" Grid.Column="2" Content="Cooldown ms"/>
+                <TextBox Name="TextBoxCooldown" Grid.Row="1" Grid.Column="3" Margin="3" Text="5000"/>
+                <Label Name="LabelBackground" Grid.Row="1" Grid.Column="4" Content="Background sec"/>
+                <TextBox Name="TextBoxBackground" Grid.Row="1" Grid.Column="5" Margin="3" Text="30"/>
+                <Label Name="LabelHorizons" Grid.Row="1" Grid.Column="6" Content="Horizons sec"/>
+                <TextBox Name="TextBoxHorizons" Grid.Row="1" Grid.Column="7" Margin="3" Text="60;300;900"/>
+
+                <Label Name="LabelTarget" Grid.Row="2" Grid.Column="0" Content="Target ticks"/>
+                <TextBox Name="TextBoxTargetTicks" Grid.Row="2" Grid.Column="1" Margin="3" Text="5"/>
+                <Label Name="LabelInvalidation" Grid.Row="2" Grid.Column="2" Content="Invalid ticks"/>
+                <TextBox Name="TextBoxInvalidationTicks" Grid.Row="2" Grid.Column="3" Margin="3" Text="5"/>
+                <Label Name="LabelPriceStep" Grid.Row="2" Grid.Column="4" Content="Price step override"/>
+                <TextBox Name="TextBoxPriceStep" Grid.Row="2" Grid.Column="5" Margin="3"/>
+                <Label Name="LabelVolumeStep" Grid.Row="2" Grid.Column="6" Content="Volume step override"/>
+                <TextBox Name="TextBoxVolumeStep" Grid.Row="2" Grid.Column="7" Margin="3"/>
+
+                <StackPanel Grid.Row="0" Grid.RowSpan="3" Grid.Column="8" Orientation="Horizontal"
+                            HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button Name="ButtonRun" Margin="8,2,2,2" MinWidth="105" Height="34" Content="Run research"/>
+                    <Button Name="ButtonCancel" Margin="2" MinWidth="80" Height="34" Content="Cancel" IsEnabled="False"/>
+                    <Button Name="ButtonOpenArtifacts" Margin="2" MinWidth="115" Height="34" Content="Open artifacts" IsEnabled="False"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <TabControl Name="TabControlResults" Grid.Row="2">
+            <TabItem Name="TabItemSummary" Header="Summary">
+                <TextBox Name="TextBoxSummary" IsReadOnly="True" TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                         FontFamily="Consolas" Padding="8"/>
+            </TabItem>
+            <TabItem Name="TabItemCandidates" Header="Candidates">
+                <DataGrid Name="DataGridCandidates" IsReadOnly="True" AutoGenerateColumns="False"
+                          SelectionMode="Single" SelectionUnit="FullRow" EnableRowVirtualization="True">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Time" Binding="{Binding TimeText}" Width="145"/>
+                        <DataGridTextColumn Header="Side" Binding="{Binding Direction}" Width="65"/>
+                        <DataGridTextColumn Header="Delta" Binding="{Binding Delta}" Width="90"/>
+                        <DataGridTextColumn Header="Price change" Binding="{Binding PriceChange}" Width="90"/>
+                        <DataGridTextColumn Header="Response" Binding="{Binding PriceResponse}" Width="90"/>
+                        <DataGridTextColumn Header="Spread" Binding="{Binding Spread}" Width="75"/>
+                        <DataGridTextColumn Header="Imbalance" Binding="{Binding BookImbalance}" Width="90"/>
+                        <DataGridTextColumn Header="Book age" Binding="{Binding BookAgeMilliseconds}" Width="85"/>
+                        <DataGridTextColumn Header="Quality" Binding="{Binding DataQualityCode}" Width="150"/>
+                        <DataGridTextColumn Header="Horizon" Binding="{Binding HorizonSeconds}" Width="70"/>
+                        <DataGridTextColumn Header="Outcome" Binding="{Binding Outcome}" Width="120"/>
+                        <DataGridTextColumn Header="MFE" Binding="{Binding Mfe}" Width="80"/>
+                        <DataGridTextColumn Header="MAE" Binding="{Binding Mae}" Width="80"/>
+                        <DataGridTextColumn Header="Candidate ID" Binding="{Binding CandidateId}" Width="*"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </TabItem>
+            <TabItem Name="TabItemChart" Header="Chart">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="4">
+                        <Label Name="LabelTimeFrame" Content="Display timeframe" VerticalAlignment="Center"/>
+                        <ComboBox Name="ComboBoxTimeFrame" Width="110" Margin="4"/>
+                        <TextBlock Name="TextBlockChartBoundary" Margin="12,7,0,0"
+                                   Text="Visualization only. Signals are not recalculated."/>
+                    </StackPanel>
+                    <ContentControl Name="ContentControlChart" Grid.Row="1" Margin="4"/>
+                    <TextBlock Name="TextBlockCandidateDetails" Grid.Row="2" Margin="8" TextWrapping="Wrap"/>
+                </Grid>
+            </TabItem>
+            <TabItem Name="TabItemJournal" Header="Event journal">
+                <DataGrid Name="DataGridJournal" IsReadOnly="True" AutoGenerateColumns="False"
+                          EnableRowVirtualization="True">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Time" Binding="{Binding Time}" Width="150"/>
+                        <DataGridTextColumn Header="Kind" Binding="{Binding Kind}" Width="130"/>
+                        <DataGridTextColumn Header="Correlation" Binding="{Binding CorrelationId}" Width="220"/>
+                        <DataGridTextColumn Header="Reason" Binding="{Binding ReasonCode}" Width="190"/>
+                        <DataGridTextColumn Header="Message" Binding="{Binding Message}" Width="*"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </TabItem>
+        </TabControl>
+
+        <Grid Grid.Row="3" Margin="0,6,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Name="TextBlockStatus" Grid.Column="0" Text="Ready" VerticalAlignment="Center"/>
+            <TextBlock Name="TextBlockEvidence" Grid.Column="1"
+                       Text="Research only. No trades or PnL." FontWeight="SemiBold"/>
+        </Grid>
+    </Grid>
+</Window>

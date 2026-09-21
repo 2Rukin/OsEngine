@@ -1,14 +1,17 @@
 # ORDER-FLOW-DATA-001: контракт данных и причинного replay
 
-**Статус:** TARGET CONTRACT — NOT IMPLEMENTED.
+**Статус:** TARGET CONTRACT — PARTIALLY IMPLEMENTED BY RESEARCH MVP.
 
 **Назначение:** определить, какие данные принимает Order Flow контур и в каком
 порядке история может быть передана исследовательскому ядру и Tester без
 look-ahead.
 
-Документ не утверждает, что описанное поведение уже реализовано. Текущие
-возможности форка и требуемые изменения перечислены в
-[roadmap](PRODUCTION_ROADMAP.md).
+Полный contract ещё не реализован. Текущий OsData workbench покрывает одну
+локальную пару, QSH v4 readers, filename/header checks, закрытые timestamp
+buckets, previous-closed-book policy, quality reason codes и deterministic
+hashes. Он не покрывает multi-day import, session/instrument/cost metadata,
+Tester/live adapters и full-day qualification. Точная граница описана в
+[ORDER-FLOW-MVP-RUNBOOK-001](RESEARCH_MVP_RUNBOOK.md).
 
 ## 1. Граница контракта
 

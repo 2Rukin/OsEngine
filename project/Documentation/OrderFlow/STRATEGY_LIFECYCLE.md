@@ -1,10 +1,15 @@
 # ORDER-FLOW-STRATEGY-001: жизненный цикл наблюдения и торгового решения
 
-**Статус:** TARGET STRATEGY CONTRACT — NOT IMPLEMENTED.
+**Статус:** TARGET STRATEGY CONTRACT — BROAD CANDIDATE SLICE ONLY.
 
 **Назначение:** отделить рыночное наблюдение от кандидата, подтверждённого
 сигнала, решения торговать, заявки и позиции. Конкретные формулы и значения
 порогов появятся только в версионируемом `StrategySpec` после исследования.
+
+Research MVP реализует только зеркальные broad Long/Short candidates и
+direction-specific cooldown. Confirmation, invalidation/expiry state machine,
+eligible signal, intent, order и position отсутствуют; market-path label не
+является переходом этого автомата.
 
 ## 1. Ключевой принцип
 

@@ -10,6 +10,7 @@ using System.Windows.Threading;
 using System;
 using OsEngine.Market;
 using OsEngine.Instructions;
+using OsEngine.OsData.OrderFlow;
 
 namespace OsEngine.OsData
 {
@@ -48,6 +49,9 @@ namespace OsEngine.OsData
             LabelStartTimeStr.Content = OsLocalization.Data.Label18;
             LabelTimeEndStr.Content = OsLocalization.Data.Label19;
             TextBoxSearchSource.Text = OsLocalization.Market.Label64;
+            ButtonOrderFlowResearch.Content = OsLocalization.ConvertToLocString(
+                "Eng:Order Flow_Ru:Order Flow_");
+            ButtonOrderFlowResearch.Click += ButtonOrderFlowResearch_Click;
 
             this.Activate();
             this.Focus();
@@ -96,6 +100,8 @@ namespace OsEngine.OsData
                     _osDataMaster.Dispose();
                     _osDataMaster = null;
                 }
+
+                ButtonOrderFlowResearch.Click -= ButtonOrderFlowResearch_Click;
 
                 if (ChartHostPanel != null)
                 {
@@ -188,6 +194,19 @@ namespace OsEngine.OsData
         private void NewDataSetButton_Click(object sender, RoutedEventArgs e)
         {
             _osDataMaster.CreateNewSetDialog();
+        }
+
+        private void ButtonOrderFlowResearch_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                OrderFlowResearchUi ui = new OrderFlowResearchUi();
+                ui.ShowDialog();
+            }
+            catch (Exception error)
+            {
+                ServerMaster.SendNewLogMessage(error.ToString(), Logging.LogMessageType.Error);
+            }
         }
 
         #region Posts collection

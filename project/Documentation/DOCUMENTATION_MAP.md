@@ -1,7 +1,7 @@
 # DOCMAP-001: реестр документации OsEngine
 
 **Статус:** CURRENT INDEX
-**Обновлено:** 21.09.2026 13:09:41 (UTC+03:00, Москва)
+**Обновлено:** 21.09.2026 11:51:10 (UTC)
 **Repository:** `2Rukin/OsEngine`
 
 Этот файл — единая точка входа для определения назначения, статуса и
@@ -49,13 +49,14 @@ authoritative level документа. Он не превращает roadmap �
 
 | ID | Путь | Статус | Назначение |
 |---|---|---|---|
-| `ORDER-FLOW-ROADMAP-001` | `project/Documentation/OrderFlow/PRODUCTION_ROADMAP.md` | TARGET ROADMAP — NOT IMPLEMENTED | Production-ready roadmap tick/depth strategy, causal Tester, visualization, risk и rollout |
-| `ORDER-FLOW-INDEX-001` | `project/Documentation/OrderFlow/README.md` | INDEX | Entry point и текущая граница: trading code не реализован, edge не доказан |
-| `ORDER-FLOW-DATA-001` | `project/Documentation/OrderFlow/DATA_REPLAY_CONTRACT.md` | TARGET CONTRACT — NOT IMPLEMENTED | QSH pair, manifest, normalized events, timestamp buckets и deterministic causal replay |
-| `ORDER-FLOW-RESEARCH-001` | `project/Documentation/OrderFlow/RESEARCH_PROTOCOL.md` | TARGET RESEARCH CONTRACT — NOT IMPLEMENTED | Observation dataset, labels, experiment registry, rule/ML boundary и temporal validation |
-| `ORDER-FLOW-STRATEGY-001` | `project/Documentation/OrderFlow/STRATEGY_LIFECYCLE.md` | TARGET STRATEGY CONTRACT — NOT IMPLEMENTED | Candidate/confirmation/no-trade/intent lifecycle и обязательное содержание StrategySpec |
+| `ORDER-FLOW-ROADMAP-001` | `project/Documentation/OrderFlow/PRODUCTION_ROADMAP.md` | TARGET ROADMAP — RESEARCH MVP SLICE | Production-ready roadmap tick/depth strategy, causal Tester, visualization, risk и rollout |
+| `ORDER-FLOW-INDEX-001` | `project/Documentation/OrderFlow/README.md` | INDEX | Entry point: research-only workbench доступен, robot/edge не реализованы |
+| `ORDER-FLOW-MVP-RUNBOOK-001` | `project/Documentation/OrderFlow/RESEARCH_MVP_RUNBOOK.md` | CURRENT IMPLEMENTATION GUIDE — RESEARCH ONLY | Входы OsData workbench, artifacts, reason codes, запуск и evidence boundary |
+| `ORDER-FLOW-DATA-001` | `project/Documentation/OrderFlow/DATA_REPLAY_CONTRACT.md` | TARGET CONTRACT — PARTIAL RESEARCH MVP | QSH pair, manifest, normalized events, timestamp buckets и deterministic causal replay |
+| `ORDER-FLOW-RESEARCH-001` | `project/Documentation/OrderFlow/RESEARCH_PROTOCOL.md` | TARGET RESEARCH CONTRACT — PARTIAL MVP | Observation dataset, labels, experiment registry, rule/ML boundary и temporal validation |
+| `ORDER-FLOW-STRATEGY-001` | `project/Documentation/OrderFlow/STRATEGY_LIFECYCLE.md` | TARGET CONTRACT — BROAD CANDIDATE ONLY | Candidate/confirmation/no-trade/intent lifecycle и обязательное содержание StrategySpec |
 | `ORDER-FLOW-EXECUTION-001` | `project/Documentation/OrderFlow/EXECUTION_MODEL.md` | TARGET EXECUTION CONTRACT — NOT IMPLEMENTED | Latency, liquidity, partial fills, costs, order/risk lifecycle и Tester/live boundary |
-| `ORDER-FLOW-QUALIFICATION-001` | `project/Documentation/OrderFlow/TESTING_AND_QUALIFICATION.md` | TARGET QUALIFICATION CONTRACT — NOT IMPLEMENTED | Technical evidence, historical validation, transition gates и go/no-go |
+| `ORDER-FLOW-QUALIFICATION-001` | `project/Documentation/OrderFlow/TESTING_AND_QUALIFICATION.md` | TARGET CONTRACT — SYNTHETIC STAND ADDED | Technical evidence, historical validation, transition gates и go/no-go |
 
 Отсутствие target components roadmap не является code-review defect. Claim о
 реализации должен иметь code/test evidence вне этого документа.

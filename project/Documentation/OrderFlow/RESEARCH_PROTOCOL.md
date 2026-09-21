@@ -1,10 +1,16 @@
 # ORDER-FLOW-RESEARCH-001: исследовательский протокол и датасет наблюдений
 
-**Статус:** TARGET RESEARCH CONTRACT — NOT IMPLEMENTED.
+**Статус:** TARGET RESEARCH CONTRACT — PARTIALLY IMPLEMENTED BY RESEARCH MVP.
 
 **Назначение:** определить, как из причинного потока строятся наблюдения,
 проверяются гипотезы и выбирается торговая политика без подглядывания в будущее
 и подгонки final out-of-sample.
+
+Текущий workbench реализует causal observations, broad candidates, background
+sampling, отдельные future market-path labels и immutable artifacts для одной
+пары файлов. Experiment registry, temporal split/purge, статистический анализ,
+policy selection и final OOS остаются target. См.
+[runbook](RESEARCH_MVP_RUNBOOK.md).
 
 ## 1. Основной ответ
 
