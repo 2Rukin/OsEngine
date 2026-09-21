@@ -39,7 +39,7 @@ namespace OsEngine.OsData.OrderFlow
 
         /// <summary>
         /// Creates the research-only workbench. The window does not start a
-        /// replay or access external systems until the user selects local files.
+        /// replay or network request. Archive access starts only through the download dialog.
         /// </summary>
         public OrderFlowResearchUi()
         {
@@ -49,12 +49,16 @@ namespace OsEngine.OsData.OrderFlow
 
             _chart = new OrderFlowResearchChart();
             ContentControlChart.Content = _chart;
-            ComboBoxTimeFrame.ItemsSource = Enum.GetValues(typeof(OrderFlowDisplayTimeFrame));
-            ComboBoxTimeFrame.SelectedItem = OrderFlowDisplayTimeFrame.Min1;
+            ComboBoxTimeFrame.ItemsSource = Enum.GetValues<OrderFlowDisplayTimeFrame>()
+                .Select(frame => new KeyValuePair<OrderFlowDisplayTimeFrame, string>(frame,
+                    OrderFlowChartTimeFrames.GetDisplayName(frame, OsLocalization.CurLocalization == OsLocalization.OsLocalType.Ru)))
+                .ToList();
+            ComboBoxTimeFrame.SelectedValue = OrderFlowDisplayTimeFrame.Min1;
 
             ButtonBrowseDeals.Click += ButtonBrowseDeals_Click;
             ButtonBrowseQuotes.Click += ButtonBrowseQuotes_Click;
             ButtonBrowseOutput.Click += ButtonBrowseOutput_Click;
+            ButtonDownloadQsh.Click += ButtonDownloadQsh_Click;
             ButtonRun.Click += ButtonRun_Click;
             ButtonCancel.Click += ButtonCancel_Click;
             ButtonOpenArtifacts.Click += ButtonOpenArtifacts_Click;
@@ -84,6 +88,7 @@ namespace OsEngine.OsData.OrderFlow
             ButtonBrowseDeals.Content = OsLocalization.ConvertToLocString("Eng:Browse_Ru:Выбрать_");
             ButtonBrowseQuotes.Content = OsLocalization.ConvertToLocString("Eng:Browse_Ru:Выбрать_");
             ButtonBrowseOutput.Content = OsLocalization.ConvertToLocString("Eng:Browse_Ru:Выбрать_");
+            ButtonDownloadQsh.Content = L("Download QSH from archive", "Загрузить QSH из архива");
             LabelWindow.Content = OsLocalization.ConvertToLocString("Eng:Window sec_Ru:Окно сек_");
             LabelDelta.Content = OsLocalization.ConvertToLocString("Eng:Min delta_Ru:Мин дельта_");
             LabelPriceTicks.Content = OsLocalization.ConvertToLocString("Eng:Price ticks_Ru:Тики цены_");
@@ -112,8 +117,8 @@ namespace OsEngine.OsData.OrderFlow
             ButtonChartAll.Content = L("All history", "Весь период");
             ButtonChartZoomIn.ToolTip = L("Zoom in: fewer bars", "Приблизить: меньше свечей");
             ButtonChartZoomOut.ToolTip = L("Zoom out: more bars", "Отдалить: больше свечей");
-            TextBlockChartBoundary.Text = L("Wheel / scrollbar: move through the file. Timeframe changes display only. Hover for bar values.",
-                "Колесо / полоса прокрутки: перемещение по файлу. Таймфрейм меняет только отображение. Наведите мышь для значений свечи.");
+            TextBlockChartBoundary.Text = L("Wheel: zoom at pointer. Shift + wheel / drag plot / scrollbar: scroll. Drag the time axis: horizontal scale. Hover for values.",
+                "Колесо: масштаб у курсора. Shift + колесо / перетаскивание графика / полоса: прокрутка. Потяните шкалу времени для масштаба. Наведение: значения.");
             SetParameterHelp();
             TextBlockStatus.Text = OsLocalization.ConvertToLocString("Eng:Ready_Ru:Готово_");
             TextBlockEvidence.Text = OsLocalization.ConvertToLocString(
@@ -241,6 +246,48 @@ namespace OsEngine.OsData.OrderFlow
             {
                 ShowError(error);
             }
+        }
+
+        private void ButtonDownloadQsh_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                OrderFlowDownloadUi dialog = new OrderFlowDownloadUi { Owner = this };
+                if (dialog.ShowDialog() == true && dialog.SelectedPair != null)
+                {
+                    OrderFlowArchivePair pair = dialog.SelectedPair;
+                    if (!HasSameDealsInstrument(TextBoxDealsPath.Text, pair.Instrument))
+                    {
+                        TextBoxPriceStep.Clear();
+                        TextBoxVolumeStep.Clear();
+                    }
+                    TextBoxDealsPath.Text = pair.DealsPath;
+                    TextBoxQuotesPath.Text = pair.QuotesPath;
+                    SetDefaultOutputPath(pair.DealsPath);
+                    TextBlockStatus.Text = L("Pair selected. Review price and volume steps, then run research.",
+                        "Пара выбрана. Проверьте шаг цены и объёма, затем запустите расчёт.");
+                }
+            }
+            catch (Exception error)
+            {
+                ShowError(error);
+            }
+        }
+
+        /// <summary>
+        /// Permits retaining manual steps only for the exact instrument in a valid Deals filename.
+        /// Date or case changes alone do not change identity; malformed names cannot retain overrides.
+        /// </summary>
+        internal static bool HasSameDealsInstrument(string path, string instrument)
+        {
+            string name = Path.GetFileName(path ?? string.Empty);
+            const string suffix = ".Deals.qsh";
+            int dateSeparator = name.Length - suffix.Length - 11;
+            return dateSeparator > 0 && name.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) &&
+                name[dateSeparator] == '.' &&
+                DateTime.TryParseExact(name.Substring(dateSeparator + 1, 10), "yyyy-MM-dd",
+                    CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime date) &&
+                string.Equals(name.Substring(0, dateSeparator), instrument, StringComparison.OrdinalIgnoreCase);
         }
 
         private void ButtonBrowseOutput_Click(object sender, RoutedEventArgs e)
@@ -458,9 +505,9 @@ namespace OsEngine.OsData.OrderFlow
         {
             try
             {
-                if (_chart != null && ComboBoxTimeFrame.SelectedItem is OrderFlowDisplayTimeFrame)
+                if (_chart != null && ComboBoxTimeFrame.SelectedValue is OrderFlowDisplayTimeFrame)
                 {
-                    _chart.SetTimeFrame((OrderFlowDisplayTimeFrame)ComboBoxTimeFrame.SelectedItem);
+                    _chart.SetTimeFrame((OrderFlowDisplayTimeFrame)ComboBoxTimeFrame.SelectedValue);
                 }
             }
             catch (Exception error)
@@ -651,6 +698,7 @@ namespace OsEngine.OsData.OrderFlow
             ButtonBrowseDeals.IsEnabled = isRunning == false;
             ButtonBrowseQuotes.IsEnabled = isRunning == false;
             ButtonBrowseOutput.IsEnabled = isRunning == false;
+            ButtonDownloadQsh.IsEnabled = isRunning == false;
             TextBoxDealsPath.IsEnabled = isRunning == false;
             TextBoxQuotesPath.IsEnabled = isRunning == false;
             TextBoxOutputPath.IsEnabled = isRunning == false;
@@ -691,6 +739,7 @@ namespace OsEngine.OsData.OrderFlow
                 ButtonBrowseDeals.Click -= ButtonBrowseDeals_Click;
                 ButtonBrowseQuotes.Click -= ButtonBrowseQuotes_Click;
                 ButtonBrowseOutput.Click -= ButtonBrowseOutput_Click;
+                ButtonDownloadQsh.Click -= ButtonDownloadQsh_Click;
                 ButtonRun.Click -= ButtonRun_Click;
                 ButtonCancel.Click -= ButtonCancel_Click;
                 ButtonOpenArtifacts.Click -= ButtonOpenArtifacts_Click;

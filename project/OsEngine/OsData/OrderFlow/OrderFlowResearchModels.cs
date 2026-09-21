@@ -59,7 +59,13 @@ namespace OsEngine.OsData.OrderFlow
     {
         Sec15,
         Sec30,
-        Min1
+        Min1,
+        Min5,
+        Min10,
+        Min15,
+        Min30,
+        Min60,
+        Hour4
     }
 
     /// <summary>

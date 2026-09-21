@@ -11,6 +11,101 @@ using System.Linq;
 
 namespace OsEngine.OsData.OrderFlow
 {
+    /// <summary>Display-only timeframes and detached resampling of existing minute bars.</summary>
+    /// <remarks>
+    /// Called on the UI thread with completed, time-ordered Min1 bars. No source
+    /// DTO, research result, feature, label or artifact is changed. Boundaries
+    /// follow QSH clock time; no exchange calendar or timezone is applied.
+    /// Contract: ORDER-FLOW-RESEARCH-001 and ORDER-FLOW-MVP-RUNBOOK-001.
+    /// </remarks>
+    internal static class OrderFlowChartTimeFrames
+    {
+        /// <summary>Returns the fixed clock duration for a supported chart timeframe.</summary>
+        /// <param name="timeFrame">Display timeframe.</param>
+        /// <returns>The duration without session or timezone adjustment.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">The enum value is unsupported.</exception>
+        public static TimeSpan GetDuration(OrderFlowDisplayTimeFrame timeFrame)
+        {
+            switch (timeFrame)
+            {
+                case OrderFlowDisplayTimeFrame.Sec15: return TimeSpan.FromSeconds(15);
+                case OrderFlowDisplayTimeFrame.Sec30: return TimeSpan.FromSeconds(30);
+                case OrderFlowDisplayTimeFrame.Min1: return TimeSpan.FromMinutes(1);
+                case OrderFlowDisplayTimeFrame.Min5: return TimeSpan.FromMinutes(5);
+                case OrderFlowDisplayTimeFrame.Min10: return TimeSpan.FromMinutes(10);
+                case OrderFlowDisplayTimeFrame.Min15: return TimeSpan.FromMinutes(15);
+                case OrderFlowDisplayTimeFrame.Min30: return TimeSpan.FromMinutes(30);
+                case OrderFlowDisplayTimeFrame.Min60: return TimeSpan.FromMinutes(60);
+                case OrderFlowDisplayTimeFrame.Hour4: return TimeSpan.FromHours(4);
+                default: throw new ArgumentOutOfRangeException(nameof(timeFrame));
+            }
+        }
+
+        /// <summary>Formats an explicit duration for the chart selector and caption.</summary>
+        /// <param name="timeFrame">Display timeframe.</param>
+        /// <param name="russian">True for Russian unit labels, false for English.</param>
+        /// <returns>A duration such as 60 min or 4 h, with localized units.</returns>
+        public static string GetDisplayName(OrderFlowDisplayTimeFrame timeFrame, bool russian)
+        {
+            TimeSpan duration = GetDuration(timeFrame);
+            if (duration.TotalMinutes < 1)
+            {
+                return duration.TotalSeconds.ToString(CultureInfo.InvariantCulture) + (russian ? " сек" : " sec");
+            }
+            if (timeFrame == OrderFlowDisplayTimeFrame.Hour4) { return russian ? "4 ч" : "4 h"; }
+            return duration.TotalMinutes.ToString(CultureInfo.InvariantCulture) + (russian ? " мин" : " min");
+        }
+
+        /// <summary>Creates larger OHLC/volume/delta bars without filling intervals that have no trades.</summary>
+        /// <param name="minutes">Completed, chronologically ordered Min1 display bars; source objects remain unchanged.</param>
+        /// <param name="timeFrame">A supported display timeframe longer than one minute.</param>
+        /// <returns>New bars, including the final partial interval with its ordinary aligned end time.</returns>
+        /// <remarks>
+        /// OHLC uses the first/last trade bars and their extrema; volume/delta are
+        /// summed. Response and all book fields come from the last trade bar,
+        /// retaining its age measured at the feature snapshot, not at bar end.
+        /// A four-hour bar starts at 00/04/08/12/16/20 on the source clock.
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException">The timeframe is unsupported or not longer than Min1.</exception>
+        public static List<OrderFlowDisplayBar> AggregateMinutes(List<OrderFlowDisplayBar> minutes,
+            OrderFlowDisplayTimeFrame timeFrame)
+        {
+            TimeSpan duration = GetDuration(timeFrame);
+            if (duration <= TimeSpan.FromMinutes(1)) { throw new ArgumentOutOfRangeException(nameof(timeFrame)); }
+            List<OrderFlowDisplayBar> result = new List<OrderFlowDisplayBar>();
+            OrderFlowDisplayBar current = null;
+            for (int i = 0; i < minutes.Count; i++)
+            {
+                OrderFlowDisplayBar minute = minutes[i];
+                if (minute.HasTrades == false) { continue; }
+                DateTime start = new DateTime(minute.TimeStart.Ticks - minute.TimeStart.Ticks % duration.Ticks, minute.TimeStart.Kind);
+                if (current == null || current.TimeStart != start)
+                {
+                    current = new OrderFlowDisplayBar();
+                    current.TimeFrame = timeFrame;
+                    current.TimeStart = start;
+                    current.TimeEnd = start.Add(duration);
+                    current.HasTrades = true;
+                    current.Open = minute.Open;
+                    current.High = minute.High;
+                    current.Low = minute.Low;
+                    result.Add(current);
+                }
+                current.High = Math.Max(current.High, minute.High);
+                current.Low = Math.Min(current.Low, minute.Low);
+                current.Close = minute.Close;
+                current.Volume += minute.Volume;
+                current.Delta += minute.Delta;
+                current.PriceResponse = minute.PriceResponse;
+                current.BookImbalance = minute.BookImbalance;
+                current.BookAgeMilliseconds = minute.BookAgeMilliseconds;
+                current.BookAvailable = minute.BookAvailable;
+                current.BookStale = minute.BookStale;
+            }
+            return result;
+        }
+    }
+
     internal sealed class OrderFlowCandidateView
     {
         public string CandidateId { get; set; }

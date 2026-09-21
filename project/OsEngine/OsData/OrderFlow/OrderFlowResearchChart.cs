@@ -29,6 +29,17 @@ namespace OsEngine.OsData.OrderFlow
         private OrderFlowResearchResult _result;
         private OrderFlowDisplayTimeFrame _timeFrame = OrderFlowDisplayTimeFrame.Min1;
         private string _selectedCandidateId;
+        private readonly Dictionary<OrderFlowDisplayTimeFrame, List<OrderFlowDisplayBar>> _displayBarCache
+            = new Dictionary<OrderFlowDisplayTimeFrame, List<OrderFlowDisplayBar>>();
+        private readonly List<OrderFlowDisplayBar> _emptyBars = new List<OrderFlowDisplayBar>();
+
+        private const double TimeAxisHeight = 36;
+        private bool _dragging;
+        private bool _dragTimeAxis;
+        private Point _dragOrigin;
+        private int _dragStart;
+        private int _dragCount;
+        private double _dragAnchor;
 
         private int _startIndex;
         private int _visibleCount = 120;
@@ -44,8 +55,18 @@ namespace OsEngine.OsData.OrderFlow
             get
             {
                 List<OrderFlowDisplayBar> bars;
-                return _result != null && _result.Bars.TryGetValue(_timeFrame, out bars)
-                    ? bars : new List<OrderFlowDisplayBar>();
+                if (_result == null) { return _emptyBars; }
+                if (_result.Bars.TryGetValue(_timeFrame, out bars)) { return bars; }
+                if (_displayBarCache.TryGetValue(_timeFrame, out bars)) { return bars; }
+                List<OrderFlowDisplayBar> minutes;
+                if (OrderFlowChartTimeFrames.GetDuration(_timeFrame) <= TimeSpan.FromMinutes(1) ||
+                    _result.Bars.TryGetValue(OrderFlowDisplayTimeFrame.Min1, out minutes) == false)
+                {
+                    return _emptyBars;
+                }
+                bars = OrderFlowChartTimeFrames.AggregateMinutes(minutes, _timeFrame);
+                _displayBarCache.Add(_timeFrame, bars);
+                return bars;
             }
         }
 
@@ -74,16 +95,19 @@ namespace OsEngine.OsData.OrderFlow
         /// <param name="result">Offline result to display, or null to clear the viewport.</param>
         public void SetResult(OrderFlowResearchResult result)
         {
+            EndDrag();
             _result = result;
+            _displayBarCache.Clear();
             _selectedCandidateId = null;
             _visibleCount = 120;
             ScrollTo(Math.Max(0, TotalBars - _visibleCount));
         }
 
         /// <summary>Changes display bars, retaining the visible midpoint time when possible.</summary>
-        /// <param name="timeFrame">Precomputed display aggregation.</param>
+        /// <param name="timeFrame">Base display bars or a larger aggregation cached from Min1 bars in this presenter.</param>
         public void SetTimeFrame(OrderFlowDisplayTimeFrame timeFrame)
         {
+            EndDrag();
             List<OrderFlowDisplayBar> previous = CurrentBars;
             DateTime? anchor = previous.Count == 0 ? null
                 : previous[Math.Min(previous.Count - 1, _startIndex + VisibleCount / 2)].TimeStart;
@@ -118,25 +142,97 @@ namespace OsEngine.OsData.OrderFlow
         /// <param name="count">Requested viewport width in bars, clamped to the available range.</param>
         public void Zoom(int count)
         {
-            int center = _startIndex + VisibleCount / 2;
-            _visibleCount = Math.Clamp(count, Math.Min(10, Math.Max(1, TotalBars)), Math.Max(1, TotalBars));
-            ScrollTo(center - VisibleCount / 2);
+            ZoomAt(count, 0.5);
         }
 
-        /// <summary>Scrolls through existing bars without changing the research result.</summary>
+        /// <summary>Changes horizontal scale while retaining the pointer time when file bounds allow it.</summary>
+        /// <param name="count">Requested visible bar count; minimum two unless the file contains fewer.</param>
+        /// <param name="anchor">Pointer fraction across the plot, clamped to zero through one.</param>
+        public void ZoomAt(int count, double anchor)
+        {
+            ApplyZoom(_startIndex, VisibleCount, count, anchor);
+        }
+
+        private void ApplyZoom(int start, int oldCount, int count, double anchor)
+        {
+            _visibleCount = Math.Clamp(count, Math.Min(2, Math.Max(1, TotalBars)), Math.Max(1, TotalBars));
+            ScrollTo(OrderFlowChartNavigation.ZoomStart(start, oldCount, VisibleCount, TotalBars, anchor));
+        }
+
+        /// <summary>Zooms around the pointer; Shift plus wheel scrolls through existing bars.</summary>
         /// <param name="e">Mouse wheel input handled by this chart.</param>
         protected override void OnMouseWheel(MouseWheelEventArgs e)
         {
             base.OnMouseWheel(e);
             try
             {
-                ScrollTo(_startIndex + (e.Delta > 0 ? -1 : 1) * Math.Max(1, VisibleCount / 10));
+                EndDrag();
+                if ((Keyboard.Modifiers & ModifierKeys.Shift) != 0)
+                {
+                    ScrollTo(_startIndex + (e.Delta > 0 ? -1 : 1) * Math.Max(1, VisibleCount / 10));
+                }
+                else
+                {
+                    int count = OrderFlowChartNavigation.WheelCount(VisibleCount, TotalBars, e.Delta);
+                    ZoomAt(count, PointerFraction(e.GetPosition(this).X));
+                }
                 e.Handled = true;
             }
             catch (Exception error)
             {
                 ServerMaster.SendNewLogMessage(error.ToString(), LogMessageType.Error);
             }
+        }
+
+        /// <summary>Starts panning on the plot or horizontal scaling on the bottom time axis.</summary>
+        /// <param name="e">Pointer press within the plot width.</param>
+        protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
+        {
+            base.OnMouseLeftButtonDown(e);
+            try
+            {
+                Point point = e.GetPosition(this);
+                if (TotalBars == 0 || point.X < 92 || point.X > ActualWidth - 12) { return; }
+                _dragOrigin = point;
+                _dragStart = _startIndex;
+                _dragCount = VisibleCount;
+                _dragAnchor = PointerFraction(point.X);
+                _dragTimeAxis = point.Y >= ActualHeight - TimeAxisHeight;
+                _dragging = CaptureMouse();
+                ToolTip = null;
+                Cursor = _dragTimeAxis ? Cursors.SizeWE : Cursors.Hand;
+                e.Handled = true;
+            }
+            catch (Exception error) { EndDrag(); ServerMaster.SendNewLogMessage(error.ToString(), LogMessageType.Error); }
+        }
+
+        /// <summary>Completes a chart drag and releases pointer capture.</summary>
+        /// <param name="e">Pointer release.</param>
+        protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
+        {
+            base.OnMouseLeftButtonUp(e);
+            if (_dragging) { EndDrag(); e.Handled = true; }
+        }
+
+        /// <summary>Clears drag state if another control takes pointer capture.</summary>
+        /// <param name="e">Capture loss event.</param>
+        protected override void OnLostMouseCapture(MouseEventArgs e)
+        {
+            base.OnLostMouseCapture(e);
+            _dragging = false;
+            Cursor = null;
+        }
+
+        private void EndDrag()
+        {
+            _dragging = false;
+            if (IsMouseCaptured) { ReleaseMouseCapture(); }
+            Cursor = null;
+        }
+
+        private double PointerFraction(double x)
+        {
+            return Math.Clamp((x - 92) / Math.Max(1, ActualWidth - 104), 0, 1);
         }
 
         /// <summary>Shows the display bar under the pointer, including its book quality.</summary>
@@ -146,7 +242,24 @@ namespace OsEngine.OsData.OrderFlow
             base.OnMouseMove(e);
             try
             {
-                double position = (e.GetPosition(this).X - 92) / Math.Max(1, ActualWidth - 104);
+                Point point = e.GetPosition(this);
+                if (_dragging)
+                {
+                    double distance = point.X - _dragOrigin.X;
+                    if (_dragTimeAxis)
+                    {
+                        int count = (int)Math.Clamp(Math.Round(_dragCount * Math.Exp(Math.Clamp(-distance / 180, -10, 10))), 1, Math.Max(1, TotalBars));
+                        ApplyZoom(_dragStart, _dragCount, count, _dragAnchor);
+                    }
+                    else
+                    {
+                        ScrollTo(_dragStart - (int)Math.Round(distance * _dragCount / Math.Max(1, ActualWidth - 104)));
+                    }
+                    e.Handled = true;
+                    return;
+                }
+                Cursor = point.Y >= ActualHeight - TimeAxisHeight ? Cursors.SizeWE : null;
+                double position = (point.X - 92) / Math.Max(1, ActualWidth - 104);
                 if (position < 0 || position >= 1 || VisibleCount == 0) { ToolTip = null; return; }
                 OrderFlowDisplayBar bar = CurrentBars[_startIndex + Math.Min(VisibleCount - 1, (int)(position * VisibleCount))];
                 ToolTip = bar.TimeStart.ToString("dd.MM.yyyy HH:mm:ss", CultureInfo.InvariantCulture) +
@@ -188,10 +301,10 @@ namespace OsEngine.OsData.OrderFlow
                 return;
             }
 
-            List<OrderFlowDisplayBar> allBars;
-            if (_result.Bars.TryGetValue(_timeFrame, out allBars) == false || allBars.Count == 0)
+            List<OrderFlowDisplayBar> allBars = CurrentBars;
+            if (allBars.Count == 0)
             {
-                DrawText(drawingContext, L("No trade bars are available for ", "Нет свечей со сделками для ") + _timeFrame + ".",
+                DrawText(drawingContext, L("No trade bars are available for ", "Нет свечей со сделками для ") + OrderFlowChartTimeFrames.GetDisplayName(_timeFrame, OsLocalization.CurLocalization == OsLocalization.OsLocalType.Ru) + ".",
                     new Point(12, 12), ForegroundBrush, 13);
                 return;
             }
@@ -200,7 +313,7 @@ namespace OsEngine.OsData.OrderFlow
             double left = 92;
             double right = Math.Max(left + 10, ActualWidth - 12);
             double width = right - left;
-            double usable = ActualHeight - 96;
+            double usable = ActualHeight - 120;
             double priceTop = 24;
             double priceBottom = priceTop + usable * 0.46;
             double deltaTop = priceBottom + 20;
@@ -241,18 +354,34 @@ namespace OsEngine.OsData.OrderFlow
             DrawScale(drawingContext, -maxResponse, maxResponse, responseTop, responseBottom);
             DrawScale(drawingContext, -1, 1, bookTop, bookBottom);
             double slotWidth = width / bars.Count;
+            DrawTimeAxis(drawingContext, bars, left, right, slotWidth, priceTop, bookBottom);
             DrawPriceBars(drawingContext, bars, left, slotWidth, priceTop, priceBottom, minPrice, maxPrice);
             DrawDeltaBars(drawingContext, bars, left, slotWidth, deltaTop, deltaBottom, maxDelta);
             DrawResponse(drawingContext, bars, left, slotWidth, responseTop, responseBottom, maxResponse);
             DrawBook(drawingContext, bars, left, slotWidth, bookTop, bookBottom);
             DrawCandidates(drawingContext, bars, left, slotWidth, priceTop, priceBottom, minPrice, maxPrice);
 
-            DrawText(drawingContext, bars[0].TimeStart.ToString("dd.MM HH:mm:ss", CultureInfo.InvariantCulture),
-                new Point(left, ActualHeight - 18), ForegroundBrush, 10);
-            DrawText(drawingContext, bars[bars.Count - 1].TimeStart.ToString("dd.MM HH:mm:ss", CultureInfo.InvariantCulture),
-                new Point(Math.Max(left, right - 105), ActualHeight - 18), ForegroundBrush, 10);
-            DrawText(drawingContext, _timeFrame + " · " + L("display", "отображение"), new Point(right - 135, 4),
+            DrawText(drawingContext, OrderFlowChartTimeFrames.GetDisplayName(_timeFrame, OsLocalization.CurLocalization == OsLocalization.OsLocalType.Ru) + " · " + L("display", "отображение"), new Point(right - 135, 4),
                 ForegroundBrush, 10);
+        }
+
+        private void DrawTimeAxis(DrawingContext context, List<OrderFlowDisplayBar> bars, double left, double right,
+            double slotWidth, double priceTop, double bookBottom)
+        {
+            Pen grid = new Pen(new SolidColorBrush(Color.FromArgb(55, 128, 128, 128)), 0.5);
+            double axisTop = ActualHeight - TimeAxisHeight;
+            context.DrawLine(new Pen(Brushes.Gray, 0.5), new Point(left, axisTop), new Point(right, axisTop));
+            DrawText(context, L("Time", "Время"), new Point(8, axisTop + 12), ForegroundBrush, 10);
+            List<OrderFlowChartTimeTick> ticks = OrderFlowChartNavigation.TimeTicks(bars, right - left);
+            for (int i = 0; i < ticks.Count; i++)
+            {
+                double x = left + slotWidth * (ticks[i].BarIndex + 0.5);
+                context.DrawLine(grid, new Point(x, priceTop), new Point(x, bookBottom));
+                context.DrawLine(new Pen(Brushes.Gray, 1), new Point(x, axisTop), new Point(x, axisTop + 5));
+                FormattedText label = new FormattedText(ticks[i].Text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
+                    new Typeface("Segoe UI"), 10, ForegroundBrush, VisualTreeHelper.GetDpi(this).PixelsPerDip);
+                context.DrawText(label, new Point(Math.Clamp(x - label.Width / 2, left, Math.Max(left, right - label.Width)), axisTop + 10));
+            }
         }
 
         private int FindSelectedBarIndex(List<OrderFlowDisplayBar> bars)

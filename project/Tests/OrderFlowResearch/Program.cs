@@ -19,6 +19,8 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Markup;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Xml.Linq;
 using System.Reflection;
 
@@ -40,7 +42,7 @@ namespace OsEngine.OrderFlowResearch.Tests
     /// ORDER-FLOW-QUALIFICATION-001 but does not prove real-QSH, full-day,
     /// execution, profitability or live compatibility.
     /// </remarks>
-    internal static class Program
+    internal static partial class Program
     {
         private static int _passed;
         private static int _failed;
@@ -78,6 +80,15 @@ namespace OsEngine.OrderFlowResearch.Tests
                 Run("book age boundary and missing book", root, TestBookAgeBoundary);
                 Run("summary layout and bilingual values", root, TestSummaryLayout);
                 Run("chart navigation reaches entire history", root, TestChartNavigation);
+                Run("larger chart bars preserve OHLC and last snapshot", root, TestLargerChartBars);
+                Run("all chart timeframes render without changing research", root, TestChartTimeFrames);
+                Run("pointer zoom and source time ticks", root, TestTimeAxis);
+                Run("archive catalog dates and hostile links", root, TestArchiveCatalog);
+                Run("archive complete pair publication and reuse", root, TestArchivePair);
+                Run("archive transfer failures preserve existing data", root, TestArchiveFailures);
+                Run("archive cancellation discards partial pair", root, TestArchiveCancellation);
+                Run("archive handoff compares exact instrument identity", root, TestArchiveHandoff);
+                Run("archive instructions and status remain readable in themes", root, TestArchiveTextContrast);
             }
             finally
             {
@@ -165,7 +176,7 @@ namespace OsEngine.OrderFlowResearch.Tests
         {
             OrderFlowResearchResult result = new OrderFlowResearchResult();
             DateTime start = new DateTime(2026, 9, 18, 10, 0, 0);
-            foreach (OrderFlowDisplayTimeFrame frame in Enum.GetValues<OrderFlowDisplayTimeFrame>())
+            foreach (OrderFlowDisplayTimeFrame frame in new OrderFlowDisplayTimeFrame[] { OrderFlowDisplayTimeFrame.Sec15, OrderFlowDisplayTimeFrame.Sec30, OrderFlowDisplayTimeFrame.Min1 })
             {
                 int seconds = frame == OrderFlowDisplayTimeFrame.Min1 ? 60 : frame == OrderFlowDisplayTimeFrame.Sec30 ? 30 : 15;
                 List<OrderFlowDisplayBar> bars = new List<OrderFlowDisplayBar>();
@@ -207,6 +218,117 @@ namespace OsEngine.OrderFlowResearch.Tests
             chart.Zoom(0);
             AssertEqual(0, chart.VisibleCount, "Empty result remains navigable without invalid ranges.");
             AssertEqual(1, result.Candidates.Count, "Navigation does not rewrite research output.");
+        }
+
+        private static void TestLargerChartBars(string root)
+        {
+            DateTime day = new DateTime(2026, 9, 18, 0, 0, 0, DateTimeKind.Utc);
+            List<OrderFlowDisplayBar> minutes = new List<OrderFlowDisplayBar>
+            {
+                ChartMinute(day.AddHours(23).AddMinutes(58), 100, 105, 99, 104, 10, -2, 0.1m, true, false, 100),
+                ChartMinute(day.AddHours(23).AddMinutes(59), 104, 110, 97, 108, 20, 7, 0.2m, false, false, -1),
+                ChartMinute(day.AddDays(1), 200, 207, 198, 202, 30, -12, 0.3m, true, true, 2000),
+                ChartMinute(day.AddDays(1).AddMinutes(1), 202, 209, 199, 208, 40, -5, 0.4m, true, false, 500),
+                new OrderFlowDisplayBar { TimeStart = day.AddDays(1).AddHours(4), HasTrades = false },
+                ChartMinute(day.AddDays(1).AddHours(8).AddMinutes(1), 300, 310, 280, 301, 50, 49, 0.5m, true, true, 9999)
+            };
+            OrderFlowDisplayTimeFrame[] frames = { OrderFlowDisplayTimeFrame.Min5, OrderFlowDisplayTimeFrame.Min10,
+                OrderFlowDisplayTimeFrame.Min15, OrderFlowDisplayTimeFrame.Min30, OrderFlowDisplayTimeFrame.Min60, OrderFlowDisplayTimeFrame.Hour4 };
+            int[] durationMinutes = { 5, 10, 15, 30, 60, 240 };
+            int[] firstStartMinutes = { 1435, 1430, 1425, 1410, 1380, 1200 };
+            string original = JsonSerializer.Serialize(minutes);
+            for (int i = 0; i < frames.Length; i++)
+            {
+                List<OrderFlowDisplayBar> bars = OrderFlowChartTimeFrames.AggregateMinutes(minutes, frames[i]);
+                AssertEqual(3, bars.Count, "No fabricated empty intervals for " + frames[i]);
+                AssertEqual(day.AddMinutes(firstStartMinutes[i]), bars[0].TimeStart, "Clock-aligned first interval " + frames[i]);
+                AssertEqual(day.AddDays(1), bars[0].TimeEnd, "Prior day ends at midnight " + frames[i]);
+                AssertEqual(day.AddDays(1), bars[1].TimeStart, "Exact boundary starts next bar " + frames[i]);
+                AssertEqual(day.AddDays(1).AddMinutes(durationMinutes[i]), bars[1].TimeEnd, "Correct requested duration " + frames[i]);
+                AssertEqual(day.AddDays(1).AddHours(8), bars[2].TimeStart, "Gap skips empty bars " + frames[i]);
+                AssertEqual(DateTimeKind.Utc, bars[2].TimeStart.Kind, "Source time kind preserved");
+                AssertEqual(frames[i], bars[0].TimeFrame, "Target timeframe recorded");
+                AssertEqual(100m, bars[0].Open, "First minute open");
+                AssertEqual(110m, bars[0].High, "Maximum high");
+                AssertEqual(97m, bars[0].Low, "Minimum low");
+                AssertEqual(108m, bars[0].Close, "Last minute close");
+                AssertEqual(30m, bars[0].Volume, "Summed volume");
+                AssertEqual(5m, bars[0].Delta, "Summed signed delta");
+                AssertEqual(0.2m, bars[0].PriceResponse, "Response is the last snapshot, not recomputed from OHLC");
+                AssertFalse(bars[0].BookAvailable, "Last missing book replaces preceding available book");
+                AssertEqual(-1L, bars[0].BookAgeMilliseconds, "Missing age preserved");
+                AssertEqual(70m, bars[1].Volume, "Second interval volume");
+                AssertEqual(-17m, bars[1].Delta, "Second interval delta");
+                AssertTrue(bars[1].BookAvailable && bars[1].BookStale == false, "Last fresh book replaces stale state");
+                AssertEqual(500L, bars[1].BookAgeMilliseconds, "Age is not extended to aggregate end");
+                AssertEqual(0.4m, bars[1].BookImbalance, "Last book imbalance preserved");
+                AssertTrue(bars[2].BookStale, "Final partial bar retains stale state");
+                AssertEqual(301m, bars[2].Close, "Final partial bar retained");
+                AssertFalse(ReferenceEquals(minutes[0], bars[0]), "Resampling creates detached objects");
+            }
+            AssertEqual(original, JsonSerializer.Serialize(minutes), "Minute DTOs remain unchanged");
+        }
+
+        private static OrderFlowDisplayBar ChartMinute(DateTime time, decimal open, decimal high, decimal low,
+            decimal close, decimal volume, decimal delta, decimal response, bool available, bool stale, long age)
+        {
+            return new OrderFlowDisplayBar { TimeFrame = OrderFlowDisplayTimeFrame.Min1,
+                TimeStart = time, TimeEnd = time.AddMinutes(1), HasTrades = true,
+                Open = open, High = high, Low = low, Close = close, Volume = volume, Delta = delta,
+                PriceResponse = response, BookImbalance = available ? response : 0,
+                BookAvailable = available, BookStale = stale, BookAgeMilliseconds = age };
+        }
+
+        private static void TestChartTimeFrames(string root)
+        {
+            SyntheticPair pair = SyntheticQshFactory.Create(root, "chart-timeframes", 101, 1000, 10, Side.Sell);
+            OrderFlowResearchRequest request = CreateRequest(pair, Path.Combine(root, "output"));
+            OrderFlowResearchResult result = new OrderFlowResearchRunner().RunAndExport(request, CancellationToken.None);
+            string original = JsonSerializer.Serialize(result);
+            OrderFlowResearchChart chart = new OrderFlowResearchChart();
+            chart.SetResult(result);
+            XNamespace ns = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+            XDocument ui;
+            using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Research.Ui.xaml")) { ui = XDocument.Load(stream); }
+            ComboBox selector = (ComboBox)XamlReader.Parse(ui.Descendants(ns + "ComboBox").Single(element =>
+                (string)element.Attribute("Name") == "ComboBoxTimeFrame").ToString());
+            OrderFlowDisplayTimeFrame[] frames = Enum.GetValues<OrderFlowDisplayTimeFrame>();
+            AssertEqual(9, frames.Length, "Three existing and six requested timeframes");
+            selector.ItemsSource = frames.Select(frame => new KeyValuePair<OrderFlowDisplayTimeFrame, string>(frame,
+                OrderFlowChartTimeFrames.GetDisplayName(frame, true))).ToList();
+            foreach (OrderFlowDisplayTimeFrame frame in frames)
+            {
+                selector.SelectedValue = frame;
+                AssertEqual(frame, ((KeyValuePair<OrderFlowDisplayTimeFrame, string>)selector.SelectedItem).Key,
+                    "Selector value reaches the requested frame");
+                chart.SetTimeFrame((OrderFlowDisplayTimeFrame)selector.SelectedValue);
+                AssertTrue(chart.TotalBars > 0, "Bars available for " + frame);
+                chart.SelectCandidate(result.Candidates[0].CandidateId);
+                chart.Zoom(chart.TotalBars);
+                chart.Measure(new Size(900, 400));
+                chart.Arrange(new Rect(0, 0, 900, 400));
+                chart.UpdateLayout();
+                RenderTargetBitmap bitmap = new RenderTargetBitmap(900, 400, 96, 96, PixelFormats.Pbgra32);
+                bitmap.Render(chart);
+                AssertEqual(3, result.Bars.Count, "Derived timeframes stay outside the engine result");
+            }
+            AssertEqual("60 мин", OrderFlowChartTimeFrames.GetDisplayName(OrderFlowDisplayTimeFrame.Min60, true), "Minutes label");
+            AssertEqual("4 ч", OrderFlowChartTimeFrames.GetDisplayName(OrderFlowDisplayTimeFrame.Hour4, true), "Russian hours label");
+            AssertEqual("4 h", OrderFlowChartTimeFrames.GetDisplayName(OrderFlowDisplayTimeFrame.Hour4, false), "English hours label");
+            AssertEqual(original, JsonSerializer.Serialize(result), "All research DTOs and hashes stay unchanged after switching/rendering");
+            AssertEqual(result.ArtifactDirectory, new OrderFlowResearchArtifactWriter().Write(request, result),
+                "Existing immutable bundle remains byte-identical after chart use");
+            OrderFlowResearchResult replacement = new OrderFlowResearchResult();
+            replacement.Bars[OrderFlowDisplayTimeFrame.Min1] = new List<OrderFlowDisplayBar>
+            {
+                ChartMinute(new DateTime(2026, 9, 20, 0, 1, 0), 100, 101, 99, 100, 1, 1, 1, true, false, 1),
+                ChartMinute(new DateTime(2026, 9, 20, 8, 1, 0), 100, 101, 99, 100, 1, 1, 1, true, false, 1)
+            };
+            chart.SetResult(replacement);
+            AssertEqual(2, chart.TotalBars, "Changing result invalidates the H4 cache");
+            chart.SetResult(new OrderFlowResearchResult());
+            AssertEqual(0, chart.TotalBars, "Rejected or empty result clears derived history");
+            AssertTrue(Application.Current == null, "No Application or Window was started");
         }
 
         private static void TestValidCausalReplay(string root)

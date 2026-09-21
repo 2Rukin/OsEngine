@@ -14,6 +14,7 @@
     <ProjectReference Include="..\..\OsEngine\OsEngine.csproj" />
     <EmbeddedResource Include="..\..\OsEngine\App.xaml" LogicalName="Research.App.xaml" />
     <EmbeddedResource Include="..\..\OsEngine\OsData\OrderFlow\OrderFlowResearchUi.xaml" LogicalName="Research.Ui.xaml" />
+    <EmbeddedResource Include="..\..\OsEngine\OsData\OrderFlow\OrderFlowDownloadUi.xaml" LogicalName="Research.DownloadUi.xaml" />
   </ItemGroup>
 
 </Project>
