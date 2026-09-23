@@ -40,10 +40,17 @@ Cloud находятся в [runbook](RESEARCH_MVP_RUNBOOK.md#45-cloud-цепо�
 | `ORDER-FLOW-EXECUTION-001` | [Execution model](EXECUTION_MODEL.md) | Ограничения тиков для fills, будущая квалификация модели, costs/risk и parity boundary |
 | `ORDER-FLOW-QUALIFICATION-001` | [Testing and qualification](TESTING_AND_QUALIFICATION.md) | Техническое evidence, historical validation, ворота и `go/no-go` |
 | `ORDER-FLOW-MVP-RUNBOOK-001` | [Research MVP runbook](RESEARCH_MVP_RUNBOOK.md) | Текущий OsData workbench, входы, artifacts, reason codes и честная граница evidence |
+| `ORDER-FLOW-CLOUD-EXPLORER-V2-001` | [Cloud Explorer v2 spec](CLOUD_EXPLORER_V2_SPEC.md) | Целевой отдельный исследовательский режим; ещё не реализован |
 
 Если краткое описание roadmap конфликтует с подробным контрактом, применяется
 специализированный документ из таблицы. Статус реализации всегда определяется
 current code и исполняемыми tests, а не target-документацией.
+
+Новый [план полного каталога и исследования Cloud](CLOUD_EXPLORER_V2_SPEC.md)
+описывает следующий отдельный режим: фильтры, адаптацию, эпизоды, VWAP,
+экстремумы и исследовательские сигналы. Это **техническая постановка, пока не
+реализованная функция**. Текущий порядок запуска и ограничения Cloud по-прежнему
+определяются runbook.
 
 ## Рекомендуемый порядок чтения
 
