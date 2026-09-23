@@ -11,9 +11,12 @@ direction-specific cooldown. Confirmation, invalidation/expiry state machine,
 eligible signal, intent, order и position отсутствуют; market-path label не
 является переходом этого автомата.
 
+Cloud overlays не создают подтверждения/intent и не изменяют broad detector.
+Их историческая группировка не добавлена в StrategySpec.
+
 ## 1. Ключевой принцип
 
-Дисбаланс, дивергенция цены и дельты либо изменение стакана сами по себе не
+Дисбаланс сделок и расхождение цены с дельтой сами по себе не
 являются командой купить или продать. Они могут только создать candidate,
 который затем подтверждается, отменяется или истекает.
 
@@ -30,7 +33,7 @@ Short автоматически. Для Short требуется независ
 | Confirmation | Новое событие после candidate, удовлетворившее frozen условиям подтверждения |
 | Invalidated | Гипотеза разрушена до разрешённого входа |
 | Expired | Время/объём наблюдения исчерпаны без confirmation |
-| Eligible signal | Confirmed candidate, прошедший data/session/context/liquidity policy |
+| Eligible signal | Confirmed candidate, прошедший data/session/context policy |
 | No-trade decision | Осознанный отказ с reason code; не ошибка и не пропавшее событие |
 | Trade intent | Запрос направления, максимальной цены/риска и срока действия; ещё не заявка |
 | Order | Команда execution controller после risk approval |
@@ -83,8 +86,9 @@ stateDiagram-v2
 
 ## 4. Создание candidate
 
-Broad detector версии 1 исследует причинную последовательность, а не цвет
-свечи:
+Текущий broad detector проверяет только delta/PriceChange по формулам
+[runbook](RESEARCH_MVP_RUNBOOK.md#42-кандидат), без swing/pivot уровней.
+Следующая целевая policy исследует причинную последовательность, а не цвет свечи:
 
 1. Зафиксирован ценовой контекст и уровень без знания будущего.
 2. Возник направленный агрессивный поток.
@@ -103,7 +107,7 @@ Broad detector версии 1 исследует причинную послед
 - уровень гипотезы и reference price;
 - confirmation, invalidation и expiry policies;
 - maximum acceptable entry boundary;
-- data-quality состояние и источник стакана.
+- data-quality состояние и provenance тиков.
 
 Уровни не передвигаются задним числом после просмотра результата.
 
@@ -117,8 +121,7 @@ Confirmation обязано появиться в более позднем за
 
 - восстановление цены после направленного потока;
 - изменение последующего потока в сторону candidate;
-- удержание уровня в течение заданного времени/объёма/числа сделок;
-- доступный, свежий и приемлемый spread/стакан.
+- удержание уровня в течение заданного времени/объёма/числа сделок.
 
 Invalidation определяется структурным нарушением уровня/реакции или
 data-quality событием. Expiry срабатывает, если подтверждение не появилось в
@@ -131,10 +134,10 @@ data-quality событием. Expiry срабатывает, если подт�
 
 | Gate | Причина отказа |
 |---|---|
-| Data quality | Gap, stale quote, unknown side, invalid/empty book |
+| Data quality | Недостаточность/разрыв данных, unknown side, регрессия времени |
 | Session | Клиринг, запрет новых входов, приближение cutoff |
-| Marketability | Недопустимый spread, недостаточная видимая ликвидность, entry boundary нарушена |
-| Context policy | Неподдерживаемый volatility/liquidity regime или конфликт с frozen контекстом |
+| Execution qualification | Нет квалифицированной модели для доступных данных либо нарушена entry boundary |
+| Context policy | Неподдерживаемый volatility/trade-activity regime или конфликт с frozen контекстом |
 | Candidate policy | Недостаточная сила/устойчивость либо низкий rule/model score |
 | Position/order state | Уже есть идея, заявка, позиция или reconciliation |
 | Risk | Нулевой разрешённый объём, лимит сделки/дня/портфеля, blocked state |

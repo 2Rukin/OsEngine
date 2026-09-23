@@ -2,196 +2,100 @@
 
 **Статус:** TARGET EXECUTION CONTRACT — NOT IMPLEMENTED.
 
-**Назначение:** определить минимально честную модель исполнения Order Flow
-стратегии в Tester и границы последующего переноса в shadow/paper/live.
+Cloud-группировка также не раскрывает котировки или доступный объём исполнения;
+визуальный объём цепочки не является гарантированным fill.
 
-## 1. Принцип
+## 1. Граница текущих данных
 
-Signal, intent, activation, order, fill и position — разные события. Ни один
-результат не может считаться прибыльным по цене сигнала без проверки, можно ли
-было причинно исполнить нужный объём после latency и расходов.
+Order Flow использует только ленту сделок. Тики позволяют исследовать дельту,
+реакцию цены и будущий market path. Из них нельзя определить доступные bid/ask,
+spread, очередь или объём, который смогла бы исполнить новая заявка.
+Текущий workbench не моделирует заявки, fills, расходы или PnL.
 
-Версия 1 поддерживает только taker/marketable-limit поведение. Пассивное
-исполнение без order-level данных и доказуемой позиции в очереди исключено.
+Прежняя обязательная модель прохода по уровням не применяется к этому входу.
+Перед реализацией execution требуется отдельно утвердить и квалифицировать
+модель, совместимую с доступными данными. Нельзя молча заменить её fill по
+цене следующего тика или считать Volume сделки доступным объёмом для робота.
+ResearchAccepted означает только принятие исследовательского replay.
 
-## 2. Вход модели
+## 2. Что должен определить будущий execution profile
 
-Execution controller получает только одобренный risk controller
-`TradeIntent`/`ExitIntent`:
-
-| Поле | Назначение |
+| Область | Обязательное решение до реализации |
 |---|---|
-| Intent ID и StrategySpec | Воспроизводимость решения |
-| Instrument/direction | Что купить или продать |
-| Signal/intent time | Начало причинной шкалы |
-| Desired/max volume | Запрос и жёсткий предел объёма |
-| Maximum acceptable price | Защита от неограниченного проскальзывания |
-| Expiry | После какого момента неисполненный остаток отменяется |
-| Risk reference | Уровень invalidation/stop и денежный предел |
-| Execution profile | Latency, fees, adverse slippage и правила остатка |
+| Данные и предположения | Какие сведения наблюдаются, какие моделируются, ограничения и независимое evidence |
+| Цена/объём fill | Правила доступности, ограничение объёма, partial/no-fill, недопустимость бесплатного улучшения цены |
+| Время | Signal, intent, activation после latency, submission и fill — разные события |
+| Расходы | Комиссии, ценовые издержки и adverse slippage; отсутствие наблюдаемого spread не означает нулевой spread |
+| Контракт | PriceStepCost, lot, volume rules, валюта и реальные правила инструмента |
+| Сессия | Часовая зона, клиринг, запрет входов и внутридневной cutoff |
+| Evidence | Synthetic/golden tests, калибровка и чувствительность к неподтверждённым допущениям |
 
-Intent не является ордером и не создаёт позицию.
+Версия profile фиксируется до просмотра результатов. Baseline, adverse и
+severe-but-plausible assumptions проходят одинаковые тесты. Ни одна цена или
+ликвидность не считается наблюдаемой только потому, что её требует модель.
+Пассивное исполнение по касанию и положение в очереди без доказательства исключены.
 
-## 3. Причинная активация
+## 3. Сохраняемые причинные требования
 
-1. Рассчитывается `activationTime = intentTime + configuredLatency`.
-2. Стаканы из породившего signal bucket и все Quotes раньше activationTime
-   запрещены для fill.
-3. Первой возможностью является первый валидный причинно последующий snapshot,
-   разрешённый политикой из
-   [ORDER-FLOW-DATA-001](DATA_REPLAY_CONTRACT.md).
-4. До fill повторно проверяются stale state, spread, session, price boundary и
-   доступный риск.
-5. Если подходящего snapshot до expiry нет, ордер получает terminal
-   `Expired/Rejected`, а не фиктивное исполнение.
+Signal не создаёт позицию. Policy формирует `TradeIntent`/`ExitIntent`:
+identity, instrument/direction, signal/intent time, desired/max volume,
+maximum acceptable price, expiry, risk reference, StrategySpec/profile version.
+Risk controller одобряет либо отвергает intent с reason code.
 
-Исторический clock использует время replay, а не wall clock компьютера.
+Активация не раньше intent time + latency. Событие, породившее candidate,
+не используется для его исполнения. Все fill inputs должны быть причинно
+доступны после активации. Без достаточного evidence результат — no-fill/
+expiry/rejection, а не автоматически выгодное исполнение.
 
-## 4. Проход по стакану
+```mermaid
+sequenceDiagram
+    participant P as Frozen policy
+    participant R as Risk controller
+    participant E as Квалифицированная модель
+    participant J as Журнал
+    P->>R: TradeIntent
+    alt Риск и данные разрешают
+        R->>E: Intent с latency и profile
+        E->>E: Только последующее допустимое evidence
+        E->>J: Fill / partial / no-fill и допущения
+    else Отказ
+        R->>J: No-trade и reason code
+    end
+```
 
-Marketable Buy потребляет asks от лучшей цены вверх, Sell — bids от лучшей цены
-вниз. На каждом уровне учитываются:
+Диаграмма — target flow. Эти компоненты не подключены к текущему workbench.
 
-- видимый доступный объём;
-- `VolumeStep` и допустимое округление;
-- maximum acceptable price;
-- дополнительный adverse slippage из execution profile;
-- комиссия на фактически исполненный объём.
+## 4. Order, stop и risk lifecycle
 
-Результатом может быть полный fill, partial fill либо отсутствие fill.
-Позиция и её защита рассчитываются только по сумме `MyTrade`/simulated fills, а
-не по первоначальному объёму intent.
+Будущие состояния: IntentReceived, RiskRejected, PendingActivation, Active,
+PartiallyFilled, Filled, CancelPending, Cancelled/Expired/Rejected и Reconciling.
+Команды идемпотентны по Intent ID + Order command ID; повтор события не создаёт
+вторую заявку. Position формируется только фактически исполненным объёмом.
 
-Внутри одного snapshot ведётся ledger уже потреблённой моделью ликвидности.
-Один и тот же отображённый объём нельзя повторно использовать для нескольких
-fills. Неисполненный остаток ждёт новый причинно последующий Quote либо
-отменяется по policy; сам факт следующего тика не восстанавливает ликвидность.
+Stop/invalidation создаёт exit intent, но не гарантирует цену исполнения.
+При partial opening защищается исполненная часть; отмена остатка и выход —
+отдельные команды. Поздний fill после cancel учитывается reconciliation.
+Перед cutoff новые входы блокируются, остатки отменяются, выход и сверка
+продолжаются даже без новых тиков по отдельному session timer.
 
-## 5. Жизненный цикл заявки
+До отправки нужны режим, data/session health, contract sizing, лимиты сделки/
+дня/портфеля, отсутствие незавершённого reconciliation и контроль overnight.
+Risk может уменьшить объём или отказать, но не меняет направление идеи.
+Для live сохраняются IDs, фактический объём/средняя цена, pending actions,
+дневной риск и версии; после reconnect новые входы запрещены до сверки с брокером.
 
-Минимальные состояния версии 1:
+## 5. Evidence, observability и parity
 
-| Состояние | Смысл |
-|---|---|
-| `IntentReceived` | Решение принято, заявка ещё не активна |
-| `RiskRejected` | Risk/data/session gate запретил отправку |
-| `PendingActivation` | Идёт latency |
-| `Active` | Достигнут первый разрешённый snapshot |
-| `PartiallyFilled` | Исполнена часть, остаток контролируется отдельно |
-| `Filled` | Весь разрешённый объём исполнен |
-| `CancelPending` | Запрошена отмена, поздний fill ещё возможен в live |
-| `Cancelled/Expired/Rejected` | Terminal без дальнейшего исполнения этой команды |
-| `Reconciling` | Локальное состояние сверяется с broker/exchange state |
+Execution results хранятся отдельно от market-path labels: времена, fills,
+комиссии/допущения, отказы, profile/config hashes и при достаточном evidence PnL.
+Log не содержит credentials или authenticated payload. Отчёт показывает
+чувствительность к assumptions и no-fill/partial/expiry, а не одну «точную» прибыль.
 
-Каждый переход идемпотентен по `Intent ID + Order command ID`. Повтор события
-не создаёт вторую заявку или дополнительную позицию.
+Future Tester/shadow/live должны разделять StrategySpec, признаки, intent/risk
+семантику и order state machine. Источник данных, simulated latency и broker
+execution различаются явно. Текущий tick importer не заявляет parity с Tester
+или каждым legacy producer времени/side. Existing платформенные режимы не изменены.
 
-## 6. Stop и выход
-
-Stop/invalidation является порогом сформировать `ExitIntent`, а не гарантией
-цены. После его срабатывания применяются та же latency, причинно последующий
-стакан, доступная ликвидность, partial fills и расходы.
-
-При partial opening защищается исполненный объём. Отмена остатка входа и выход
-из уже набранной части являются разными командами. Поздний fill после cancel
-обрабатывается reconciliation, а не игнорируется.
-
-Перед session cutoff:
-
-1. новые входы блокируются;
-2. неисполненные остатки входов отменяются;
-3. формируются exit intents на фактически открытый объём;
-4. попытки выхода продолжаются независимо от поступления новых сделок;
-5. итог сверяется с broker state в live.
-
-## 7. Профили исполнения
-
-Одна StrategySpec проверяется минимум на трёх заранее заданных профилях:
-
-| Профиль | Назначение |
-|---|---|
-| Baseline | Обоснованная комиссия, latency и видимая ликвидность без бесплатных улучшений |
-| Adverse | Увеличенные latency/slippage и более строгая доступность объёма |
-| Severe but plausible | Стресс допустимого production диапазона для проверки хвостового риска |
-
-Точные значения задаются отдельно по connector/instrument/session evidence и
-версионируются. Выбирать профиль после просмотра PnL запрещено.
-
-Отчёт показывает диапазон результатов, fill ratio, rejected/expired intents,
-partial fills и чувствительность к каждому предположению, а не одну
-«правильную» прибыль.
-
-## 8. Что версия 1 не моделирует
-
-- место пассивной заявки в очереди;
-- гарантированный maker fill по касанию цены;
-- скрытую ликвидность и точные add/cancel order-level события;
-- сохранение видимого объёма между одинаковыми snapshots;
-- бесплатное улучшение цены и rebate без подтверждённого тарифа;
-- исполнение на том же событии, которое породило signal;
-- универсальную поддержку server stop, IOC, OCO или reduce-only всеми
-  коннекторами.
-
-Если прибыль зависит от одного из этих предположений, версия стратегии получает
-`no-go` либо отдельную задачу на данные и модель.
-
-## 9. Risk controller
-
-До создания order command проверяются:
-
-- режим `Off/Research/Shadow/Paper/Live`;
-- causal data health, stale/gap/disconnect и session state;
-- отсутствие незавершённого opening/closing/reconciliation;
-- размер из денежного риска и спецификации реального контракта;
-- лимит убытка на сделку, день и совокупную открытую позицию;
-- maximum position/order volume и доступный лимит;
-- запрет overnight и достижимость принудительного выхода;
-- соответствие локальной позиции broker/exchange state в live.
-
-Risk controller может уменьшить объём либо отвергнуть intent, но не менять его
-direction и не создавать противоположную идею.
-
-## 10. Persistence и восстановление live
-
-Перед `Live` должны сохраняться как минимум:
-
-- текущая торговая дата и использованный дневной риск;
-- активные Candidate/Intent/Order IDs;
-- фактически исполненный объём и средняя цена;
-- pending cancel/exit и последнее reconciliation state;
-- StrategySpec/execution profile versions.
-
-После старта или reconnect новые входы запрещены до запроса реальных позиций и
-активных заявок. Расхождение переводит инструмент в `Blocked/Reconciling` и
-требует явного разрешения, а не автоматического обнуления локального состояния.
-
-## 11. Audit trail и observability
-
-Для каждого intent/order/fill сохраняются correlation IDs и времена signal,
-intent, activation, submission, broker acknowledgement, fill/cancel. Логируются
-reason codes отказов, stale age, latency profile, использованные book snapshot
-IDs, levels/volume, комиссия и slippage.
-
-Не логируются credentials и raw authenticated payload. Высокочастотные события
-не должны превращаться в неограниченный UI/log поток: детальный event journal
-пишется структурированно, а operator log агрегирует состояние и ошибки.
-
-## 12. Tester/live parity
-
-Общими обязаны быть:
-
-- StrategySpec и candidate lifecycle;
-- normalizer/feature semantics;
-- intent и risk правила;
-- order state machine и reason codes.
-
-Явно различаются:
-
-- источник market data;
-- историческая simulated latency против измеренной live latency;
-- simulated fill против broker execution;
-- доступные типы заявок и server-side protections.
-
-Shadow записывает, что **было бы** отправлено и как это исполнила бы модель, но
-не выдаёт simulated fill за broker fill. Paper/live qualification задана в
-[ORDER-FLOW-QUALIFICATION-001](TESTING_AND_QUALIFICATION.md).
+До `Execution qualified` по [qualification](TESTING_AND_QUALIFICATION.md)
+simulation PnL не используется для выбора торговой policy или экономического
+допуска. Достаточность тиков для delta research не закрывает этот этап.

@@ -99,8 +99,7 @@ namespace OsEngine.OsData.OrderFlow
     /// snapshot only after the current timestamp bucket has closed.
     /// </summary>
     /// <remarks>
-    /// Quote-derived fields use only the last valid quote from a previous
-    /// closed bucket. The current bucket quote is not accepted by this class.
+    /// Uses only trade prices, source sides and volumes from the trailing time window.
     /// Contract: ORDER-FLOW-DATA-001.
     /// </remarks>
     internal sealed class OrderFlowFeatureWindow
@@ -114,12 +113,10 @@ namespace OsEngine.OsData.OrderFlow
         /// <c>T - FeatureWindowSeconds</c> and builds the causal feature DTO.
         /// </summary>
         /// <param name="bucket">Closed bucket containing validated positive Buy/Sell deals.</param>
-        /// <param name="previousClosedBook">Last valid Quote from a strictly earlier closed bucket, or <c>null</c>.</param>
         /// <param name="request">Validated run-scoped formulas and thresholds.</param>
         /// <returns>A detached feature DTO, or <c>null</c> when the bounded window is empty.</returns>
         /// <remarks>Reference prices are per-timestamp VWAP values; published DTOs are mutable by type and treated as read-only by convention.</remarks>
-        public OrderFlowFeatureSnapshot Build(OrderFlowBucket bucket, OrderFlowBookSnapshot previousClosedBook,
-            OrderFlowResearchRequest request)
+        public OrderFlowFeatureSnapshot Build(OrderFlowBucket bucket, OrderFlowResearchRequest request)
         {
             for (int i = 0; i < bucket.Deals.Count; i++)
             {
@@ -165,7 +162,7 @@ namespace OsEngine.OsData.OrderFlow
             decimal currentPrice = CalculateBucketVwap(bucket.Deals, bucket.Time);
 
             OrderFlowFeatureSnapshot snapshot = new OrderFlowFeatureSnapshot();
-            snapshot.SnapshotId = "S-" + bucket.Time.ToString("yyyyMMddHHmmssfff", CultureInfo.InvariantCulture) +
+            snapshot.SnapshotId = "S-" + bucket.Time.ToString("yyyyMMddHHmmssffffff", CultureInfo.InvariantCulture) +
                 "-" + bucket.BucketSequence.ToString("D10", CultureInfo.InvariantCulture);
             snapshot.BucketSequence = bucket.BucketSequence;
             snapshot.Time = bucket.Time;
@@ -179,7 +176,7 @@ namespace OsEngine.OsData.OrderFlow
                 ? 0
                 : snapshot.PriceChange / Math.Abs(snapshot.Delta);
 
-            ApplyBook(snapshot, previousClosedBook, request);
+            snapshot.DataQualityCode = "OK";
             return snapshot;
         }
 
@@ -190,6 +187,7 @@ namespace OsEngine.OsData.OrderFlow
 
             foreach (OrderFlowDeal deal in deals)
             {
+                if (deal.Time > bucketTime) { break; }
                 if (deal.Time != bucketTime || deal.Price <= 0 || deal.Volume <= 0)
                 {
                     continue;
@@ -207,40 +205,6 @@ namespace OsEngine.OsData.OrderFlow
             return notional / volume;
         }
 
-        private static void ApplyBook(OrderFlowFeatureSnapshot snapshot, OrderFlowBookSnapshot book,
-            OrderFlowResearchRequest request)
-        {
-            if (book == null || book.IsValid == false || book.Time >= snapshot.Time)
-            {
-                snapshot.BookAvailable = false;
-                snapshot.BookStale = false;
-                snapshot.BookAgeMilliseconds = -1;
-                snapshot.DataQualityCode = "BOOK_NOT_CAUSALLY_AVAILABLE";
-                return;
-            }
-
-            snapshot.BookAvailable = true;
-            snapshot.BookTime = book.Time;
-            snapshot.BookAgeMilliseconds = Convert.ToInt64((snapshot.Time - book.Time).TotalMilliseconds);
-            snapshot.BookStale = snapshot.BookAgeMilliseconds > request.MaximumBookAgeMilliseconds;
-            snapshot.Spread = book.BestAsk - book.BestBid;
-
-            decimal bidVolume = 0;
-            decimal askVolume = 0;
-            for (int i = 0; i < book.Bids.Count && i < request.TopBookLevels; i++)
-            {
-                bidVolume += book.Bids[i].Volume;
-            }
-
-            for (int i = 0; i < book.Asks.Count && i < request.TopBookLevels; i++)
-            {
-                askVolume += book.Asks[i].Volume;
-            }
-
-            decimal totalVolume = bidVolume + askVolume;
-            snapshot.BookImbalance = totalVolume == 0 ? 0 : (bidVolume - askVolume) / totalVolume;
-            snapshot.DataQualityCode = snapshot.BookStale ? "BOOK_STALE" : "OK";
-        }
     }
 
     internal sealed class OrderFlowDisplayBarAggregator
@@ -257,20 +221,20 @@ namespace OsEngine.OsData.OrderFlow
             _bars[OrderFlowDisplayTimeFrame.Min1] = new List<OrderFlowDisplayBar>();
         }
 
-        public void Add(OrderFlowBucket bucket, OrderFlowFeatureSnapshot snapshot)
+        public void Add(OrderFlowBucket bucket, OrderFlowFeatureSnapshot snapshot, bool preserveResponse = false)
         {
-            if (bucket.Deals.Count == 0 || snapshot == null)
+            if (bucket.Deals.Count == 0)
             {
                 return;
             }
 
-            Add(bucket, snapshot, OrderFlowDisplayTimeFrame.Sec15, TimeSpan.FromSeconds(15));
-            Add(bucket, snapshot, OrderFlowDisplayTimeFrame.Sec30, TimeSpan.FromSeconds(30));
-            Add(bucket, snapshot, OrderFlowDisplayTimeFrame.Min1, TimeSpan.FromMinutes(1));
+            Add(bucket, snapshot, OrderFlowDisplayTimeFrame.Sec15, TimeSpan.FromSeconds(15), preserveResponse);
+            Add(bucket, snapshot, OrderFlowDisplayTimeFrame.Sec30, TimeSpan.FromSeconds(30), preserveResponse);
+            Add(bucket, snapshot, OrderFlowDisplayTimeFrame.Min1, TimeSpan.FromMinutes(1), preserveResponse);
         }
 
         private void Add(OrderFlowBucket bucket, OrderFlowFeatureSnapshot snapshot,
-            OrderFlowDisplayTimeFrame timeFrame, TimeSpan duration)
+            OrderFlowDisplayTimeFrame timeFrame, TimeSpan duration, bool preserveResponse)
         {
             DateTime start = new DateTime(bucket.Time.Ticks - bucket.Time.Ticks % duration.Ticks, bucket.Time.Kind);
             OrderFlowDisplayBar bar;
@@ -325,11 +289,24 @@ namespace OsEngine.OsData.OrderFlow
                 bar.Delta += deal.Side == Side.Buy ? deal.Volume : -deal.Volume;
             }
 
-            bar.PriceResponse = snapshot.PriceResponse;
-            bar.BookImbalance = snapshot.BookImbalance;
-            bar.BookAgeMilliseconds = snapshot.BookAgeMilliseconds;
-            bar.BookAvailable = snapshot.BookAvailable;
-            bar.BookStale = snapshot.BookStale;
+            if (!preserveResponse || snapshot != null) { bar.PriceResponse = snapshot?.PriceResponse ?? 0; }
+        }
+
+        /// <summary>Builds a detached prefix view, overlaying the uncommitted timestamp bucket exactly once.</summary>
+        /// <remarks>Closed bars are shared read-only; mutable bars are copied. Preview never finalizes live state or computes features; response stays at the last closed bucket of that bar (zero for a new bar).</remarks>
+        internal Dictionary<OrderFlowDisplayTimeFrame, List<OrderFlowDisplayBar>> Snapshot(OrderFlowBucket pending)
+        {
+            OrderFlowDisplayBarAggregator preview = new OrderFlowDisplayBarAggregator();
+            foreach (KeyValuePair<OrderFlowDisplayTimeFrame, List<OrderFlowDisplayBar>> pair in _bars)
+            {
+                preview._bars[pair.Key].AddRange(pair.Value);
+            }
+            foreach (KeyValuePair<OrderFlowDisplayTimeFrame, OrderFlowDisplayBar> pair in _current)
+            {
+                preview._current[pair.Key] = pair.Value.Copy();
+            }
+            if (pending != null) { preview.Add(pending, null, true); }
+            return preview.Complete();
         }
 
         public Dictionary<OrderFlowDisplayTimeFrame, List<OrderFlowDisplayBar>> Complete()
@@ -480,7 +457,7 @@ namespace OsEngine.OsData.OrderFlow
         /// horizon beyond <paramref name="lastEventTime"/> remains incomplete;
         /// completion does not imply executable or profitable behavior.
         /// </remarks>
-        /// <param name="lastEventTime">Last decoded Deal or Quote bucket time.</param>
+        /// <param name="lastEventTime">Last selected tick bucket time; excluded dates provide no label evidence.</param>
         public void Complete(DateTime lastEventTime)
         {
             for (int i = _active.Count - 1; i >= 0; i--)
@@ -548,7 +525,7 @@ namespace OsEngine.OsData.OrderFlow
         {
             decimal direction = Candidate.Direction == OrderFlowDirection.Long ? 1 : -1;
             decimal signedReturn = (deal.Price - Candidate.ReferencePrice) * direction;
-            long elapsed = Convert.ToInt64((deal.Time - Candidate.Time).TotalMilliseconds);
+            long elapsed = (deal.Time.Ticks - Candidate.Time.Ticks) / 10;
 
             _futureTradeCount++;
             if (signedReturn > _mfe)
@@ -591,10 +568,10 @@ namespace OsEngine.OsData.OrderFlow
             label.SignedReturn = _lastSignedReturn;
             label.MaximumFavorableExcursion = _mfe;
             label.MaximumAdverseExcursion = _mae;
-            label.TimeToMfeMilliseconds = _timeToMfe;
-            label.TimeToMaeMilliseconds = _timeToMae;
-            label.TimeToTargetMilliseconds = _timeToTarget;
-            label.TimeToInvalidationMilliseconds = _timeToInvalidation;
+            label.TimeToMfeMicroseconds = _timeToMfe;
+            label.TimeToMaeMicroseconds = _timeToMae;
+            label.TimeToTargetMicroseconds = _timeToTarget;
+            label.TimeToInvalidationMicroseconds = _timeToInvalidation;
             label.FutureTradeCount = _futureTradeCount;
 
             if (isComplete == false)

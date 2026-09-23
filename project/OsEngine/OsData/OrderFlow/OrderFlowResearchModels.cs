@@ -13,12 +13,13 @@ namespace OsEngine.OsData.OrderFlow
 {
     internal static class OrderFlowResearchSchema
     {
-        public const string ParserVersion = "qsh-v4-paired-2";
-        public const string NormalizerVersion = "closed-bucket-1";
-        public const string FeatureSchemaVersion = "order-flow-features-1";
+        public const string CloudVersion = "tick-cloud-chain-4";
+        public const string ParserVersion = "tick-text-1";
+        public const string NormalizerVersion = "tick-closed-bucket-3";
+        public const string FeatureSchemaVersion = "tick-flow-features-2";
         public const string CandidateDetectorVersion = "flow-price-resilience-1";
-        public const string LabelSchemaVersion = "market-path-1";
-        public const string ArtifactSchemaVersion = "order-flow-research-artifacts-2";
+        public const string LabelSchemaVersion = "market-path-microseconds-2";
+        public const string ArtifactSchemaVersion = "tick-flow-artifacts-7";
     }
 
     internal enum OrderFlowDirection
@@ -65,14 +66,26 @@ namespace OsEngine.OsData.OrderFlow
         Min15,
         Min30,
         Min60,
-        Hour4
+        Hour4,
+        Day1,
+        Week1,
+        Min2,
+        Min3,
+        Min20,
+        Min45,
+        Hour2,
+        Hour3,
+        Hour6,
+        Hour8,
+        Hour12,
+        Month1
     }
 
     /// <summary>
-    /// Mutable, run-scoped input DTO for one offline paired-QSH research run.
+    /// Mutable, run-scoped input DTO for one offline tick-text research run.
     /// </summary>
     /// <remarks>
-    /// <see cref="Validate"/> normalizes the horizon list. The caller must stop
+    /// <see cref="Validate"/> normalizes horizons and clears disabled calculation settings. The caller must stop
     /// mutating this instance before passing it to the single-consumer engine.
     /// Values define causal feature and future market-path label semantics; they
     /// do not define orders, fills, PnL or a production trading policy.
@@ -80,9 +93,17 @@ namespace OsEngine.OsData.OrderFlow
     /// </remarks>
     internal sealed class OrderFlowResearchRequest
     {
-        public string DealsFilePath { get; set; }
+        public bool CalculateDelta { get; set; } = true;
+        public bool CalculateCloud { get; set; }
+        public bool CalculateCloud2 { get; set; }
+        public OrderFlowCloudSettings Cloud2 { get; set; } = new OrderFlowCloudSettings { SingleTicks = true, MinimumTickVolume = 1000 };
+        public OrderFlowCloudSettings Cloud { get; set; } = new OrderFlowCloudSettings();
 
-        public string QuotesFilePath { get; set; }
+        public string TicksFilePath { get; set; }
+
+        public DateTime? FromDate { get; set; }
+
+        public DateTime? ToDate { get; set; }
 
         public string OutputRootPath { get; set; }
 
@@ -91,10 +112,6 @@ namespace OsEngine.OsData.OrderFlow
         public decimal MinimumAbsoluteDelta { get; set; }
 
         public int MinimumPriceChangeTicks { get; set; }
-
-        public int TopBookLevels { get; set; }
-
-        public int MaximumBookAgeMilliseconds { get; set; }
 
         public int CandidateCooldownMilliseconds { get; set; }
 
@@ -106,25 +123,18 @@ namespace OsEngine.OsData.OrderFlow
 
         public int InvalidationTicks { get; set; }
 
-        public decimal PriceStepOverride { get; set; }
-
-        public decimal VolumeStepOverride { get; set; }
+        public decimal PriceStep { get; set; }
 
         /// <summary>
-        /// Validates required path text and numeric settings and canonicalizes label horizons.
+        /// Validates required path text and numeric settings and canonicalizes horizons and clears parameters of disabled calculations.
         /// File availability is checked by the engine so input failures retain an audit bundle.
         /// </summary>
         /// <exception cref="ArgumentException">Required text or research settings are invalid.</exception>
         public void Validate()
         {
-            if (string.IsNullOrWhiteSpace(DealsFilePath))
+            if (string.IsNullOrWhiteSpace(TicksFilePath))
             {
-                throw new ArgumentException("Deals QSH path is required.", nameof(DealsFilePath));
-            }
-
-            if (string.IsNullOrWhiteSpace(QuotesFilePath))
-            {
-                throw new ArgumentException("Quotes QSH path is required.", nameof(QuotesFilePath));
+                throw new ArgumentException("Tick text path is required.", nameof(TicksFilePath));
             }
 
             if (string.IsNullOrWhiteSpace(OutputRootPath))
@@ -132,29 +142,50 @@ namespace OsEngine.OsData.OrderFlow
                 throw new ArgumentException("Output folder is required.", nameof(OutputRootPath));
             }
 
-            if (FeatureWindowSeconds <= 0)
+            if (!CalculateDelta && !CalculateCloud && !CalculateCloud2) { throw new ArgumentException("Select Delta, Cloud 1 or Cloud 2."); }
+            if (CalculateCloud2) { (Cloud2 ?? throw new ArgumentException("Cloud 2 settings are required.")).Validate(); }
+            else { Cloud2 = null; }
+            if (CalculateCloud) { (Cloud ?? throw new ArgumentException("Cloud settings are required.")).Validate(); }
+            else { Cloud = null; }
+            if (CalculateDelta)
             {
-                throw new ArgumentOutOfRangeException(nameof(FeatureWindowSeconds));
+                if (FeatureWindowSeconds <= 0)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(FeatureWindowSeconds));
+                }
+
+                if (MinimumAbsoluteDelta <= 0)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(MinimumAbsoluteDelta));
+                }
+
+                if (MinimumPriceChangeTicks < 0 ||
+                    CandidateCooldownMilliseconds < 0 || BackgroundSampleSeconds <= 0 || TargetTicks <= 0 ||
+                    InvalidationTicks <= 0)
+                {
+                    throw new ArgumentOutOfRangeException("Research settings contain an invalid zero or negative value.");
+                }
+            }
+            else
+            {
+                FeatureWindowSeconds = MinimumPriceChangeTicks = CandidateCooldownMilliseconds = 0;
+                BackgroundSampleSeconds = TargetTicks = InvalidationTicks = 0;
+                MinimumAbsoluteDelta = 0;
+                LabelHorizonsSeconds = new List<int>();
             }
 
-            if (MinimumAbsoluteDelta <= 0)
+            if (PriceStep <= 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(MinimumAbsoluteDelta));
+                throw new ArgumentOutOfRangeException(nameof(PriceStep), "A positive manual decimal price step is required.");
             }
-
-            if (MinimumPriceChangeTicks < 0 || TopBookLevels <= 0 || MaximumBookAgeMilliseconds <= 0 ||
-                CandidateCooldownMilliseconds < 0 || BackgroundSampleSeconds <= 0 || TargetTicks <= 0 ||
-                InvalidationTicks <= 0)
+            if (FromDate.HasValue != ToDate.HasValue || FromDate?.Date > ToDate?.Date)
             {
-                throw new ArgumentOutOfRangeException("Research settings contain an invalid zero or negative value.");
+                throw new ArgumentException("Select both inclusive dates in chronological order, or leave both empty.");
             }
+            FromDate = FromDate?.Date;
+            ToDate = ToDate?.Date;
 
-            if (PriceStepOverride < 0 || VolumeStepOverride < 0)
-            {
-                throw new ArgumentOutOfRangeException("QSH step overrides cannot be negative.");
-            }
-
-            if (LabelHorizonsSeconds == null || LabelHorizonsSeconds.Count == 0)
+            if (CalculateDelta && (LabelHorizonsSeconds == null || LabelHorizonsSeconds.Count == 0))
             {
                 throw new ArgumentException("At least one future label horizon is required.", nameof(LabelHorizonsSeconds));
             }
@@ -176,6 +207,11 @@ namespace OsEngine.OsData.OrderFlow
 
             return string.Join("|", new string[]
             {
+                OrderFlowResearchSchema.ArtifactSchemaVersion,
+                OrderFlowResearchSchema.CloudVersion,
+                CalculateDelta ? "DELTA" : "NO_DELTA",
+                CalculateCloud ? Cloud.CanonicalValue() : "NO_CLOUD",
+                CalculateCloud2 ? "CLOUD2:" + Cloud2.CanonicalValue() : "NO_CLOUD2",
                 OrderFlowResearchSchema.ParserVersion,
                 OrderFlowResearchSchema.NormalizerVersion,
                 OrderFlowResearchSchema.FeatureSchemaVersion,
@@ -184,60 +220,29 @@ namespace OsEngine.OsData.OrderFlow
                 FeatureWindowSeconds.ToString(CultureInfo.InvariantCulture),
                 MinimumAbsoluteDelta.ToString("G29", CultureInfo.InvariantCulture),
                 MinimumPriceChangeTicks.ToString(CultureInfo.InvariantCulture),
-                TopBookLevels.ToString(CultureInfo.InvariantCulture),
-                MaximumBookAgeMilliseconds.ToString(CultureInfo.InvariantCulture),
                 CandidateCooldownMilliseconds.ToString(CultureInfo.InvariantCulture),
                 BackgroundSampleSeconds.ToString(CultureInfo.InvariantCulture),
                 horizons,
                 TargetTicks.ToString(CultureInfo.InvariantCulture),
                 InvalidationTicks.ToString(CultureInfo.InvariantCulture),
-                PriceStepOverride.ToString("G29", CultureInfo.InvariantCulture),
-                VolumeStepOverride.ToString("G29", CultureInfo.InvariantCulture)
+                PriceStep.ToString("G29", CultureInfo.InvariantCulture),
+                FromDate?.ToString("yyyyMMdd", CultureInfo.InvariantCulture) ?? "ALL",
+                ToDate?.ToString("yyyyMMdd", CultureInfo.InvariantCulture) ?? "ALL"
             });
         }
     }
 
-    internal sealed class OrderFlowQshHeader
+    /// <summary>Provenance of one pinned local tick input; filename identifies the instrument by user convention only.</summary>
+    internal sealed class OrderFlowTickInput
     {
         public string FileName { get; set; }
-
-        public string FileType { get; set; }
-
-        public string ApplicationName { get; set; }
-
-        public string Comment { get; set; }
-
-        public string InstrumentHeader { get; set; }
-
-        public string HeaderInstrument { get; set; }
-
-        public string FileInstrument { get; set; }
-
-        public DateTime TradingDate { get; set; }
-
-        public DateTime HeaderTime { get; set; }
-
-        public decimal HeaderPriceStep { get; set; }
-
-        public decimal HeaderVolumeStep { get; set; }
-
-        public decimal EffectivePriceStep { get; set; }
-
-        public decimal EffectiveVolumeStep { get; set; }
-
-        public bool PriceStepOverridden { get; set; }
-
-        public bool VolumeStepOverridden { get; set; }
-
+        public string Instrument { get; set; }
         public string Sha256 { get; set; }
-
-        /// <summary>Stored byte count, or null when the file could not be opened.</summary>
         public long? FileSize { get; set; }
-
-        /// <summary>True only after all role-specific header checks succeed.</summary>
-        public bool HeaderComplete { get; set; }
-
-        /// <summary>Stable input preparation failure code; null after successful header decoding.</summary>
+        public long RecordCount { get; set; }
+        public DateTime? FirstTime { get; set; }
+        public DateTime? LastTime { get; set; }
+        public bool ReadComplete { get; set; }
         public string FailureReasonCode { get; set; }
     }
 
@@ -247,51 +252,12 @@ namespace OsEngine.OsData.OrderFlow
 
         public DateTime Time { get; set; }
 
-        public DateTime FrameTime { get; set; }
-
         public decimal Price { get; set; }
 
         public decimal Volume { get; set; }
-
-        public long PriceTicks { get; set; }
-
-        public long VolumeSteps { get; set; }
 
         public Side Side { get; set; }
 
-        public string SourceId { get; set; }
-    }
-
-    internal sealed class OrderFlowBookLevel
-    {
-        public decimal Price { get; set; }
-
-        public decimal Volume { get; set; }
-    }
-
-    internal sealed class OrderFlowBookSnapshot
-    {
-        public long SourceSequence { get; set; }
-
-        public DateTime Time { get; set; }
-
-        public List<OrderFlowBookLevel> Bids { get; set; } = new List<OrderFlowBookLevel>();
-
-        public List<OrderFlowBookLevel> Asks { get; set; } = new List<OrderFlowBookLevel>();
-
-        public bool IsValid { get; set; }
-
-        public string QualityCode { get; set; }
-
-        public decimal BestBid
-        {
-            get { return Bids.Count == 0 ? 0 : Bids[0].Price; }
-        }
-
-        public decimal BestAsk
-        {
-            get { return Asks.Count == 0 ? 0 : Asks[0].Price; }
-        }
     }
 
     internal sealed class OrderFlowBucket
@@ -302,9 +268,6 @@ namespace OsEngine.OsData.OrderFlow
 
         public List<OrderFlowDeal> Deals { get; set; } = new List<OrderFlowDeal>();
 
-        public List<OrderFlowBookSnapshot> Quotes { get; set; } = new List<OrderFlowBookSnapshot>();
-
-        public OrderFlowBookSnapshot FinalValidQuote { get; set; }
     }
 
     internal sealed class OrderFlowFeatureSnapshot
@@ -328,18 +291,6 @@ namespace OsEngine.OsData.OrderFlow
         public decimal PriceChange { get; set; }
 
         public decimal PriceResponse { get; set; }
-
-        public bool BookAvailable { get; set; }
-
-        public bool BookStale { get; set; }
-
-        public DateTime? BookTime { get; set; }
-
-        public long BookAgeMilliseconds { get; set; }
-
-        public decimal Spread { get; set; }
-
-        public decimal BookImbalance { get; set; }
 
         public string DataQualityCode { get; set; }
     }
@@ -396,19 +347,22 @@ namespace OsEngine.OsData.OrderFlow
 
         public decimal MaximumAdverseExcursion { get; set; }
 
-        public long TimeToMfeMilliseconds { get; set; }
+        public long TimeToMfeMicroseconds { get; set; }
 
-        public long TimeToMaeMilliseconds { get; set; }
+        public long TimeToMaeMicroseconds { get; set; }
 
-        public long TimeToTargetMilliseconds { get; set; }
+        public long TimeToTargetMicroseconds { get; set; }
 
-        public long TimeToInvalidationMilliseconds { get; set; }
+        public long TimeToInvalidationMicroseconds { get; set; }
 
         public int FutureTradeCount { get; set; }
     }
 
     internal sealed class OrderFlowDisplayBar
     {
+        /// <summary>Copies all scalar bar fields for a worker-owned preview without changing the live accumulator.</summary>
+        internal OrderFlowDisplayBar Copy() { return (OrderFlowDisplayBar)MemberwiseClone(); }
+
         public OrderFlowDisplayTimeFrame TimeFrame { get; set; }
 
         public DateTime TimeStart { get; set; }
@@ -431,13 +385,6 @@ namespace OsEngine.OsData.OrderFlow
 
         public decimal PriceResponse { get; set; }
 
-        public decimal BookImbalance { get; set; }
-
-        public long BookAgeMilliseconds { get; set; }
-
-        public bool BookAvailable { get; set; }
-
-        public bool BookStale { get; set; }
     }
 
     internal sealed class OrderFlowJournalEntry
@@ -472,41 +419,9 @@ namespace OsEngine.OsData.OrderFlow
 
         public long DealCount { get; set; }
 
-        public long QuoteCount { get; set; }
-
-        public long ValidBookCount { get; set; }
-
         public long BucketCount { get; set; }
 
-        public long UnknownSideCount { get; set; }
-
-        public long InvalidDealCount { get; set; }
-
-        public long InvalidBookCount { get; set; }
-
-        public long EmptyBookCount { get; set; }
-
-        public long CrossedBookCount { get; set; }
-
-        public long RegressiveDealTimeCount { get; set; }
-
-        public long RegressiveQuoteTimeCount { get; set; }
-
         public long DuplicateDealTimestampCount { get; set; }
-
-        public long DuplicateQuoteTimestampCount { get; set; }
-
-        public long MissingBookFeatureCount { get; set; }
-
-        public long StaleBookFeatureCount { get; set; }
-
-        public long BookAgeUpTo100MillisecondsCount { get; set; }
-
-        public long BookAgeUpTo500MillisecondsCount { get; set; }
-
-        public long BookAgeUpTo1000MillisecondsCount { get; set; }
-
-        public long BookAgeAbove1000MillisecondsCount { get; set; }
 
         public long RejectionIssueCount { get; set; }
 
@@ -521,10 +436,6 @@ namespace OsEngine.OsData.OrderFlow
         public DateTime? FirstDealTime { get; set; }
 
         public DateTime? LastDealTime { get; set; }
-
-        public DateTime? FirstQuoteTime { get; set; }
-
-        public DateTime? LastQuoteTime { get; set; }
 
         public List<OrderFlowQualityIssue> Issues { get; set; } = new List<OrderFlowQualityIssue>();
 
@@ -549,9 +460,7 @@ namespace OsEngine.OsData.OrderFlow
     /// </remarks>
     internal sealed class OrderFlowResearchResult
     {
-        public OrderFlowQshHeader DealsHeader { get; set; }
-
-        public OrderFlowQshHeader QuotesHeader { get; set; }
+        public OrderFlowTickInput Input { get; set; }
 
         public OrderFlowQualityReport Quality { get; set; } = new OrderFlowQualityReport();
 
@@ -564,6 +473,14 @@ namespace OsEngine.OsData.OrderFlow
         public string FeatureHash { get; set; }
 
         public string CandidateHash { get; set; }
+
+        public bool DeltaCalculated { get; set; } = true;
+        public bool CloudCalculated { get; set; }
+        public bool Cloud2Calculated { get; set; }
+        public string Cloud2Hash { get; set; }
+        public List<OrderFlowCloud> Clouds2 { get; set; } = new List<OrderFlowCloud>();
+        public string CloudHash { get; set; }
+        public List<OrderFlowCloud> Clouds { get; set; } = new List<OrderFlowCloud>();
 
         public string ArtifactDirectory { get; set; }
 

@@ -15,15 +15,15 @@ namespace OsEngine.OsData.OrderFlow
     /// <remarks>
     /// Called on the UI thread with completed, time-ordered Min1 bars. No source
     /// DTO, research result, feature, label or artifact is changed. Boundaries
-    /// follow QSH clock time; no exchange calendar or timezone is applied.
+    /// follow source clock time; no exchange calendar or timezone is applied.
     /// Contract: ORDER-FLOW-RESEARCH-001 and ORDER-FLOW-MVP-RUNBOOK-001.
     /// </remarks>
     internal static class OrderFlowChartTimeFrames
     {
-        /// <summary>Returns the fixed clock duration for a supported chart timeframe.</summary>
+        /// <summary>Returns a fixed duration for supported timeframes other than the calendar month.</summary>
         /// <param name="timeFrame">Display timeframe.</param>
         /// <returns>The duration without session or timezone adjustment.</returns>
-        /// <exception cref="ArgumentOutOfRangeException">The enum value is unsupported.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">The value is unsupported or is Month1, which has no fixed duration.</exception>
         public static TimeSpan GetDuration(OrderFlowDisplayTimeFrame timeFrame)
         {
             switch (timeFrame)
@@ -31,14 +31,32 @@ namespace OsEngine.OsData.OrderFlow
                 case OrderFlowDisplayTimeFrame.Sec15: return TimeSpan.FromSeconds(15);
                 case OrderFlowDisplayTimeFrame.Sec30: return TimeSpan.FromSeconds(30);
                 case OrderFlowDisplayTimeFrame.Min1: return TimeSpan.FromMinutes(1);
+                case OrderFlowDisplayTimeFrame.Min2: return TimeSpan.FromMinutes(2);
+                case OrderFlowDisplayTimeFrame.Min3: return TimeSpan.FromMinutes(3);
+                case OrderFlowDisplayTimeFrame.Min20: return TimeSpan.FromMinutes(20);
+                case OrderFlowDisplayTimeFrame.Min45: return TimeSpan.FromMinutes(45);
+                case OrderFlowDisplayTimeFrame.Hour2: return TimeSpan.FromHours(2);
+                case OrderFlowDisplayTimeFrame.Hour3: return TimeSpan.FromHours(3);
+                case OrderFlowDisplayTimeFrame.Hour6: return TimeSpan.FromHours(6);
+                case OrderFlowDisplayTimeFrame.Hour8: return TimeSpan.FromHours(8);
+                case OrderFlowDisplayTimeFrame.Hour12: return TimeSpan.FromHours(12);
                 case OrderFlowDisplayTimeFrame.Min5: return TimeSpan.FromMinutes(5);
                 case OrderFlowDisplayTimeFrame.Min10: return TimeSpan.FromMinutes(10);
                 case OrderFlowDisplayTimeFrame.Min15: return TimeSpan.FromMinutes(15);
                 case OrderFlowDisplayTimeFrame.Min30: return TimeSpan.FromMinutes(30);
                 case OrderFlowDisplayTimeFrame.Min60: return TimeSpan.FromMinutes(60);
                 case OrderFlowDisplayTimeFrame.Hour4: return TimeSpan.FromHours(4);
+                case OrderFlowDisplayTimeFrame.Day1: return TimeSpan.FromDays(1);
+                case OrderFlowDisplayTimeFrame.Week1: return TimeSpan.FromDays(7);
                 default: throw new ArgumentOutOfRangeException(nameof(timeFrame));
             }
+        }
+
+        /// <summary>Returns the selector order from seconds through calendar month, independently of enum numeric values.</summary>
+        public static List<OrderFlowDisplayTimeFrame> GetMenuValues()
+        {
+            return Enum.GetValues<OrderFlowDisplayTimeFrame>()
+                .OrderBy(frame => frame == OrderFlowDisplayTimeFrame.Month1 ? TimeSpan.MaxValue : GetDuration(frame)).ToList();
         }
 
         /// <summary>Formats an explicit duration for the chart selector and caption.</summary>
@@ -47,12 +65,15 @@ namespace OsEngine.OsData.OrderFlow
         /// <returns>A duration such as 60 min or 4 h, with localized units.</returns>
         public static string GetDisplayName(OrderFlowDisplayTimeFrame timeFrame, bool russian)
         {
+            if (timeFrame == OrderFlowDisplayTimeFrame.Month1) { return russian ? "1 месяц" : "1 month"; }
             TimeSpan duration = GetDuration(timeFrame);
+            if (timeFrame == OrderFlowDisplayTimeFrame.Day1) { return russian ? "1 день" : "1 day"; }
+            if (timeFrame == OrderFlowDisplayTimeFrame.Week1) { return russian ? "1 неделя" : "1 week"; }
             if (duration.TotalMinutes < 1)
             {
                 return duration.TotalSeconds.ToString(CultureInfo.InvariantCulture) + (russian ? " сек" : " sec");
             }
-            if (timeFrame == OrderFlowDisplayTimeFrame.Hour4) { return russian ? "4 ч" : "4 h"; }
+            if (duration.TotalHours >= 2) { return duration.TotalHours.ToString(CultureInfo.InvariantCulture) + (russian ? " ч" : " h"); }
             return duration.TotalMinutes.ToString(CultureInfo.InvariantCulture) + (russian ? " мин" : " min");
         }
 
@@ -62,29 +83,34 @@ namespace OsEngine.OsData.OrderFlow
         /// <returns>New bars, including the final partial interval with its ordinary aligned end time.</returns>
         /// <remarks>
         /// OHLC uses the first/last trade bars and their extrema; volume/delta are
-        /// summed. Response and all book fields come from the last trade bar,
-        /// retaining its age measured at the feature snapshot, not at bar end.
-        /// A four-hour bar starts at 00/04/08/12/16/20 on the source clock.
+        /// summed. Response comes from the last trade bar without recomputation.
+        /// Four-hour bars start at 00/04/08/12/16/20; daily bars at midnight;
+        /// weekly bars at Monday midnight (DateTime epoch is Monday); calendar months
+        /// start at midnight on day one and end at the next month, including leap years. All use
+        /// the source clock, with no session, timezone or DST conversion.
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException">The timeframe is unsupported or not longer than Min1.</exception>
         public static List<OrderFlowDisplayBar> AggregateMinutes(List<OrderFlowDisplayBar> minutes,
             OrderFlowDisplayTimeFrame timeFrame)
         {
-            TimeSpan duration = GetDuration(timeFrame);
-            if (duration <= TimeSpan.FromMinutes(1)) { throw new ArgumentOutOfRangeException(nameof(timeFrame)); }
+            bool calendarMonth = timeFrame == OrderFlowDisplayTimeFrame.Month1;
+            TimeSpan duration = calendarMonth ? TimeSpan.Zero : GetDuration(timeFrame);
+            if (!calendarMonth && duration <= TimeSpan.FromMinutes(1)) { throw new ArgumentOutOfRangeException(nameof(timeFrame)); }
             List<OrderFlowDisplayBar> result = new List<OrderFlowDisplayBar>();
             OrderFlowDisplayBar current = null;
             for (int i = 0; i < minutes.Count; i++)
             {
                 OrderFlowDisplayBar minute = minutes[i];
                 if (minute.HasTrades == false) { continue; }
-                DateTime start = new DateTime(minute.TimeStart.Ticks - minute.TimeStart.Ticks % duration.Ticks, minute.TimeStart.Kind);
+                DateTime start = calendarMonth
+                    ? new DateTime(minute.TimeStart.Year, minute.TimeStart.Month, 1, 0, 0, 0, minute.TimeStart.Kind)
+                    : new DateTime(minute.TimeStart.Ticks - minute.TimeStart.Ticks % duration.Ticks, minute.TimeStart.Kind);
                 if (current == null || current.TimeStart != start)
                 {
                     current = new OrderFlowDisplayBar();
                     current.TimeFrame = timeFrame;
                     current.TimeStart = start;
-                    current.TimeEnd = start.Add(duration);
+                    current.TimeEnd = calendarMonth ? start.AddMonths(1) : start.Add(duration);
                     current.HasTrades = true;
                     current.Open = minute.Open;
                     current.High = minute.High;
@@ -97,10 +123,6 @@ namespace OsEngine.OsData.OrderFlow
                 current.Volume += minute.Volume;
                 current.Delta += minute.Delta;
                 current.PriceResponse = minute.PriceResponse;
-                current.BookImbalance = minute.BookImbalance;
-                current.BookAgeMilliseconds = minute.BookAgeMilliseconds;
-                current.BookAvailable = minute.BookAvailable;
-                current.BookStale = minute.BookStale;
             }
             return result;
         }
@@ -120,12 +142,6 @@ namespace OsEngine.OsData.OrderFlow
 
         public decimal PriceResponse { get; set; }
 
-        public decimal Spread { get; set; }
-
-        public decimal BookImbalance { get; set; }
-
-        public long BookAgeMilliseconds { get; set; }
-
         public string DataQualityCode { get; set; }
 
         public int HorizonSeconds { get; set; }
@@ -144,6 +160,7 @@ namespace OsEngine.OsData.OrderFlow
                 .Where(observation => string.IsNullOrEmpty(observation.CandidateId) == false)
                 .ToDictionary(observation => observation.CandidateId, StringComparer.Ordinal);
 
+            Dictionary<string, OrderFlowMarketPathLabel> shortest = ShortestLabels(result);
             List<OrderFlowCandidateView> views = new List<OrderFlowCandidateView>();
 
             for (int i = 0; i < result.Candidates.Count; i++)
@@ -155,22 +172,16 @@ namespace OsEngine.OsData.OrderFlow
                     continue;
                 }
 
-                OrderFlowMarketPathLabel label = result.Labels
-                    .Where(item => item.CandidateId == candidate.CandidateId)
-                    .OrderBy(item => item.HorizonSeconds)
-                    .FirstOrDefault();
+                shortest.TryGetValue(candidate.CandidateId, out OrderFlowMarketPathLabel label);
                 OrderFlowFeatureSnapshot feature = observation.Features;
 
                 OrderFlowCandidateView view = new OrderFlowCandidateView();
                 view.CandidateId = candidate.CandidateId;
-                view.TimeText = candidate.Time.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture);
+                view.TimeText = candidate.Time.ToString("yyyy-MM-dd HH:mm:ss.ffffff", CultureInfo.InvariantCulture);
                 view.Direction = candidate.Direction;
                 view.Delta = feature.Delta;
                 view.PriceChange = feature.PriceChange;
                 view.PriceResponse = feature.PriceResponse;
-                view.Spread = feature.Spread;
-                view.BookImbalance = feature.BookImbalance;
-                view.BookAgeMilliseconds = feature.BookAgeMilliseconds;
                 view.DataQualityCode = feature.DataQualityCode;
                 view.HorizonSeconds = label == null ? 0 : label.HorizonSeconds;
                 view.Outcome = label == null ? OrderFlowBarrierOutcome.Incomplete : label.Outcome;
@@ -181,6 +192,19 @@ namespace OsEngine.OsData.OrderFlow
             }
 
             return views;
+        }
+
+        internal static Dictionary<string, OrderFlowMarketPathLabel> ShortestLabels(OrderFlowResearchResult result)
+        {
+            Dictionary<string, OrderFlowMarketPathLabel> labels = new Dictionary<string, OrderFlowMarketPathLabel>(StringComparer.Ordinal);
+            foreach (OrderFlowMarketPathLabel label in result.Labels)
+            {
+                if (!labels.TryGetValue(label.CandidateId, out OrderFlowMarketPathLabel previous) || label.HorizonSeconds < previous.HorizonSeconds)
+                {
+                    labels[label.CandidateId] = label;
+                }
+            }
+            return labels;
         }
 
         private static string L(string english, string russian)
@@ -195,17 +219,14 @@ namespace OsEngine.OsData.OrderFlow
                 ? L("No future label", "Нет оценки будущего")
                 : L("Shortest horizon ", "Короткий горизонт ") + label.HorizonSeconds.ToString(CultureInfo.InvariantCulture) +
                   L(" sec · ", " сек · ") + label.Outcome + " · MFE " +
-                  label.MaximumFavorableExcursion.ToString("0.######", CultureInfo.InvariantCulture) +
-                  " · MAE " + label.MaximumAdverseExcursion.ToString("0.######", CultureInfo.InvariantCulture);
+                  label.MaximumFavorableExcursion.ToString("0.############################", CultureInfo.InvariantCulture) +
+                  " · MAE " + label.MaximumAdverseExcursion.ToString("0.############################", CultureInfo.InvariantCulture);
 
-            return candidate.Time.ToString("dd.MM.yyyy HH:mm:ss.fff", CultureInfo.InvariantCulture) + " · " + candidate.CandidateId + " · " + candidate.Direction + " · " + candidate.ReasonCode +
-                L(" · price ", " · цена ") + candidate.ReferencePrice.ToString("0.######", CultureInfo.InvariantCulture) +
-                L(" · delta ", " · дельта окна ") + feature.Delta.ToString("0.######", CultureInfo.InvariantCulture) +
-                L(" · response ", " · отклик окна ") + feature.PriceResponse.ToString("0.######", CultureInfo.InvariantCulture) +
-                L(" · spread ", " · спред ") + feature.Spread.ToString("0.######", CultureInfo.InvariantCulture) +
-                L(" · imbalance ", " · дисбаланс ") + feature.BookImbalance.ToString("0.######", CultureInfo.InvariantCulture) +
-                L(" · book age ", " · возраст стакана ") + feature.BookAgeMilliseconds.ToString(CultureInfo.InvariantCulture) +
-                " ms · " + feature.DataQualityCode + " · " + labelText +
+            return candidate.Time.ToString("dd.MM.yyyy HH:mm:ss.ffffff", CultureInfo.InvariantCulture) + " · " + candidate.CandidateId + " · " + candidate.Direction + " · " + candidate.ReasonCode +
+                L(" · price ", " · цена ") + candidate.ReferencePrice.ToString("0.############################", CultureInfo.InvariantCulture) +
+                L(" · delta ", " · дельта окна ") + feature.Delta.ToString("0.############################", CultureInfo.InvariantCulture) +
+                L(" · response ", " · отклик окна ") + feature.PriceResponse.ToString("0.############################", CultureInfo.InvariantCulture) +
+                " · " + feature.DataQualityCode + " · " + labelText +
                 L(". MFE/MAE are price distances, not PnL.", ". MFE/MAE — лучшее/худшее отклонение в единицах цены; это не прибыль.");
         }
     }

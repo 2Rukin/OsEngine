@@ -24,26 +24,40 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-
-            <Label Name="LabelDeals" Grid.Row="0" Grid.Column="0" Content="Deals QSH" VerticalAlignment="Center"/>
-            <TextBox Name="TextBoxDealsPath" Grid.Row="0" Grid.Column="1" Margin="4" MinHeight="24"/>
-            <Button Name="ButtonBrowseDeals" Grid.Row="0" Grid.Column="2" Margin="4" Content="Browse"/>
-
-            <Label Name="LabelQuotes" Grid.Row="1" Grid.Column="0" Content="Quotes QSH" VerticalAlignment="Center"/>
-            <TextBox Name="TextBoxQuotesPath" Grid.Row="1" Grid.Column="1" Margin="4" MinHeight="24"/>
-            <Button Name="ButtonBrowseQuotes" Grid.Row="1" Grid.Column="2" Margin="4" Content="Browse"/>
-
-            <Label Name="LabelOutput" Grid.Row="2" Grid.Column="0" Content="Output folder" VerticalAlignment="Center"/>
-            <TextBox Name="TextBoxOutputPath" Grid.Row="2" Grid.Column="1" Margin="4" MinHeight="24"/>
-            <Button Name="ButtonBrowseOutput" Grid.Row="2" Grid.Column="2" Margin="4" Content="Browse"/>
-            <Button Name="ButtonDownloadQsh" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
-                    HorizontalAlignment="Right" Margin="4" Padding="12,4" Content="Download QSH"/>
+            <Label Name="LabelTicks" Content="Tick file" VerticalAlignment="Center"/>
+            <TextBox Name="TextBoxTicksPath" Grid.Column="1" Margin="4" MinHeight="24"/>
+            <Button Name="ButtonBrowseTicks" Grid.Column="2" Margin="4" Content="Browse"/>
+            <Label Name="LabelOutput" Grid.Row="1" Content="Output folder" VerticalAlignment="Center"/>
+            <TextBox Name="TextBoxOutputPath" Grid.Row="1" Grid.Column="1" Margin="4" MinHeight="24"/>
+            <Button Name="ButtonBrowseOutput" Grid.Row="1" Grid.Column="2" Margin="4" Content="Browse"/>
+            <Label Name="LabelPeriod" Grid.Row="2" Content="Period" VerticalAlignment="Center"/>
+            <WrapPanel Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Margin="4">
+                <DatePicker Name="DateFrom" Width="145"/>
+                <TextBlock Text=" — " VerticalAlignment="Center" Foreground="{DynamicResource ControlForegroundWhite}"/>
+                <DatePicker Name="DateTo" Width="145"/>
+                <Button Name="ButtonAllDates" Margin="8,0,0,0" MinWidth="90" Content="Full file"/>
+                <TextBlock Name="TextBlockPeriodHelp" Foreground="{DynamicResource ControlForegroundWhite}" Margin="10,0" VerticalAlignment="Center" TextWrapping="Wrap"/>
+            </WrapPanel>
         </Grid>
 
         <Border Grid.Row="1" Margin="0,8,0,8" BorderBrush="Gray" BorderThickness="1" Padding="6">
             <Grid Name="GridSettings">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <WrapPanel Grid.Row="0">
+                    <CheckBox Name="CheckBoxCalculateDelta" Content="Calculate delta" IsChecked="True" Margin="8"/>
+                    <CheckBox Name="CheckBoxCalculateCloud" Content="Calculate Cloud" Margin="8"/>
+                    <CheckBox Name="CheckBoxCalculateCloud2" Content="Calculate Cloud 2" Margin="8"/>
+                <Label Name="LabelPriceStep"  Content="Price step"/>
+                <TextBox Name="TextBoxPriceStep" Width="100" Margin="3"/>
+                </WrapPanel>
+                <TabControl Name="TabControlSettings" Grid.Row="1">
+                    <TabItem Name="TabItemDeltaSettings" Header="Delta">
+            <Grid Name="GridDeltaSettings">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="75"/>
@@ -68,28 +82,167 @@
                 <TextBox Name="TextBoxMinimumDelta" Grid.Row="0" Grid.Column="3" Margin="3" Text="100"/>
                 <Label Name="LabelPriceTicks" Grid.Row="0" Grid.Column="4" Content="Price ticks"/>
                 <TextBox Name="TextBoxMinimumPriceTicks" Grid.Row="0" Grid.Column="5" Margin="3" Text="0"/>
-                <Label Name="LabelBookLevels" Grid.Row="0" Grid.Column="6" Content="Book levels"/>
-                <TextBox Name="TextBoxTopLevels" Grid.Row="0" Grid.Column="7" Margin="3" Text="5"/>
 
-                <Label Name="LabelBookAge" Grid.Row="1" Grid.Column="0" Content="Book age ms"/>
-                <TextBox Name="TextBoxBookAge" Grid.Row="1" Grid.Column="1" Margin="3" Text="1000"/>
-                <Label Name="LabelCooldown" Grid.Row="1" Grid.Column="2" Content="Cooldown ms"/>
-                <TextBox Name="TextBoxCooldown" Grid.Row="1" Grid.Column="3" Margin="3" Text="5000"/>
-                <Label Name="LabelBackground" Grid.Row="1" Grid.Column="4" Content="Background sec"/>
-                <TextBox Name="TextBoxBackground" Grid.Row="1" Grid.Column="5" Margin="3" Text="30"/>
-                <Label Name="LabelHorizons" Grid.Row="1" Grid.Column="6" Content="Horizons sec"/>
-                <TextBox Name="TextBoxHorizons" Grid.Row="1" Grid.Column="7" Margin="3" Text="60;300;900"/>
+                <Label Name="LabelCooldown" Grid.Row="1" Grid.Column="0" Content="Cooldown ms"/>
+                <TextBox Name="TextBoxCooldown" Grid.Row="1" Grid.Column="1" Margin="3" Text="5000"/>
+                <Label Name="LabelBackground" Grid.Row="1" Grid.Column="2" Content="Background sec"/>
+                <TextBox Name="TextBoxBackground" Grid.Row="1" Grid.Column="3" Margin="3" Text="30"/>
+                <Label Name="LabelHorizons" Grid.Row="1" Grid.Column="4" Content="Horizons sec"/>
+                <TextBox Name="TextBoxHorizons" Grid.Row="1" Grid.Column="5" Margin="3" Text="60;300;900"/>
 
                 <Label Name="LabelTarget" Grid.Row="2" Grid.Column="0" Content="Target ticks"/>
                 <TextBox Name="TextBoxTargetTicks" Grid.Row="2" Grid.Column="1" Margin="3" Text="5"/>
                 <Label Name="LabelInvalidation" Grid.Row="2" Grid.Column="2" Content="Invalid ticks"/>
                 <TextBox Name="TextBoxInvalidationTicks" Grid.Row="2" Grid.Column="3" Margin="3" Text="5"/>
-                <Label Name="LabelPriceStep" Grid.Row="2" Grid.Column="4" Content="Price step override"/>
-                <TextBox Name="TextBoxPriceStep" Grid.Row="2" Grid.Column="5" Margin="3"/>
-                <Label Name="LabelVolumeStep" Grid.Row="2" Grid.Column="6" Content="Volume step override"/>
-                <TextBox Name="TextBoxVolumeStep" Grid.Row="2" Grid.Column="7" Margin="3"/>
 
-                <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="9" Orientation="Horizontal"
+
+
+            </Grid>
+                    </TabItem>
+                    <TabItem Name="TabItemCloudSettings" Header="Cloud">
+                        <StackPanel>
+                        <Grid Name="GridCloudSettings" Margin="4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="180"/>
+                                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="100"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                            <Label Name="LabelCloudMinTick" Grid.Column="0" Content="Tick Limit"/>
+                            <TextBox Name="TextBoxCloudMinTick" Grid.Column="1" Text="1" Margin="3"/>
+                            <Label Name="LabelCloudSum" Grid.Column="2" Content="Summ Limit"/>
+                            <TextBox Name="TextBoxCloudSum" Grid.Column="3" Text="100" Margin="3"/>
+                            <Label Name="LabelCloudGap" Grid.Column="4" Content="Gap ms"/>
+                            <TextBox Name="TextBoxCloudGap" Grid.Column="5" Text="1000" Margin="3"/>
+                            <Label Name="LabelCloudRange" Grid.Row="1" Content="Range ticks"/>
+                            <TextBox Name="TextBoxCloudRange" Grid.Row="1" Grid.Column="1" Text="5" Margin="3"/>
+                            <Label Name="LabelCloudContextSeconds" Grid.Row="1" Grid.Column="2" Content="Context, sec"/>
+                            <TextBox Name="TextBoxCloudContextSeconds" Grid.Row="1" Grid.Column="3" Text="30" Margin="3"/>
+                            <TextBlock Name="TextBlockCloudHelp" Grid.Row="2" Grid.ColumnSpan="8" Margin="4" TextWrapping="Wrap" Foreground="{DynamicResource ControlForegroundWhite}"/>
+
+                        </Grid>
+                            <Expander Name="ExpanderCloudFilter" Foreground="{DynamicResource ControlForegroundWhite}" Margin="4">
+                                <Expander.Header><TextBlock Name="TextBlockCloudFilterHeader" Text="Imbalance / Перевес" Foreground="{DynamicResource ControlForegroundWhite}"/></Expander.Header>
+                                <Grid>
+                                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                    <WrapPanel>
+                                        <Label Name="LabelCloudImbalanceSource" Content="Filter source"/>
+                                        <ComboBox Name="ComboBoxCloudImbalanceSource" Width="170" Margin="3" DisplayMemberPath="Value" SelectedValuePath="Key"/>
+                                    </WrapPanel>
+                                    <WrapPanel Name="PanelCloudImbalanceThresholds" Grid.Row="1">
+                                        <Label Name="LabelCloudImbalanceDirection" Content="Direction"/>
+                                        <ComboBox Name="ComboBoxCloudImbalanceDirection" Width="140" Margin="3" DisplayMemberPath="Value" SelectedValuePath="Key"/>
+                                        <Label Name="LabelCloudImbalanceRatio" Content="Ratio, %"/>
+                                        <TextBox Name="TextBoxCloudImbalanceRatio" Text="300" Width="65" Margin="3"/>
+                                        <Label Name="LabelCloudImbalanceVolume" Content="Min volume"/>
+                                        <TextBox Name="TextBoxCloudImbalanceVolume" Text="0" Width="65" Margin="3"/>
+                                        <Label Name="LabelCloudImbalanceDifference" Content="Min difference"/>
+                                        <TextBox Name="TextBoxCloudImbalanceDifference" Text="0" Width="65" Margin="3"/>
+                                        <Label Name="LabelCloudImbalanceDelta" Content="Min delta, %"/>
+                                        <TextBox Name="TextBoxCloudImbalanceDelta" Text="0" Width="65" Margin="3"/>
+                                    </WrapPanel>
+                                    <WrapPanel Grid.Row="2">
+                                        <Label Name="LabelCloudMinCount" Content="Min ticks"/>
+                                        <TextBox Name="TextBoxCloudMinCount" Text="0" Width="65" Margin="3"/>
+                                        <Label Name="LabelCloudMaxCount" Content="Max ticks"/>
+                                        <TextBox Name="TextBoxCloudMaxCount" Text="0" Width="65" Margin="3"/>
+                                        <Button Name="ButtonCloudFilterApply" Content="Apply filters" Margin="8,3" Padding="8,2"/>
+                                    </WrapPanel>
+                                    <TextBlock Name="TextBlockCloudFilterStatus" Grid.Row="4" TextWrapping="Wrap" Margin="4" Foreground="{DynamicResource ControlForegroundWhite}"/>
+                                    <TextBlock Name="TextBlockCloudImbalanceHelp" Grid.Row="3" TextWrapping="Wrap" Margin="4" Foreground="{DynamicResource ControlForegroundWhite}"/>
+                                </Grid>
+                            </Expander>
+                        </StackPanel>
+                    </TabItem>
+                    <TabItem Name="TabItemCloud2Settings" Header="Cloud2">
+                        <StackPanel>
+                        <Grid Name="GridCloud2Settings" Margin="4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="180"/>
+                                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="100"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                            <Label Name="LabelCloud2MinTick" Grid.Column="0" Content="Tick Limit"/>
+                            <TextBox Name="TextBoxCloud2MinTick" Grid.Column="1" Text="1000" Margin="3"/>
+                            <Label Name="LabelCloud2Sum" Grid.Column="2" Content="Summ Limit"/>
+                            <TextBox Name="TextBoxCloud2Sum" Grid.Column="3" Text="100" Margin="3"/>
+                            <Label Name="LabelCloud2Gap" Grid.Column="4" Content="Gap ms"/>
+                            <TextBox Name="TextBoxCloud2Gap" Grid.Column="5" Text="1000" Margin="3"/>
+                            <Label Name="LabelCloud2Range" Grid.Row="1" Content="Range ticks"/>
+                            <TextBox Name="TextBoxCloud2Range" Grid.Row="1" Grid.Column="1" Text="5" Margin="3"/>
+                            <CheckBox Name="CheckBoxCloud2SingleTicks" Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="6"
+                                      Content="Single ticks" IsChecked="True" Margin="8"/>
+                            <Label Name="LabelCloud2ContextSeconds" Grid.Row="2" Grid.Column="0" Content="Context, sec"/>
+                            <TextBox Name="TextBoxCloud2ContextSeconds" Grid.Row="2" Grid.Column="1" Text="30" Margin="3"/>
+                            <TextBlock Name="TextBlockCloud2Help" Grid.Row="3" Grid.ColumnSpan="8" Margin="4" TextWrapping="Wrap" Foreground="{DynamicResource ControlForegroundWhite}"/>
+
+                        </Grid>
+                            <Expander Name="ExpanderCloud2Filter" Foreground="{DynamicResource ControlForegroundWhite}" Margin="4">
+                                <Expander.Header><TextBlock Name="TextBlockCloud2FilterHeader" Text="Imbalance / Перевес" Foreground="{DynamicResource ControlForegroundWhite}"/></Expander.Header>
+                                <Grid>
+                                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                    <WrapPanel>
+                                        <Label Name="LabelCloud2ImbalanceSource" Content="Filter source"/>
+                                        <ComboBox Name="ComboBoxCloud2ImbalanceSource" Width="170" Margin="3" DisplayMemberPath="Value" SelectedValuePath="Key"/>
+                                    </WrapPanel>
+                                    <WrapPanel Name="PanelCloud2ImbalanceThresholds" Grid.Row="1">
+                                        <Label Name="LabelCloud2ImbalanceDirection" Content="Direction"/>
+                                        <ComboBox Name="ComboBoxCloud2ImbalanceDirection" Width="140" Margin="3" DisplayMemberPath="Value" SelectedValuePath="Key"/>
+                                        <Label Name="LabelCloud2ImbalanceRatio" Content="Ratio, %"/>
+                                        <TextBox Name="TextBoxCloud2ImbalanceRatio" Text="300" Width="65" Margin="3"/>
+                                        <Label Name="LabelCloud2ImbalanceVolume" Content="Min volume"/>
+                                        <TextBox Name="TextBoxCloud2ImbalanceVolume" Text="0" Width="65" Margin="3"/>
+                                        <Label Name="LabelCloud2ImbalanceDifference" Content="Min difference"/>
+                                        <TextBox Name="TextBoxCloud2ImbalanceDifference" Text="0" Width="65" Margin="3"/>
+                                        <Label Name="LabelCloud2ImbalanceDelta" Content="Min delta, %"/>
+                                        <TextBox Name="TextBoxCloud2ImbalanceDelta" Text="0" Width="65" Margin="3"/>
+                                    </WrapPanel>
+                                    <WrapPanel Grid.Row="2">
+                                        <Label Name="LabelCloud2MinCount" Content="Min ticks"/>
+                                        <TextBox Name="TextBoxCloud2MinCount" Text="0" Width="65" Margin="3"/>
+                                        <Label Name="LabelCloud2MaxCount" Content="Max ticks"/>
+                                        <TextBox Name="TextBoxCloud2MaxCount" Text="0" Width="65" Margin="3"/>
+                                        <Button Name="ButtonCloud2FilterApply" Content="Apply filters" Margin="8,3" Padding="8,2"/>
+                                    </WrapPanel>
+                                    <TextBlock Name="TextBlockCloud2FilterStatus" Grid.Row="4" TextWrapping="Wrap" Margin="4" Foreground="{DynamicResource ControlForegroundWhite}"/>
+                                    <TextBlock Name="TextBlockCloud2ImbalanceHelp" Grid.Row="3" TextWrapping="Wrap" Margin="4" Foreground="{DynamicResource ControlForegroundWhite}"/>
+                                </Grid>
+                            </Expander>
+                        </StackPanel>
+                    </TabItem>
+                    <TabItem Name="TabItemChartSettings" Header="Chart">
+                        <WrapPanel Margin="4">
+                            <Label Name="LabelTimeFrame" Content="Display timeframe" VerticalAlignment="Center"/>
+                            <ComboBox Name="ComboBoxTimeFrame" Width="110" Margin="4"
+                                      DisplayMemberPath="Value" SelectedValuePath="Key" MaxDropDownHeight="500"/>
+                            <CheckBox Name="CheckBoxShowDelta" Content="Show delta" IsChecked="True" Margin="8"/>
+                            <CheckBox Name="CheckBoxShowCloud" Content="Show Cloud 1" IsChecked="True" Margin="8"/>
+                            <CheckBox Name="CheckBoxShowCloud2" Content="Show Cloud 2" IsChecked="True" Margin="8"/>
+                            <Label Name="LabelCloudScale" Content="Cloud size" VerticalAlignment="Center"/>
+                            <Slider Name="SliderCloudScale" Minimum="0.1" Maximum="3" Value="1"
+                                    TickFrequency="0.1" IsSnapToTickEnabled="True" SmallChange="0.1" LargeChange="0.5"
+                                    Width="150" Margin="4" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding ElementName=SliderCloudScale, Path=Value, StringFormat={}{0:F1}×}"
+                                       Foreground="{DynamicResource ControlForegroundWhite}" VerticalAlignment="Center" Width="45"/>
+                            <Label Name="LabelCloudContrast" Content="Cloud contrast" VerticalAlignment="Center"/>
+                            <Slider Name="SliderCloudContrast" Minimum="0.5" Maximum="10" Value="2"
+                                    TickFrequency="0.1" IsSnapToTickEnabled="True" SmallChange="0.1" LargeChange="0.5"
+                                    Width="130" Margin="4" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding ElementName=SliderCloudContrast, Path=Value, StringFormat={}{0:F1}}"
+                                       Foreground="{DynamicResource ControlForegroundWhite}" VerticalAlignment="Center" Width="32"/>
+                            <Label Name="LabelCloud2Scale" Content="Cloud 2 size" VerticalAlignment="Center"/>
+                            <Slider Name="SliderCloud2Scale" Minimum="0.1" Maximum="3" Value="1" Width="130" Margin="4"
+                                    TickFrequency="0.1" IsSnapToTickEnabled="True" SmallChange="0.1" LargeChange="0.5"/>
+                            <Label Name="LabelCloud2Contrast" Content="Cloud 2 contrast" VerticalAlignment="Center"/>
+                            <Slider Name="SliderCloud2Contrast" Minimum="0.5" Maximum="10" Value="2" Width="130" Margin="4"
+                                    TickFrequency="0.1" IsSnapToTickEnabled="True" SmallChange="0.1" LargeChange="0.5"/>
+                        </WrapPanel>
+                    </TabItem>
+                </TabControl>
+                <StackPanel Grid.Row="2" Orientation="Horizontal"
                             HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Name="ButtonRun" Margin="8,2,2,2" MinWidth="105" Height="34" Content="Run research"/>
                     <Button Name="ButtonCancel" Margin="2" MinWidth="80" Height="34" Content="Cancel" IsEnabled="False"/>
@@ -114,9 +267,6 @@
                         <DataGridTextColumn Header="Delta" Binding="{Binding Delta}" Width="90"/>
                         <DataGridTextColumn Header="Price change" Binding="{Binding PriceChange}" Width="90"/>
                         <DataGridTextColumn Header="Response" Binding="{Binding PriceResponse}" Width="90"/>
-                        <DataGridTextColumn Header="Spread" Binding="{Binding Spread}" Width="75"/>
-                        <DataGridTextColumn Header="Imbalance" Binding="{Binding BookImbalance}" Width="90"/>
-                        <DataGridTextColumn Header="Book age" Binding="{Binding BookAgeMilliseconds}" Width="85"/>
                         <DataGridTextColumn Header="Quality" Binding="{Binding DataQualityCode}" Width="150"/>
                         <DataGridTextColumn Header="Horizon" Binding="{Binding HorizonSeconds}" Width="70"/>
                         <DataGridTextColumn Header="Outcome" Binding="{Binding Outcome}" Width="120"/>
@@ -126,8 +276,108 @@
                     </DataGrid.Columns>
                 </DataGrid>
             </TabItem>
+            <TabItem Name="TabItemClouds" Header="Clouds">
+                <DataGrid Name="DataGridClouds" IsReadOnly="True" AutoGenerateColumns="False" SelectionMode="Single" EnableRowVirtualization="True">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Time" Binding="{Binding Time, StringFormat=yyyy-MM-dd HH:mm:ss.ffffff}" Width="190"/>
+                        <DataGridTextColumn Header="Qualified at" Binding="{Binding Qualified.Time, StringFormat=yyyy-MM-dd HH:mm:ss.ffffff}" Width="190"/>
+                        <DataGridTextColumn Header="Qualified volume" Binding="{Binding Qualified.Volume}" Width="110"/>
+                        <DataGridTextColumn Header="Kind" Binding="{Binding Kind}" Width="100"/>
+                        <DataGridTextColumn Header="Price" Binding="{Binding Price}" Width="100"/>
+                        <DataGridTextColumn Header="VWAP" Binding="{Binding Vwap}" Width="120"/>
+                        <DataGridTextColumn Header="Volume" Binding="{Binding Volume}" Width="100"/>
+                        <DataGridTextColumn Header="Buy" Binding="{Binding BuyVolume}" Width="90"/>
+                        <DataGridTextColumn Header="Sell" Binding="{Binding SellVolume}" Width="90"/>
+                        <DataGridTextColumn Header="Ticks" Binding="{Binding TradeCount}" Width="70"/>
+                        <DataGridTextColumn Header="Count Δ %" Binding="{Binding SidePercent, StringFormat=F2}" Width="85"/>
+                        <DataGridTextColumn Header="Completion" Binding="{Binding CompletionReason}" Width="110"/>
+                        <DataGridTextColumn Header="Completed at" Binding="{Binding CompletedAt, StringFormat=yyyy-MM-dd HH:mm:ss.ffffff}" Width="190"/>
+                        <DataGridTextColumn Header="ID" Binding="{Binding CloudId}" Width="*"/>
+                        <DataGridCheckBoxColumn Header="Filter PASS" Binding="{Binding ImbalancePassed}" Width="90"/>
+                        <DataGridTextColumn Header="Δ volume %" Binding="{Binding DeltaPercent, StringFormat=F2}" Width="95"/>
+                        <DataGridTextColumn Header="Inside Buy %" Binding="{Binding InsideImbalance.BuyRatioPercent, StringFormat=F2, TargetNullValue=—}" Width="105"/>
+                        <DataGridTextColumn Header="Inside Sell %" Binding="{Binding InsideImbalance.SellRatioPercent, StringFormat=F2, TargetNullValue=—}" Width="105"/>
+                        <DataGridTextColumn Header="Context Δ %" Binding="{Binding ContextImbalance.DeltaPercent, StringFormat=F2}" Width="100"/>
+                        <DataGridTextColumn Header="Context Buy %" Binding="{Binding ContextImbalance.BuyRatioPercent, StringFormat=F2, TargetNullValue=—}" Width="115"/>
+                        <DataGridTextColumn Header="Context Sell %" Binding="{Binding ContextImbalance.SellRatioPercent, StringFormat=F2, TargetNullValue=—}" Width="115"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </TabItem>
+            <TabItem Name="TabItemClouds2" Header="Cloud 2">
+                <DataGrid Name="DataGridClouds2" IsReadOnly="True" AutoGenerateColumns="False" SelectionMode="Single" EnableRowVirtualization="True">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Time" Binding="{Binding Time, StringFormat=yyyy-MM-dd HH:mm:ss.ffffff}" Width="190"/>
+                        <DataGridTextColumn Header="Qualified at" Binding="{Binding Qualified.Time, StringFormat=yyyy-MM-dd HH:mm:ss.ffffff}" Width="190"/>
+                        <DataGridTextColumn Header="Qualified volume" Binding="{Binding Qualified.Volume}" Width="110"/>
+                        <DataGridTextColumn Header="Kind" Binding="{Binding Kind}" Width="100"/>
+                        <DataGridTextColumn Header="Price" Binding="{Binding Price}" Width="100"/>
+                        <DataGridTextColumn Header="VWAP" Binding="{Binding Vwap}" Width="120"/>
+                        <DataGridTextColumn Header="Volume" Binding="{Binding Volume}" Width="100"/>
+                        <DataGridTextColumn Header="Buy" Binding="{Binding BuyVolume}" Width="90"/>
+                        <DataGridTextColumn Header="Sell" Binding="{Binding SellVolume}" Width="90"/>
+                        <DataGridTextColumn Header="Ticks" Binding="{Binding TradeCount}" Width="70"/>
+                        <DataGridTextColumn Header="Count Δ %" Binding="{Binding SidePercent, StringFormat=F2}" Width="85"/>
+                        <DataGridTextColumn Header="Completion" Binding="{Binding CompletionReason}" Width="110"/>
+                        <DataGridTextColumn Header="Completed at" Binding="{Binding CompletedAt, StringFormat=yyyy-MM-dd HH:mm:ss.ffffff}" Width="190"/>
+                        <DataGridTextColumn Header="ID" Binding="{Binding CloudId}" Width="*"/>
+                        <DataGridCheckBoxColumn Header="Filter PASS" Binding="{Binding ImbalancePassed}" Width="90"/>
+                        <DataGridTextColumn Header="Δ volume %" Binding="{Binding DeltaPercent, StringFormat=F2}" Width="95"/>
+                        <DataGridTextColumn Header="Inside Buy %" Binding="{Binding InsideImbalance.BuyRatioPercent, StringFormat=F2, TargetNullValue=—}" Width="105"/>
+                        <DataGridTextColumn Header="Inside Sell %" Binding="{Binding InsideImbalance.SellRatioPercent, StringFormat=F2, TargetNullValue=—}" Width="105"/>
+                        <DataGridTextColumn Header="Context Δ %" Binding="{Binding ContextImbalance.DeltaPercent, StringFormat=F2}" Width="100"/>
+                        <DataGridTextColumn Header="Context Buy %" Binding="{Binding ContextImbalance.BuyRatioPercent, StringFormat=F2, TargetNullValue=—}" Width="115"/>
+                        <DataGridTextColumn Header="Context Sell %" Binding="{Binding ContextImbalance.SellRatioPercent, StringFormat=F2, TargetNullValue=—}" Width="115"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </TabItem>
+            <TabItem Name="TabItemStatistics" Header="Statistics / Статистика">
+                <Grid Margin="4">
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                    <WrapPanel Name="GridStatisticsSettings">
+                        <Label Name="LabelStatsAtrPeriod" Content="ATR, min bars / свечей"/><TextBox Name="TextBoxStatsAtrPeriod" Text="20" Width="55" Margin="3"/>
+                        <Label Name="LabelStatsTargetAtr" Content="Target / Цель, ATR"/><TextBox Name="TextBoxStatsTargetAtr" Text="1.5" Width="55" Margin="3"/>
+                        <Label Name="LabelStatsStopAtr" Content="Adverse / Против, ATR"/><TextBox Name="TextBoxStatsStopAtr" Text="1" Width="55" Margin="3"/>
+                        <Label Name="LabelStatsHorizons" Content="Horizons / Горизонты, min"/><TextBox Name="TextBoxStatsHorizons" Text="3;9;18" Width="95" Margin="3"/>
+                        <Label Name="LabelStatsTrainPercent" Content="Fit / Подбор, %"/><TextBox Name="TextBoxStatsTrainPercent" Text="70" Width="55" Margin="3"/>
+                        <Label Name="LabelStatsMinimumSamples" Content="Min sample / Мин. случаев"/><TextBox Name="TextBoxStatsMinimumSamples" Text="30" Width="55" Margin="3"/>
+                    </WrapPanel>
+                    <WrapPanel Grid.Row="1">
+                        <Button Name="ButtonStatsCalculate" Content="Calculate statistics" Padding="8,3" Margin="4" IsEnabled="False"/>
+                        <Button Name="ButtonStatsCancel" Content="Cancel" Padding="8,3" Margin="4" IsEnabled="False"/>
+                        <Button Name="ButtonStatsShow" Content="Show recommended parameters on chart" Padding="8,3" Margin="4" IsEnabled="False"/>
+                    </WrapPanel>
+                    <TextBox Name="TextBoxStatisticsSummary" Grid.Row="2" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True"
+                             MinHeight="72" MaxHeight="145" VerticalScrollBarVisibility="Auto" Margin="4"/>
+                    <DataGrid Name="DataGridRecommendations" Grid.Row="3" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single" SelectionUnit="FullRow"
+                              CanUserAddRows="False" EnableRowVirtualization="True" EnableColumnVirtualization="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Cloud" Binding="{Binding Layer}" Width="60"/>
+                            <DataGridTextColumn Header="Volatility / Волатильность" Binding="{Binding Regime}" Width="140"/>
+                            <DataGridTextColumn Header="Reaction / Реакция" Binding="{Binding Reaction}" Width="180"/>
+                            <DataGridTextColumn Header="Minutes / Минуты" Binding="{Binding HorizonMinutes}" Width="90"/>
+                            <DataGridTextColumn Header="Parameters / Параметры" Binding="{Binding Parameters}" Width="300"/>
+                            <DataGridTextColumn Header="Fit N / Подбор N" Binding="{Binding Fit.Count}" Width="105"/>
+                            <DataGridTextColumn Header="Fit target % / Цель %" Binding="{Binding Fit.WinPercent, StringFormat=F2}" Width="130"/>
+                            <DataGridTextColumn Header="Fit lower % / Нижн. %" Binding="{Binding Fit.LowerPercent, StringFormat=F2}" Width="145"/>
+                            <DataGridTextColumn Header="Test N / Проверка N" Binding="{Binding Test.Count}" Width="130"/>
+                            <DataGridTextColumn Header="Test target % / Цель %" Binding="{Binding Test.WinPercent, StringFormat=F2}" Width="140"/>
+                            <DataGridTextColumn Header="Test base % / База %" Binding="{Binding TestBaseline.WinPercent, StringFormat=F2}" Width="140"/>
+                            <DataGridTextColumn Header="Test MFE, ATR" Binding="{Binding Test.MeanMfeAtr, StringFormat=F2}" Width="115"/>
+                            <DataGridTextColumn Header="Test MAE, ATR" Binding="{Binding Test.MeanMaeAtr, StringFormat=F2}" Width="115"/>
+                            <DataGridTextColumn Header="Tried / Проверено" Binding="{Binding TriedRules}" Width="115"/>
+                            <DataGridTextColumn Header="Status / Статус" Binding="{Binding Status}" Width="260"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
             <TabItem Name="TabItemChart" Header="Chart">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <Grid>
+                    <StackPanel Name="StackPanelDetachedChart" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Name="TextBlockDetachedChart" Foreground="{DynamicResource ControlForegroundWhite}" Margin="8" Text="Chart is open in another window"/>
+                        <Button Name="ButtonActivateChartWindow" Content="Show chart window" Margin="8"/>
+                    </StackPanel>
+                    <ContentControl Name="ContentControlChartHome" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+                <ScrollViewer Name="ScrollViewerChartSurface" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <Grid MinHeight="540">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -138,9 +388,40 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
                         <WrapPanel Grid.Row="0" Margin="4">
-                            <Label Name="LabelTimeFrame" Content="Display timeframe" VerticalAlignment="Center"/>
-                            <ComboBox Name="ComboBoxTimeFrame" Width="110" Margin="4"
-                                      DisplayMemberPath="Value" SelectedValuePath="Key"/>
+                            <CheckBox Name="CheckBoxChartShowCloud" Content="Cloud 1" Margin="6" VerticalAlignment="Center"/>
+                            <CheckBox Name="CheckBoxChartShowCloud2" Content="Cloud 2" Margin="6" VerticalAlignment="Center"/>
+                            <CheckBox Name="CheckBoxCloudRejected" Content="Cloud 1 rejected" Margin="6" VerticalAlignment="Center"/>
+                            <CheckBox Name="CheckBoxCloud2Rejected" Content="Cloud 2 rejected" Margin="6" VerticalAlignment="Center"/>
+                            <Button Name="ButtonChartPopOut" Content="Separate window" Margin="3"/>
+                            <Label Name="LabelPriceDisplay" Content="View" VerticalAlignment="Center"/>
+                            <ComboBox Name="ComboBoxPriceDisplay" Width="140" Margin="3" DisplayMemberPath="Value" SelectedValuePath="Key"/>
+                            <CheckBox Name="CheckBoxCloudPriceMode" Content="Chart by Cloud" Margin="6" VerticalAlignment="Center"/>
+                            <Label Name="LabelChartTimeFrame" Content="Timeframe" VerticalAlignment="Center"/>
+                            <ComboBox Name="ComboBoxChartTimeFrame" Width="110" Margin="4" MaxDropDownHeight="500"
+                                      DisplayMemberPath="Value" SelectedValuePath="Key"
+                                      ItemsSource="{Binding ElementName=ComboBoxTimeFrame, Path=ItemsSource}"
+                                      SelectedValue="{Binding ElementName=ComboBoxTimeFrame, Path=SelectedValue, Mode=TwoWay}"/>
+                            <Label Name="LabelChartCloudScale" Content="Cloud size" VerticalAlignment="Center"/>
+                            <Slider Name="SliderChartCloudScale" Minimum="0.1" Maximum="3"
+                                    Value="{Binding ElementName=SliderCloudScale, Path=Value, Mode=TwoWay}"
+                                    TickFrequency="0.1" IsSnapToTickEnabled="True" SmallChange="0.1" LargeChange="0.5"
+                                    Width="130" Margin="4" VerticalAlignment="Center"/>
+                            <TextBlock Name="TextBlockChartCloudScale" Text="{Binding ElementName=SliderCloudScale, Path=Value, StringFormat={}{0:F1}×}"
+                                       Foreground="{DynamicResource ControlForegroundWhite}" VerticalAlignment="Center" Width="45"/>
+
+                            <Label Name="LabelChartCloudContrast" Content="Cloud contrast" VerticalAlignment="Center"/>
+                            <Slider Name="SliderChartCloudContrast" Minimum="0.5" Maximum="10"
+                                    Value="{Binding ElementName=SliderCloudContrast, Path=Value, Mode=TwoWay}"
+                                    TickFrequency="0.1" IsSnapToTickEnabled="True" SmallChange="0.1" LargeChange="0.5"
+                                    Width="110" Margin="4" VerticalAlignment="Center"/>
+                            <TextBlock Name="TextBlockChartCloudContrast" Text="{Binding ElementName=SliderCloudContrast, Path=Value, StringFormat={}{0:F1}}"
+                                       Foreground="{DynamicResource ControlForegroundWhite}" VerticalAlignment="Center" Width="32"/>
+                            <CheckBox Name="CheckBoxCloudVolumes" Content="Cloud volumes" IsChecked="True" Margin="6" VerticalAlignment="Center"/>
+                            <Label Name="LabelRightPadding" Content="Right space %" VerticalAlignment="Center"/>
+                            <Slider Name="SliderRightPadding" Minimum="0" Maximum="90" Value="5" TickFrequency="1"
+                                    IsSnapToTickEnabled="True" SmallChange="1" LargeChange="5" Width="110" Margin="4" VerticalAlignment="Center"/>
+                            <TextBlock Name="TextBlockRightPadding" Text="{Binding ElementName=SliderRightPadding, Path=Value, StringFormat={}{0:F0}%}"
+                                       Foreground="{DynamicResource ControlForegroundWhite}" VerticalAlignment="Center" Width="38"/>
                             <Button Name="ButtonChartFirst" Content="| &lt;" Margin="3" MinWidth="65"/>
                             <Button Name="ButtonChartLast" Content="&gt; |" Margin="3" MinWidth="65"/>
                             <Button Name="ButtonChartSelected" Content="Candidate" Margin="3" MinWidth="105"/>
@@ -148,17 +429,58 @@
                             <Button Name="ButtonChartZoomOut" Content="−" Margin="3" Width="35"/>
                             <Button Name="ButtonChartAll" Content="All history" Margin="3" MinWidth="110"/>
                         </WrapPanel>
-                        <TextBlock Name="TextBlockChartBoundary" Grid.Row="1" Margin="8,0,8,4" TextWrapping="Wrap"/>
+                        <StackPanel Grid.Row="1">
+                            <WrapPanel Margin="4,0">
+                                <Label Name="LabelChartCloud2Scale" Content="Cloud 2 size" VerticalAlignment="Center"/>
+                                <Slider Name="SliderChartCloud2Scale" Minimum="0.1" Maximum="3" Value="1" Width="120" Margin="4"
+                                        TickFrequency="0.1" IsSnapToTickEnabled="True" SmallChange="0.1" LargeChange="0.5"/>
+                                <TextBlock Name="TextBlockChartCloud2Scale" Width="45" Foreground="{DynamicResource ControlForegroundWhite}" VerticalAlignment="Center"/>
+                                <Label Name="LabelChartCloud2Contrast" Content="Cloud 2 contrast" VerticalAlignment="Center"/>
+                                <Slider Name="SliderChartCloud2Contrast" Minimum="0.5" Maximum="10" Value="2" Width="120" Margin="4"
+                                        TickFrequency="0.1" IsSnapToTickEnabled="True" SmallChange="0.1" LargeChange="0.5"/>
+                                <TextBlock Name="TextBlockChartCloud2Contrast" Width="38" Foreground="{DynamicResource ControlForegroundWhite}" VerticalAlignment="Center"/>
+                                <CheckBox Name="CheckBoxCloud2Volumes" Content="Cloud 2 volumes" IsChecked="True" Margin="6" VerticalAlignment="Center"/>
+                            </WrapPanel>
+                            <WrapPanel Name="WrapPanelReplay" Margin="4,0">
+                                <Button Name="ButtonReplayPlay" Content="Replay" Margin="3" IsEnabled="False"/>
+                                <Button Name="ButtonReplayStep" Content="One tick" Margin="3" IsEnabled="False"/>
+                                <Button Name="ButtonReplayReturn" Content="Full chart" Margin="3" IsEnabled="False"/>
+                                <Label Name="LabelReplaySpeed" Content="Speed" VerticalAlignment="Center"/>
+                                <ComboBox Name="ComboBoxReplaySpeed" Width="85" Margin="3" DisplayMemberPath="Value" SelectedValuePath="Key"/>
+                                <CheckBox Name="CheckBoxReplaySkipGaps" Content="Skip gaps &gt; 60 s" IsChecked="True" Margin="6" VerticalAlignment="Center"/>
+                                <TextBlock Name="TextBlockReplayStatus" Foreground="{DynamicResource ControlForegroundWhite}" Margin="8,3" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                            </WrapPanel>
+                            <WrapPanel Margin="4,0">
+                                <Label Name="LabelDrawingTool" Content="Drawing" VerticalAlignment="Center"/>
+                                <ComboBox Name="ComboBoxDrawingTool" Width="150" Margin="3" DisplayMemberPath="Value" SelectedValuePath="Key"/>
+                                <Button Name="ButtonDrawingColor" Margin="3">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Name="BorderDrawingColor" Background="Gold" Width="18" Height="14" Margin="4,0"/>
+                                        <TextBlock Name="TextBlockDrawingColor" Text="Color"/>
+                                    </StackPanel>
+                                </Button>
+                                <Label Name="LabelDrawingThickness" Content="Width" VerticalAlignment="Center"/>
+                                <ComboBox Name="ComboBoxDrawingThickness" Width="50" Margin="3"/>
+                                <CheckBox Name="CheckBoxDrawingLeft" Content="Extend left" Margin="6" VerticalAlignment="Center"/>
+                                <CheckBox Name="CheckBoxDrawingRight" Content="Extend right" Margin="6" VerticalAlignment="Center"/>
+                                <Button Name="ButtonDrawingDelete" Content="Delete line" Margin="3"/>
+                                <Button Name="ButtonDrawingClear" Content="Clear lines" Margin="3"/>
+                            </WrapPanel>
+                            <TextBlock Name="TextBlockDrawingHelp" Foreground="{DynamicResource ControlForegroundWhite}" Margin="8,2" TextWrapping="Wrap"/>
+                            <TextBlock Name="TextBlockChartBoundary" Foreground="{DynamicResource ControlForegroundWhite}" Margin="8,0,8,4" TextWrapping="Wrap"/>
+                        </StackPanel>
                         <ContentControl Name="ContentControlChart" Grid.Row="2" Margin="4" MinHeight="320"
                                         HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
                         <StackPanel Grid.Row="3" Margin="8,0">
                             <ScrollBar Name="ScrollBarChart" Orientation="Horizontal" Height="20" Minimum="0"/>
-                            <TextBlock Name="TextBlockChartRange" Margin="0,3" TextWrapping="Wrap"/>
+                            <TextBlock Name="TextBlockChartRange" Foreground="{DynamicResource ControlForegroundWhite}" Margin="0,3" TextWrapping="Wrap"/>
                         </StackPanel>
-                        <TextBlock Name="TextBlockChartLegend" Grid.Row="4" Margin="8,3" TextWrapping="Wrap"/>
-                        <TextBlock Name="TextBlockCandidateDetails" Grid.Row="5" Margin="8,3" TextWrapping="Wrap"/>
+                        <TextBlock Name="TextBlockChartLegend" Foreground="{DynamicResource ControlForegroundWhite}" Grid.Row="4" Margin="8,3" TextWrapping="Wrap"/>
+                        <TextBlock Name="TextBlockCandidateDetails" Foreground="{DynamicResource ControlForegroundWhite}" Grid.Row="5" Margin="8,3" TextWrapping="Wrap"/>
                     </Grid>
                 </ScrollViewer>
+                    </ContentControl>
+                </Grid>
             </TabItem>
             <TabItem Name="TabItemJournal" Header="Event journal">
                 <DataGrid Name="DataGridJournal" IsReadOnly="True" AutoGenerateColumns="False"
@@ -179,8 +501,8 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Name="TextBlockStatus" Grid.Column="0" Text="Ready" VerticalAlignment="Center"/>
-            <TextBlock Name="TextBlockEvidence" Grid.Column="1"
+            <TextBlock Name="TextBlockStatus" Foreground="{DynamicResource ControlForegroundWhite}" Grid.Column="0" Text="Ready" VerticalAlignment="Center"/>
+            <TextBlock Name="TextBlockEvidence" Foreground="{DynamicResource ControlForegroundWhite}" Grid.Column="1"
                        Text="Research only. No trades or PnL." FontWeight="SemiBold"/>
         </Grid>
     </Grid>

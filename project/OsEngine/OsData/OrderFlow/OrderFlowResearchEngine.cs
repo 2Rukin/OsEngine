@@ -3,418 +3,183 @@
  * Ваши права на использование кода регулируются данной лицензией http://o-s-a.net/doc/license_simple_engine.pdf
 */
 
-using OsEngine.Entity;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 
 namespace OsEngine.OsData.OrderFlow
 {
-    /// <summary>
-    /// Runs a deterministic, closed-bucket paired-QSH research replay.
-    /// </summary>
+    /// <summary>Runs independent delta/price and Cloud calculations on one validated tick stream.</summary>
     /// <remarks>
-    /// The engine is single-consumer and offline. It publishes candidates and
-    /// future market-path labels but never creates orders, fills, positions or
-    /// PnL. A quote from the current timestamp bucket becomes available only to
-    /// later buckets. Contract: ORDER-FLOW-DATA-001 and ORDER-FLOW-RESEARCH-001.
+    /// One caller owns this synchronous offline replay. The entire pinned input is validated in source order;
+    /// only ticks inside the inclusive requested dates enter buckets, features, labels and charts.
+    /// No warm-up or future-label evidence is taken from excluded dates. Time is source clock time,
+    /// without a session calendar, timezone conversion or daily reset. No execution or PnL is created.
+    /// Contract: ORDER-FLOW-DATA-001 and ORDER-FLOW-RESEARCH-001.
     /// </remarks>
     internal sealed class OrderFlowResearchEngine
     {
-        /// <summary>
-        /// Validates and replays one local Deals/Quotes pair into causal
-        /// observations and separately computed future market-path labels.
-        /// </summary>
-        /// <param name="request">Run-scoped request that must no longer be mutated by its caller.</param>
-        /// <param name="cancellationToken">Cancellation observed before input preparation and between closed buckets.</param>
-        /// <returns>A deterministic research result; input access and malformed QSH failures retain per-role metadata and rejection reason codes.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="request"/> is <c>null</c>.</exception>
-        /// <exception cref="ArgumentException">Paths or numeric settings fail request validation.</exception>
-        /// <exception cref="OperationCanceledException">Cancellation is requested.</exception>
-        /// <remarks>No order, fill, position, execution simulation or PnL is created.</remarks>
+        /// <summary>Validates and replays one local tick file, returning rejected audit results for input failures.</summary>
+        /// <param name="request">Run-owned settings, including positive manual price step; caller must stop mutating them.</param>
+        /// <param name="cancellationToken">Observed during hashing, line reading and closed-bucket processing.</param>
+        /// <returns>Research result with single-input provenance and no trading outcome.</returns>
+        /// <exception cref="ArgumentException">Paths, dates or numeric settings are invalid.</exception>
+        /// <exception cref="OperationCanceledException">The run is cancelled without publishing a rejected result.</exception>
         public OrderFlowResearchResult Run(OrderFlowResearchRequest request, CancellationToken cancellationToken)
         {
-            if (request == null)
-            {
-                throw new ArgumentNullException(nameof(request));
-            }
+            return Run(request, cancellationToken, null);
+        }
 
+        /// <summary>Runs the same calculations with an optional synchronous prefix observer for visual playback.</summary>
+        /// <remarks>The worker owns the observer; callbacks may pace/cancel but never mutate the context. No artifacts are written.</remarks>
+        internal OrderFlowResearchResult Run(OrderFlowResearchRequest request, CancellationToken cancellationToken,
+            IOrderFlowReplayObserver replay)
+        {
+            if (request == null) { throw new ArgumentNullException(nameof(request)); }
             request.Validate();
             cancellationToken.ThrowIfCancellationRequested();
-
             OrderFlowResearchResult result = new OrderFlowResearchResult();
+            result.DeltaCalculated = request.CalculateDelta;
+            result.CloudCalculated = request.CalculateCloud;
+            result.Cloud2Calculated = request.CalculateCloud2;
             result.ResearchSpecHash = OrderFlowCanonicalHash.Calculate(request.GetCanonicalValue());
-            result.DealsHeader = CreateInputHeader(request.DealsFilePath, "Deals");
-            result.QuotesHeader = CreateInputHeader(request.QuotesFilePath, "Quotes");
-
+            result.Input = new OrderFlowTickInput
+            {
+                FileName = Path.GetFileName(request.TicksFilePath).ToUpperInvariant(),
+                Instrument = Path.GetFileNameWithoutExtension(request.TicksFilePath).ToUpperInvariant()
+            };
             using (OrderFlowCanonicalHash eventHash = new OrderFlowCanonicalHash())
             using (OrderFlowCanonicalHash featureHash = new OrderFlowCanonicalHash())
             using (OrderFlowCanonicalHash candidateHash = new OrderFlowCanonicalHash())
             {
                 try
                 {
-                    using (OrderFlowDealsQshReader dealsReader = (OrderFlowDealsQshReader)TryOpenReader(
-                        request.DealsFilePath, request, result, result.DealsHeader))
-                    using (OrderFlowQuotesQshReader quotesReader = (OrderFlowQuotesQshReader)TryOpenReader(
-                        request.QuotesFilePath, request, result, result.QuotesHeader))
-                    {
-                        result.InputHash = OrderFlowCanonicalHash.Calculate(
-                            "DEALS|" + result.DealsHeader.FileName + "|" +
-                            (result.DealsHeader.Sha256 ?? result.DealsHeader.FailureReasonCode) +
-                            "|" + result.DealsHeader.FailureReasonCode +
-                            "|QUOTES|" + result.QuotesHeader.FileName + "|" +
-                            (result.QuotesHeader.Sha256 ?? result.QuotesHeader.FailureReasonCode) +
-                            "|" + result.QuotesHeader.FailureReasonCode);
-
-                        if (dealsReader != null && quotesReader != null)
-                        {
-                            ValidatePair(result);
-                        }
-
-                        if (HasRejection(result.Quality) == false)
-                        {
-                            ProcessPair(dealsReader, quotesReader, request, result,
-                                eventHash, featureHash, candidateHash, cancellationToken);
-                        }
-                    }
+                    using OrderFlowTickReader reader = new OrderFlowTickReader(request.TicksFilePath, result.Input, cancellationToken);
+                    replay?.InputReady(result.Input);
+                    result.InputHash = InputIdentity(result.Input);
+                    AddQualityIssue(result, null, "EXECUTION_METADATA_NOT_COLLECTED",
+                        "Manual price step and recorded tick volumes define research units; execution costs and fills are not modelled.", false);
+                    ProcessTicks(reader, request, result, eventHash, featureHash, candidateHash, cancellationToken, replay);
                 }
-                catch (OperationCanceledException)
-                {
-                    throw;
-                }
-                catch (InvalidDataException error)
-                {
-                    AddQualityIssue(result, null, "QSH_INVALID", error.Message, true);
-                }
-                catch (IOException error)
-                {
-                    AddQualityIssue(result, null, "QSH_IO_ERROR", error.Message, true);
-                }
-                catch (OverflowException error)
-                {
-                    AddQualityIssue(result, null, "QSH_NUMERIC_OVERFLOW", error.Message, true);
-                }
-
+                catch (OperationCanceledException) { throw; }
+                catch (FileNotFoundException) { RejectInput(result, "TICK_FILE_MISSING", "The tick file does not exist."); }
+                catch (DirectoryNotFoundException) { RejectInput(result, "TICK_FILE_MISSING", "The tick file does not exist."); }
+                catch (UnauthorizedAccessException) { RejectInput(result, "TICK_ACCESS_DENIED", "Read access to the tick file was denied."); }
+                catch (InvalidDataException error) { RejectInput(result, "TICK_INVALID", error.Message); }
+                catch (DecoderFallbackException) { RejectInput(result, "TICK_INVALID", "The tick file is not valid UTF-8 text."); }
+                catch (IOException) { RejectInput(result, "TICK_IO_ERROR", "The tick file could not be opened or read."); }
+                catch (OverflowException) { RejectInput(result, "TICK_NUMERIC_OVERFLOW", "A tick or derived calculation exceeds the decimal range."); }
+                catch (ArgumentOutOfRangeException) { RejectInput(result, "TICK_TIME_RANGE", "A research window or horizon exceeds the supported time range."); }
+                result.InputHash ??= InputIdentity(result.Input);
                 result.NormalizedEventHash = eventHash.Complete();
                 result.FeatureHash = featureHash.Complete();
                 result.CandidateHash = candidateHash.Complete();
             }
-
+            cancellationToken.ThrowIfCancellationRequested();
+            result.CloudHash = HashClouds(result.Clouds, cancellationToken);
+            result.Cloud2Hash = HashClouds(result.Clouds2, cancellationToken);
             FinalizeQuality(result);
             SortResult(result);
+            cancellationToken.ThrowIfCancellationRequested();
             return result;
         }
 
-        private static OrderFlowQshHeader CreateInputHeader(string path, string role)
+        private static string HashClouds(List<OrderFlowCloud> clouds, CancellationToken cancellationToken)
         {
-            OrderFlowQshHeader header = new OrderFlowQshHeader();
-            header.FileName = Path.GetFileName(path).ToUpperInvariant();
-            header.FileType = role;
-            return header;
-        }
-
-        private static OrderFlowQshReaderBase TryOpenReader(string path, OrderFlowResearchRequest request,
-            OrderFlowResearchResult result, OrderFlowQshHeader header)
-        {
-            string detail;
-            try
+            using (OrderFlowCanonicalHash cloudHash = new OrderFlowCanonicalHash())
             {
-                if (header.FileType == "Deals")
+                foreach (OrderFlowCloud cloud in clouds)
                 {
-                    return new OrderFlowDealsQshReader(path, request.PriceStepOverride,
-                        request.VolumeStepOverride, header);
+                    cancellationToken.ThrowIfCancellationRequested();
+                    cloudHash.Add(cloud.CloudId, cloud.StartTime, cloud.Time, cloud.CompletedAt, cloud.LastSourceSequence,
+                        cloud.CompletionSourceSequence, cloud.CompletionReason, cloud.Price, cloud.Low, cloud.High,
+                        cloud.BuyVolume, cloud.SellVolume, cloud.BuyCount, cloud.SellCount, cloud.LargestTick,
+                        cloud.FirstSourceSequence, cloud.FirstPrice, cloud.Notional, cloud.PriceStep);
+                    cloudHash.Add(cloud.ImbalancePassed, cloud.ImbalanceSource);
+                    HashImbalance(cloudHash, cloud.InsideImbalance, cancellationToken);
+                    HashImbalance(cloudHash, cloud.ContextImbalance, cancellationToken);
+                    cloudHash.Add(cloud.Qualified.Time, cloud.Qualified.SourceSequence, cloud.Qualified.Price,
+                        cloud.Qualified.Low, cloud.Qualified.High, cloud.Qualified.Volume, cloud.Qualified.BuyVolume,
+                        cloud.Qualified.SellVolume, cloud.Qualified.TradeCount, cloud.Qualified.Vwap);
                 }
-
-                return new OrderFlowQuotesQshReader(path, request.PriceStepOverride,
-                    request.VolumeStepOverride, header);
+                return cloudHash.Complete();
             }
-            catch (InvalidDataException error)
-            {
-                header.FailureReasonCode = "QSH_INVALID";
-                detail = error.Message;
-            }
-            catch (EndOfStreamException)
-            {
-                header.FailureReasonCode = "QSH_INVALID";
-                detail = "QSH ends inside its header.";
-            }
-            catch (FormatException)
-            {
-                header.FailureReasonCode = "QSH_INVALID";
-                detail = "QSH header contains an invalid encoded value.";
-            }
-            catch (FileNotFoundException)
-            {
-                header.FailureReasonCode = "QSH_FILE_MISSING";
-                detail = "The selected file or its directory does not exist.";
-            }
-            catch (DirectoryNotFoundException)
-            {
-                header.FailureReasonCode = "QSH_FILE_MISSING";
-                detail = "The selected file or its directory does not exist.";
-            }
-            catch (UnauthorizedAccessException)
-            {
-                header.FailureReasonCode = "QSH_ACCESS_DENIED";
-                detail = "Read access to the selected file was denied.";
-            }
-            catch (IOException)
-            {
-                header.FailureReasonCode = "QSH_IO_ERROR";
-                detail = "The selected file could not be opened or read.";
-            }
-            catch (OverflowException)
-            {
-                header.FailureReasonCode = "QSH_NUMERIC_OVERFLOW";
-                detail = "QSH header metadata exceeds the supported numeric range.";
-            }
-
-            AddQualityIssue(result, null, header.FailureReasonCode, header.FileType + ": " + detail, true);
-            return null;
         }
 
-        private static void ValidatePair(OrderFlowResearchResult result)
+        private static void HashImbalance(OrderFlowCanonicalHash hash, OrderFlowImbalanceSnapshot snapshot, CancellationToken cancellationToken)
         {
-            OrderFlowQshHeader deals = result.DealsHeader;
-            OrderFlowQshHeader quotes = result.QuotesHeader;
-
-            if (string.Equals(deals.FileInstrument, quotes.FileInstrument,
-                StringComparison.OrdinalIgnoreCase) == false)
-            {
-                AddQualityIssue(result, null, "PAIR_FILE_INSTRUMENT_MISMATCH",
-                    "Deals and Quotes file names identify different instruments.", true);
-            }
-
-            if (deals.TradingDate != quotes.TradingDate)
-            {
-                AddQualityIssue(result, null, "PAIR_TRADING_DATE_MISMATCH",
-                    "Deals and Quotes file names identify different trading dates.", true);
-            }
-
-            if (string.Equals(deals.InstrumentHeader, quotes.InstrumentHeader,
-                StringComparison.Ordinal) == false)
-            {
-                AddQualityIssue(result, null, "PAIR_HEADER_INSTRUMENT_MISMATCH",
-                    "Deals and Quotes QSH headers identify different instruments.", true);
-            }
-
-            if (string.IsNullOrWhiteSpace(deals.HeaderInstrument) ||
-                string.IsNullOrWhiteSpace(quotes.HeaderInstrument) ||
-                string.Equals(deals.FileInstrument, deals.HeaderInstrument,
-                    StringComparison.OrdinalIgnoreCase) == false ||
-                string.Equals(quotes.FileInstrument, quotes.HeaderInstrument,
-                    StringComparison.OrdinalIgnoreCase) == false)
-            {
-                AddQualityIssue(result, null, "PAIR_FILE_HEADER_INSTRUMENT_MISMATCH",
-                    "A QSH file name instrument does not match the instrument encoded in its header.", true);
-            }
-
-            if (deals.EffectivePriceStep != quotes.EffectivePriceStep ||
-                deals.EffectiveVolumeStep != quotes.EffectiveVolumeStep)
-            {
-                AddQualityIssue(result, null, "PAIR_STEP_MISMATCH",
-                    "Deals and Quotes use different effective price or volume steps.", true);
-            }
-
-            if (deals.PriceStepOverridden || quotes.PriceStepOverridden ||
-                deals.VolumeStepOverridden || quotes.VolumeStepOverridden)
-            {
-                AddQualityIssue(result, null, "QSH_STEP_OVERRIDE",
-                    "At least one QSH price or volume step is supplied by the user override and must be independently verified.", false);
-            }
-
-            result.Quality.ExecutionMetadataComplete = false;
-            AddQualityIssue(result, null, "EXECUTION_METADATA_NOT_COLLECTED",
-                "The research MVP does not collect lot, price-step cost, commission, session or execution profiles. No PnL claim is available.", false);
+            hash.Add(snapshot.BuyVolume, snapshot.SellVolume, snapshot.ComparablePairs);
+            foreach (OrderFlowDiagonalPair pair in new[] { snapshot.BestBuy, snapshot.BestSell, snapshot.EligibleBuy, snapshot.EligibleSell })
+            { hash.Add(pair?.LowerPrice, pair?.Buy, pair?.Sell); }
+            foreach (OrderFlowDiagonalPair pair in snapshot.Pairs.Values)
+            { cancellationToken.ThrowIfCancellationRequested(); hash.Add(pair.LowerPrice, pair.Buy, pair.Sell); }
         }
 
-        private static void ProcessPair(OrderFlowDealsQshReader dealsReader, OrderFlowQuotesQshReader quotesReader,
-            OrderFlowResearchRequest request, OrderFlowResearchResult result, OrderFlowCanonicalHash eventHash,
-            OrderFlowCanonicalHash featureHash, OrderFlowCanonicalHash candidateHash,
-            CancellationToken cancellationToken)
+        private static string InputIdentity(OrderFlowTickInput input)
+        {
+            return OrderFlowCanonicalHash.Calculate(OrderFlowResearchSchema.ParserVersion + "|" +
+                input.FileName + "|" + (input.Sha256 ?? input.FailureReasonCode));
+        }
+
+        private static void RejectInput(OrderFlowResearchResult result, string code, string message)
+        {
+            result.Input.FailureReasonCode = code;
+            AddQualityIssue(result, null, code, message, true);
+        }
+
+        private static void ProcessTicks(OrderFlowTickReader reader, OrderFlowResearchRequest request,
+            OrderFlowResearchResult result, OrderFlowCanonicalHash eventHash, OrderFlowCanonicalHash featureHash,
+            OrderFlowCanonicalHash candidateHash, CancellationToken cancellationToken, IOrderFlowReplayObserver replay)
         {
             OrderFlowRunContext context = new OrderFlowRunContext(request, result, eventHash,
-                featureHash, candidateHash, dealsReader.Header.EffectivePriceStep);
-
-            OrderFlowDeal nextDeal;
-            OrderFlowBookSnapshot nextQuote;
-            bool hasDeal = dealsReader.TryRead(out nextDeal);
-            bool hasQuote = quotesReader.TryRead(out nextQuote);
-            DateTime lastDealReadTime = DateTime.MinValue;
-            DateTime lastQuoteReadTime = DateTime.MinValue;
-            bool fatalOrderingError = false;
-
-            while ((hasDeal || hasQuote) && fatalOrderingError == false)
+                featureHash, candidateHash, request.PriceStep);
+            OrderFlowBucket bucket = null;
+            while (reader.TryRead(out OrderFlowDeal tick))
             {
                 cancellationToken.ThrowIfCancellationRequested();
-
-                DateTime bucketTime;
-                if (hasDeal && hasQuote)
+                if (request.FromDate.HasValue && (tick.Time.Date < request.FromDate.Value || tick.Time.Date > request.ToDate.Value))
                 {
-                    bucketTime = nextDeal.Time <= nextQuote.Time ? nextDeal.Time : nextQuote.Time;
+                    continue;
                 }
-                else
+                replay?.BeforeTick(tick.Time, cancellationToken);
+                context.CloudAccumulator?.Add(tick, cancellationToken);
+                context.CloudAccumulator2?.Add(tick, cancellationToken);
+                if (bucket == null || bucket.Time != tick.Time)
                 {
-                    bucketTime = hasDeal ? nextDeal.Time : nextQuote.Time;
+                    if (bucket != null) { ProcessBucket(context, bucket); }
+                    bucket = new OrderFlowBucket { Time = tick.Time, BucketSequence = ++context.BucketSequence };
                 }
-
-                OrderFlowBucket bucket = new OrderFlowBucket();
-                bucket.BucketSequence = ++context.BucketSequence;
-                bucket.Time = bucketTime;
-
-                while (hasDeal && nextDeal.Time == bucketTime)
-                {
-                    bucket.Deals.Add(nextDeal);
-                    result.Quality.DealCount++;
-                    UpdateDealTimeRange(result.Quality, nextDeal.Time);
-
-                    if (lastDealReadTime == nextDeal.Time)
-                    {
-                        result.Quality.DuplicateDealTimestampCount++;
-                    }
-
-                    lastDealReadTime = nextDeal.Time;
-                    OrderFlowDeal consumedDeal = nextDeal;
-                    hasDeal = dealsReader.TryRead(out nextDeal);
-
-                    if (hasDeal && nextDeal.Time < consumedDeal.Time)
-                    {
-                        result.Quality.RegressiveDealTimeCount++;
-                        AddQualityIssue(result, nextDeal.Time, "DEAL_TIME_REGRESSION",
-                            "Deals source time moves backwards in file order.", true);
-                        fatalOrderingError = true;
-                        break;
-                    }
-                }
-
-                if (fatalOrderingError)
-                {
-                    break;
-                }
-
-                while (hasQuote && nextQuote.Time == bucketTime)
-                {
-                    bucket.Quotes.Add(nextQuote);
-                    result.Quality.QuoteCount++;
-                    UpdateQuoteTimeRange(result.Quality, nextQuote.Time);
-
-                    if (lastQuoteReadTime == nextQuote.Time)
-                    {
-                        result.Quality.DuplicateQuoteTimestampCount++;
-                    }
-
-                    lastQuoteReadTime = nextQuote.Time;
-                    if (nextQuote.IsValid)
-                    {
-                        result.Quality.ValidBookCount++;
-                        bucket.FinalValidQuote = nextQuote;
-                    }
-
-                    OrderFlowBookSnapshot consumedQuote = nextQuote;
-                    hasQuote = quotesReader.TryRead(out nextQuote);
-
-                    if (hasQuote && nextQuote.Time < consumedQuote.Time)
-                    {
-                        result.Quality.RegressiveQuoteTimeCount++;
-                        AddQualityIssue(result, nextQuote.Time, "QUOTE_TIME_REGRESSION",
-                            "Quotes source time moves backwards in file order.", true);
-                        fatalOrderingError = true;
-                        break;
-                    }
-                }
-
-                if (fatalOrderingError)
-                {
-                    break;
-                }
-
-                ProcessBucket(context, bucket);
+                else { result.Quality.DuplicateDealTimestampCount++; }
+                bucket.Deals.Add(tick);
+                result.Quality.DealCount++;
+                result.Quality.FirstDealTime ??= tick.Time;
+                result.Quality.LastDealTime = tick.Time;
+                replay?.TickProcessed(context, bucket, tick);
             }
-
-            DateTime lastEventTime = result.Quality.LastEventTime ?? DateTime.MinValue;
-            context.Labeler.Complete(lastEventTime);
+            if (bucket != null) { ProcessBucket(context, bucket); }
+            context.CloudAccumulator?.Complete();
+            context.CloudAccumulator2?.Complete();
+            context.Labeler?.Complete(result.Quality.LastEventTime ?? DateTime.MinValue);
             result.Bars = context.BarAggregator.Complete();
         }
 
         private static void ProcessBucket(OrderFlowRunContext context, OrderFlowBucket bucket)
         {
-            OrderFlowResearchResult result = context.Result;
-            result.Quality.BucketCount++;
-            UpdateTimeRange(result.Quality, bucket.Time);
+            context.Result.Quality.BucketCount++;
+            context.Result.Quality.FirstEventTime ??= bucket.Time;
+            context.Result.Quality.LastEventTime = bucket.Time;
             HashBucket(context.EventHash, bucket);
-
-            List<OrderFlowDeal> validDeals = new List<OrderFlowDeal>();
-            for (int i = 0; i < bucket.Deals.Count; i++)
+            context.Labeler?.Advance(bucket.Time, bucket.Deals);
+            OrderFlowFeatureSnapshot snapshot = context.FeatureWindow?.Build(bucket, context.Request);
+            context.BarAggregator.Add(bucket, snapshot);
+            if (snapshot != null)
             {
-                OrderFlowDeal deal = bucket.Deals[i];
-                if (deal.Side != Side.Buy && deal.Side != Side.Sell)
-                {
-                    result.Quality.UnknownSideCount++;
-                    result.Quality.InvalidDealCount++;
-                    AddQualityIssue(result, deal.Time, "DEAL_SIDE_UNKNOWN",
-                        "A deal has no source Buy/Sell side and is excluded from causal features.", true);
-                    continue;
-                }
-
-                if (deal.Price <= 0 || deal.Volume <= 0)
-                {
-                    result.Quality.InvalidDealCount++;
-                    AddQualityIssue(result, deal.Time, "DEAL_VALUE_INVALID",
-                        "A deal has a non-positive price or volume and is excluded from causal features.", true);
-                    continue;
-                }
-
-                validDeals.Add(deal);
-            }
-
-            for (int i = 0; i < bucket.Quotes.Count; i++)
-            {
-                OrderFlowBookSnapshot quote = bucket.Quotes[i];
-                if (quote.IsValid)
-                {
-                    continue;
-                }
-
-                result.Quality.InvalidBookCount++;
-                if (quote.QualityCode == "BOOK_EMPTY")
-                {
-                    result.Quality.EmptyBookCount++;
-                }
-                else if (quote.QualityCode == "BOOK_CROSSED_OR_LOCKED")
-                {
-                    result.Quality.CrossedBookCount++;
-                }
-
-                AddQualityIssue(result, quote.Time, quote.QualityCode,
-                    "An invalid quote snapshot is ignored; the last valid earlier book is not silently refreshed.", false);
-            }
-
-            context.Labeler.Advance(bucket.Time, validDeals);
-
-            OrderFlowFeatureSnapshot snapshot = null;
-            if (validDeals.Count > 0)
-            {
-                OrderFlowBucket validBucket = new OrderFlowBucket();
-                validBucket.BucketSequence = bucket.BucketSequence;
-                validBucket.Time = bucket.Time;
-                validBucket.Deals = validDeals;
-                snapshot = context.FeatureWindow.Build(validBucket, context.PreviousClosedBook, context.Request);
-
-                if (snapshot != null)
-                {
-                    UpdateBookQualityCounters(result.Quality, snapshot);
-                    HashFeature(context.FeatureHash, snapshot);
-                    context.BarAggregator.Add(validBucket, snapshot);
-                    ProcessObservation(context, snapshot);
-                }
-            }
-
-            if (bucket.FinalValidQuote != null)
-            {
-                context.PreviousClosedBook = bucket.FinalValidQuote;
+                HashFeature(context.FeatureHash, snapshot);
+                ProcessObservation(context, snapshot);
             }
         }
 
@@ -466,10 +231,9 @@ namespace OsEngine.OsData.OrderFlow
                     ? snapshot.Time
                     : context.NextBackgroundTime;
 
-                while (nextTime <= snapshot.Time)
-                {
-                    nextTime = nextTime.AddSeconds(context.Request.BackgroundSampleSeconds);
-                }
+                long interval = TimeSpan.FromSeconds(context.Request.BackgroundSampleSeconds).Ticks;
+                long steps = (snapshot.Time.Ticks - nextTime.Ticks) / interval + 1;
+                nextTime = nextTime.AddTicks(checked(steps * interval));
 
                 context.NextBackgroundTime = nextTime;
 
@@ -510,7 +274,7 @@ namespace OsEngine.OsData.OrderFlow
             OrderFlowDirection direction)
         {
             string sideCode = direction == OrderFlowDirection.Long ? "L" : "S";
-            string candidateId = "C-" + snapshot.Time.ToString("yyyyMMddHHmmssfff", CultureInfo.InvariantCulture) +
+            string candidateId = "C-" + snapshot.Time.ToString("yyyyMMddHHmmssffffff", CultureInfo.InvariantCulture) +
                 "-" + snapshot.BucketSequence.ToString("D10", CultureInfo.InvariantCulture) + "-" + sideCode;
 
             OrderFlowCandidate candidate = new OrderFlowCandidate();
@@ -558,32 +322,10 @@ namespace OsEngine.OsData.OrderFlow
 
         private static void HashBucket(OrderFlowCanonicalHash hash, OrderFlowBucket bucket)
         {
-            hash.Add("BUCKET", bucket.BucketSequence, bucket.Time, bucket.Deals.Count, bucket.Quotes.Count);
-
-            for (int i = 0; i < bucket.Deals.Count; i++)
+            hash.Add("BUCKET", bucket.BucketSequence, bucket.Time, bucket.Deals.Count);
+            foreach (OrderFlowDeal deal in bucket.Deals)
             {
-                OrderFlowDeal deal = bucket.Deals[i];
-                hash.Add("DEAL", deal.SourceSequence, deal.Time, deal.FrameTime, deal.PriceTicks,
-                    deal.VolumeSteps, deal.Side, deal.SourceId);
-            }
-
-            for (int i = 0; i < bucket.Quotes.Count; i++)
-            {
-                OrderFlowBookSnapshot quote = bucket.Quotes[i];
-                hash.Add("QUOTE", quote.SourceSequence, quote.Time, quote.IsValid, quote.QualityCode,
-                    quote.Bids.Count, quote.Asks.Count);
-
-                for (int levelIndex = 0; levelIndex < quote.Bids.Count; levelIndex++)
-                {
-                    OrderFlowBookLevel level = quote.Bids[levelIndex];
-                    hash.Add("BID", levelIndex, level.Price, level.Volume);
-                }
-
-                for (int levelIndex = 0; levelIndex < quote.Asks.Count; levelIndex++)
-                {
-                    OrderFlowBookLevel level = quote.Asks[levelIndex];
-                    hash.Add("ASK", levelIndex, level.Price, level.Volume);
-                }
+                hash.Add("TICK", deal.SourceSequence, deal.Time, deal.Price, deal.Volume, deal.Side);
             }
         }
 
@@ -591,9 +333,7 @@ namespace OsEngine.OsData.OrderFlow
         {
             hash.Add(snapshot.SnapshotId, snapshot.BucketSequence, snapshot.Time, snapshot.ReferencePrice,
                 snapshot.BuyVolume, snapshot.SellVolume, snapshot.Delta, snapshot.TradeCount,
-                snapshot.PriceChange, snapshot.PriceResponse, snapshot.BookAvailable, snapshot.BookStale,
-                snapshot.BookTime, snapshot.BookAgeMilliseconds, snapshot.Spread,
-                snapshot.BookImbalance, snapshot.DataQualityCode);
+                snapshot.PriceChange, snapshot.PriceResponse, snapshot.DataQualityCode);
         }
 
         private static void HashCandidate(OrderFlowCanonicalHash hash, OrderFlowCandidate candidate,
@@ -601,106 +341,14 @@ namespace OsEngine.OsData.OrderFlow
         {
             hash.Add(candidate.CandidateId, candidate.ObservationKey, candidate.Time, candidate.Direction,
                 candidate.ReasonCode, candidate.DataQualityCode, candidate.ReferencePrice,
-                snapshot.Delta, snapshot.PriceChange, snapshot.PriceResponse, snapshot.Spread,
-                snapshot.BookImbalance, snapshot.BookAgeMilliseconds);
-        }
-
-        private static void UpdateBookQualityCounters(OrderFlowQualityReport quality,
-            OrderFlowFeatureSnapshot snapshot)
-        {
-            if (snapshot.BookAvailable == false)
-            {
-                quality.MissingBookFeatureCount++;
-                return;
-            }
-
-            if (snapshot.BookStale)
-            {
-                quality.StaleBookFeatureCount++;
-            }
-
-            if (snapshot.BookAgeMilliseconds <= 100)
-            {
-                quality.BookAgeUpTo100MillisecondsCount++;
-            }
-            else if (snapshot.BookAgeMilliseconds <= 500)
-            {
-                quality.BookAgeUpTo500MillisecondsCount++;
-            }
-            else if (snapshot.BookAgeMilliseconds <= 1000)
-            {
-                quality.BookAgeUpTo1000MillisecondsCount++;
-            }
-            else
-            {
-                quality.BookAgeAbove1000MillisecondsCount++;
-            }
-        }
-
-        private static void UpdateTimeRange(OrderFlowQualityReport quality, DateTime time)
-        {
-            if (quality.FirstEventTime.HasValue == false || time < quality.FirstEventTime.Value)
-            {
-                quality.FirstEventTime = time;
-            }
-
-            if (quality.LastEventTime.HasValue == false || time > quality.LastEventTime.Value)
-            {
-                quality.LastEventTime = time;
-            }
-        }
-
-        private static void UpdateDealTimeRange(OrderFlowQualityReport quality, DateTime time)
-        {
-            if (quality.FirstDealTime.HasValue == false || time < quality.FirstDealTime.Value)
-            {
-                quality.FirstDealTime = time;
-            }
-
-            if (quality.LastDealTime.HasValue == false || time > quality.LastDealTime.Value)
-            {
-                quality.LastDealTime = time;
-            }
-        }
-
-        private static void UpdateQuoteTimeRange(OrderFlowQualityReport quality, DateTime time)
-        {
-            if (quality.FirstQuoteTime.HasValue == false || time < quality.FirstQuoteTime.Value)
-            {
-                quality.FirstQuoteTime = time;
-            }
-
-            if (quality.LastQuoteTime.HasValue == false || time > quality.LastQuoteTime.Value)
-            {
-                quality.LastQuoteTime = time;
-            }
+                snapshot.Delta, snapshot.PriceChange, snapshot.PriceResponse);
         }
 
         private static void FinalizeQuality(OrderFlowResearchResult result)
         {
             if (result.Quality.DealCount == 0)
             {
-                AddQualityIssue(result, null, "DEALS_EMPTY", "No Deals records were decoded.", true);
-            }
-
-            if (result.Quality.QuoteCount == 0)
-            {
-                AddQualityIssue(result, null, "QUOTES_EMPTY", "No Quotes records were decoded.", true);
-            }
-
-            if (result.Quality.QuoteCount > 0 && result.Quality.ValidBookCount == 0)
-            {
-                AddQualityIssue(result, null, "QUOTES_NO_VALID_BOOK",
-                    "No valid two-sided quote snapshot was decoded.", true);
-            }
-
-            if (result.Quality.FirstDealTime.HasValue && result.Quality.LastDealTime.HasValue &&
-                result.Quality.FirstQuoteTime.HasValue && result.Quality.LastQuoteTime.HasValue &&
-                (result.Quality.LastDealTime.Value < result.Quality.FirstQuoteTime.Value ||
-                 result.Quality.LastQuoteTime.Value < result.Quality.FirstDealTime.Value))
-            {
-                AddQualityIssue(result, null, "PAIR_TIME_RANGES_DISJOINT",
-                    "Deals and Quotes source time ranges do not overlap; session metadata is not available to reconcile them.", true);
+                AddQualityIssue(result, null, "TICKS_EMPTY", "No ticks occur within the selected date range.", true);
             }
 
             result.Quality.ResearchAccepted = HasRejection(result.Quality) == false;
@@ -711,7 +359,7 @@ namespace OsEngine.OsData.OrderFlow
             finalEntry.CorrelationId = result.InputHash;
             finalEntry.ReasonCode = result.Quality.ResearchAccepted ? "RESEARCH_ACCEPTED" : "RESEARCH_REJECTED";
             finalEntry.Message = result.Quality.ResearchAccepted
-                ? "Paired causal research replay completed. No execution or profitability qualification was performed."
+                ? "Tick-only causal research replay completed. No execution or profitability qualification was performed."
                 : "Research replay was rejected. Inspect quality reason codes before interpreting candidates.";
             result.Journal.Add(finalEntry);
         }
@@ -783,10 +431,12 @@ namespace OsEngine.OsData.OrderFlow
             FeatureHash = featureHash;
             CandidateHash = candidateHash;
             PriceStep = priceStep;
-            FeatureWindow = new OrderFlowFeatureWindow();
+            FeatureWindow = request.CalculateDelta ? new OrderFlowFeatureWindow() : null;
+            CloudAccumulator = request.CalculateCloud ? new OrderFlowCloudAccumulator(request.Cloud, priceStep, result.Clouds) : null;
+            CloudAccumulator2 = request.CalculateCloud2 ? new OrderFlowCloudAccumulator(request.Cloud2, priceStep, result.Clouds2, "CL2-") : null;
             BarAggregator = new OrderFlowDisplayBarAggregator();
-            Labeler = new OrderFlowMarketPathLabeler(result.Labels, result.Journal,
-                priceStep, request.TargetTicks, request.InvalidationTicks);
+            Labeler = request.CalculateDelta ? new OrderFlowMarketPathLabeler(result.Labels, result.Journal,
+                priceStep, request.TargetTicks, request.InvalidationTicks) : null;
         }
 
         public OrderFlowResearchRequest Request { get; private set; }
@@ -801,13 +451,14 @@ namespace OsEngine.OsData.OrderFlow
 
         public decimal PriceStep { get; private set; }
 
+        public OrderFlowCloudAccumulator CloudAccumulator { get; private set; }
+        public OrderFlowCloudAccumulator CloudAccumulator2 { get; private set; }
+
         public OrderFlowFeatureWindow FeatureWindow { get; private set; }
 
         public OrderFlowDisplayBarAggregator BarAggregator { get; private set; }
 
         public OrderFlowMarketPathLabeler Labeler { get; private set; }
-
-        public OrderFlowBookSnapshot PreviousClosedBook { get; set; }
 
         public long BucketSequence { get; set; }
 

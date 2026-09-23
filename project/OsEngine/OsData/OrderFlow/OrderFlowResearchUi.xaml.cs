@@ -22,11 +22,13 @@ using System.Windows.Input;
 namespace OsEngine.OsData.OrderFlow
 {
     /// <summary>
-    /// Offline paired-QSH workbench for inspecting causal Order Flow research
+    /// Offline tick-text workbench for inspecting causal Order Flow research
     /// features, candidates and separately computed future market-path labels.
     /// </summary>
     public partial class OrderFlowResearchUi
     {
+        #region Setup and chart interaction
+
         private OrderFlowResearchChart _chart;
         private Thread _analysisThread;
         private CancellationTokenSource _cancellation;
@@ -36,29 +38,33 @@ namespace OsEngine.OsData.OrderFlow
         private bool _workerCancelled;
         private volatile bool _isClosing;
         private bool _updatingChartRange;
+        private readonly OrderFlowDateInput _fromDateInput;
+        private readonly OrderFlowDateInput _toDateInput;
 
         /// <summary>
         /// Creates the research-only workbench. The window does not start a
-        /// replay or network request. Archive access starts only through the download dialog.
+        /// replay, network access or file download.
         /// </summary>
         public OrderFlowResearchUi()
         {
             InitializeComponent();
+            _fromDateInput = new OrderFlowDateInput(DateFrom);
+            _toDateInput = new OrderFlowDateInput(DateTo);
             Layout.StickyBorders.Listen(this);
             Layout.StartupLocation.Start_FitHeightToWorkArea(this);
 
             _chart = new OrderFlowResearchChart();
             ContentControlChart.Content = _chart;
-            ComboBoxTimeFrame.ItemsSource = Enum.GetValues<OrderFlowDisplayTimeFrame>()
+            ComboBoxTimeFrame.ItemsSource = OrderFlowChartTimeFrames.GetMenuValues()
                 .Select(frame => new KeyValuePair<OrderFlowDisplayTimeFrame, string>(frame,
                     OrderFlowChartTimeFrames.GetDisplayName(frame, OsLocalization.CurLocalization == OsLocalization.OsLocalType.Ru)))
                 .ToList();
             ComboBoxTimeFrame.SelectedValue = OrderFlowDisplayTimeFrame.Min1;
 
-            ButtonBrowseDeals.Click += ButtonBrowseDeals_Click;
-            ButtonBrowseQuotes.Click += ButtonBrowseQuotes_Click;
+
+            ButtonBrowseTicks.Click += ButtonBrowseTicks_Click;
+            ButtonAllDates.Click += ButtonAllDates_Click;
             ButtonBrowseOutput.Click += ButtonBrowseOutput_Click;
-            ButtonDownloadQsh.Click += ButtonDownloadQsh_Click;
             ButtonRun.Click += ButtonRun_Click;
             ButtonCancel.Click += ButtonCancel_Click;
             ButtonOpenArtifacts.Click += ButtonOpenArtifacts_Click;
@@ -75,32 +81,59 @@ namespace OsEngine.OsData.OrderFlow
             ButtonChartZoomIn.Click += ButtonChartNavigation_Click;
             ButtonChartZoomOut.Click += ButtonChartNavigation_Click;
             ButtonChartAll.Click += ButtonChartNavigation_Click;
+            CheckBoxCalculateDelta.Click += CalculationMode_Click;
+            CheckBoxCalculateCloud.Click += CalculationMode_Click;
+            CheckBoxShowDelta.Click += ChartLayers_Click;
+            CheckBoxShowCloud.Click += ChartLayers_Click;
+            SliderCloudScale.ValueChanged += SliderCloudScale_ValueChanged;
+            DataGridClouds.MouseDoubleClick += DataGridClouds_MouseDoubleClick;
+            InitializeCloud2Controls();
+            InitializeCloudImbalanceControls();
+            UpdateCalculationControls();
             ApplyLocalization();
+            InitializeChartTools();
+            InitializeReplay();
+            InitializeCloudNavigation();
+            InitializeStatistics();
+            InitializeFieldHelp();
             Chart_ViewChanged(this, EventArgs.Empty);
         }
 
         private void ApplyLocalization()
         {
             Title = OsLocalization.ConvertToLocString("Eng:Order Flow Research_Ru:Исследование Order Flow_");
-            LabelDeals.Content = OsLocalization.ConvertToLocString("Eng:Deals QSH_Ru:Сделки QSH_");
-            LabelQuotes.Content = OsLocalization.ConvertToLocString("Eng:Quotes QSH_Ru:Стакан QSH_");
+            TabItemDeltaSettings.Header = L("Delta", "Дельта");
+            TabItemChartSettings.Header = L("Chart", "График");
+            CheckBoxCalculateDelta.Content = L("Calculate delta", "Рассчитать дельту");
+            CheckBoxCalculateCloud.Content = L("Calculate Cloud 1", "Рассчитать Cloud 1");
+            CheckBoxShowDelta.Content = L("Show delta", "Показать дельту");
+            CheckBoxShowCloud.Content = L("Show Cloud 1", "Показать Cloud 1");
+            LabelCloudMinTick.Content = L("Min tick volume", "Мин. объём тика");
+            LabelCloudSum.Content = L("Min sum", "Мин. сумма");
+            LabelCloudGap.Content = L("Gap ms", "Пауза, мс");
+            LabelCloudRange.Content = L("Range ticks", "Диапазон, тики");
+            TextBoxCloudGap.ToolTip = L("Maximum time between eligible ticks, inclusive. 0 means equal timestamps.", "Максимальная пауза между отобранными тиками, включительно. 0 — одинаковый timestamp.");
+            TextBoxCloudRange.ToolTip = L("Maximum high-low of the entire chain in manual price steps. Zero requires one price.", "Максимум цены − минимум цены всей цепочки в шагах цены. Ноль — одна цена.");
+            TextBlockCloudHelp.Text = L("Historical tick chains. Double-click a Clouds table row to locate it. Spread modes and Smart are unavailable.",
+                "Исторические цепочки тиков. Двойной клик строки Clouds — переход на график. Режимы спреда и Smart недоступны.");
+            LabelPeriod.Content = L("Period", "Период");
+            ButtonAllDates.Content = L("Full file", "Весь файл");
+            DateFrom.ToolTip = L("Start date, inclusive", "Начальная дата, включительно");
+            DateTo.ToolTip = L("End date, inclusive", "Конечная дата, включительно");
+            TextBlockPeriodHelp.Text = L("Inclusive dates; leave both empty for the full file.", "Даты включительно; оба поля пустые — весь файл.");
+            LabelTicks.Content = OsLocalization.ConvertToLocString("Eng:Tick file_Ru:Файл тиков_");
             LabelOutput.Content = OsLocalization.ConvertToLocString("Eng:Output folder_Ru:Папка результатов_");
-            ButtonBrowseDeals.Content = OsLocalization.ConvertToLocString("Eng:Browse_Ru:Выбрать_");
-            ButtonBrowseQuotes.Content = OsLocalization.ConvertToLocString("Eng:Browse_Ru:Выбрать_");
+            ButtonBrowseTicks.Content = OsLocalization.ConvertToLocString("Eng:Browse_Ru:Выбрать_");
             ButtonBrowseOutput.Content = OsLocalization.ConvertToLocString("Eng:Browse_Ru:Выбрать_");
-            ButtonDownloadQsh.Content = L("Download QSH from archive", "Загрузить QSH из архива");
             LabelWindow.Content = OsLocalization.ConvertToLocString("Eng:Window sec_Ru:Окно сек_");
             LabelDelta.Content = OsLocalization.ConvertToLocString("Eng:Min delta_Ru:Мин дельта_");
             LabelPriceTicks.Content = OsLocalization.ConvertToLocString("Eng:Price ticks_Ru:Тики цены_");
-            LabelBookLevels.Content = OsLocalization.ConvertToLocString("Eng:Book levels_Ru:Уровни стакана_");
-            LabelBookAge.Content = OsLocalization.ConvertToLocString("Eng:Book age ms_Ru:Возраст стакана мс_");
             LabelCooldown.Content = OsLocalization.ConvertToLocString("Eng:Cooldown ms_Ru:Пауза мс_");
             LabelBackground.Content = OsLocalization.ConvertToLocString("Eng:Background sec_Ru:Фон сек_");
             LabelHorizons.Content = OsLocalization.ConvertToLocString("Eng:Horizons sec_Ru:Горизонты сек_");
             LabelTarget.Content = OsLocalization.ConvertToLocString("Eng:Target ticks_Ru:Цель тики_");
             LabelInvalidation.Content = OsLocalization.ConvertToLocString("Eng:Adverse ticks_Ru:Против, тики_");
-            LabelPriceStep.Content = OsLocalization.ConvertToLocString("Eng:Price step override_Ru:Шаг цены вручную_");
-            LabelVolumeStep.Content = OsLocalization.ConvertToLocString("Eng:Volume step override_Ru:Шаг объема вручную_");
+            LabelPriceStep.Content = OsLocalization.ConvertToLocString("Eng:Price step_Ru:Шаг цены_");
             ButtonRun.Content = OsLocalization.ConvertToLocString("Eng:Run research_Ru:Запустить_");
             ButtonCancel.Content = OsLocalization.ConvertToLocString("Eng:Cancel_Ru:Отмена_");
             ButtonOpenArtifacts.Content = OsLocalization.ConvertToLocString("Eng:Open artifacts_Ru:Открыть файлы_");
@@ -108,6 +141,11 @@ namespace OsEngine.OsData.OrderFlow
             TabItemCandidates.Header = OsLocalization.ConvertToLocString("Eng:Candidates_Ru:Кандидаты_");
             TabItemChart.Header = OsLocalization.ConvertToLocString("Eng:Chart_Ru:График_");
             TabItemJournal.Header = OsLocalization.ConvertToLocString("Eng:Event journal_Ru:Журнал событий_");
+            LabelChartTimeFrame.Content = L("Timeframe", "Таймфрейм");
+            LabelCloudScale.Content = LabelChartCloudScale.Content = L("Cloud size", "Размер Cloud");
+            SliderCloudScale.ToolTip = SliderChartCloudScale.ToolTip = L(
+                "Radius coefficient 0.1–3. Changes only the circles, without recalculation.",
+                "Коэффициент радиуса 0,1–3. Меняет только кружки, без пересчёта.");
             LabelTimeFrame.Content = OsLocalization.ConvertToLocString("Eng:Display timeframe_Ru:Таймфрейм отображения_");
             TextBlockChartBoundary.Text = OsLocalization.ConvertToLocString(
                 "Eng:Visualization only. Signals are not recalculated._Ru:Только визуализация. Сигналы не пересчитываются._");
@@ -138,10 +176,6 @@ namespace OsEngine.OsData.OrderFlow
                 "Минимальный перевес объёма покупок или продаж. Дельта = покупки − продажи. Для кандидата дополнительно проверяется цена против потока.");
             TextBoxMinimumPriceTicks.ToolTip = LabelPriceTicks.ToolTip = L("Minimum price move against the dominant flow in ticks. Long: negative delta and rising/holding price; Short is mirrored. Zero allows unchanged price.",
                 "Минимальное движение цены против потока в тиках. Long: отрицательная дельта и рост/удержание цены; Short зеркально. Ноль допускает неизменную цену. Сравниваются VWAP начального и текущего timestamp окна.");
-            TextBoxTopLevels.ToolTip = LabelBookLevels.ToolTip = L("Number of nearest price levels on EACH side used for book volume imbalance.",
-                "Сколько ближайших ценовых уровней с КАЖДОЙ стороны брать для дисбаланса объёмов стакана.");
-            TextBoxBookAge.ToolTip = LabelBookAge.ToolTip = L("Maximum age of the previous valid book in milliseconds. 1000 = 1 second. Older books are flagged; diagnostic candidates remain.",
-                "Предельный возраст предыдущего валидного стакана, мс. 1000 = 1 секунда. Более старый помечается как устаревший; диагностический кандидат сохраняется.");
             TextBoxCooldown.ToolTip = LabelCooldown.ToolTip = L("Minimum interval between candidates of the same direction, in milliseconds. Long and Short use separate timers. 5000 = 5 seconds.",
                 "Минимальный интервал между кандидатами одного направления, мс. Для Long и Short отсчёт отдельный. 5000 = 5 секунд.");
             TextBoxBackground.ToolTip = LabelBackground.ToolTip = L("Interval for background observations in seconds, at available trade times. A candidate at that time replaces the background row.",
@@ -152,10 +186,8 @@ namespace OsEngine.OsData.OrderFlow
                 "Расстояние от опорной цены в сторону кандидата, в тиках: вверх для Long, вниз для Short. Только оценка истории, без заявки.");
             TextBoxInvalidationTicks.ToolTip = LabelInvalidation.ToolTip = L("Adverse distance from candidate reference price in ticks: down for Long, up for Short. Not an order cancellation.",
                 "Расстояние от опорной цены против кандидата, в тиках: вниз для Long, вверх для Short. Это граница неблагоприятного движения, а не отмена заявки.");
-            TextBoxPriceStep.ToolTip = LabelPriceStep.ToolTip = L("Price distance for one tick. Leave blank to use QSH header metadata.",
-                "Размер одного тика в единицах цены. Пусто — взять шаг из QSH header.");
-            TextBoxVolumeStep.ToolTip = LabelVolumeStep.ToolTip = L("Confirmed volume unit override when QSH metadata is absent. Leave blank to use metadata.",
-                "Подтверждённый шаг объёма, если его нет в QSH metadata. Пусто — взять из metadata; не подбирается автоматически.");
+            TextBoxPriceStep.ToolTip = LabelPriceStep.ToolTip = L("Required manual price distance per tick, e.g. 5 or 0.00001. Volume is read as stored.",
+                "Обязательный ручной шаг цены, например 5 или 0,00001. Объём читается как записан в файле.");
         }
 
         private void Chart_ViewChanged(object sender, EventArgs e)
@@ -170,6 +202,15 @@ namespace OsEngine.OsData.OrderFlow
                 ScrollBarChart.LargeChange = Math.Max(1, _chart.VisibleCount * 0.8);
                 ScrollBarChart.Value = _chart.StartIndex;
                 TextBlockChartRange.Text = _chart.RangeText;
+                SliderCloudContrast.ToolTip = SliderChartCloudContrast.ToolTip = (_chart.IsReplaying
+                    ? L("Replay reference = minimum Cloud sum: ", "Опорный объём реплея = минимальная сумма Cloud: ") : L(
+                    "Emphasizes differences in volume, independently of overall size. Full-result median volume = ",
+                    "Усиливает разницу объёмов независимо от общего размера. Медианный объём всего результата = "))
+                    + _chart.CloudReferenceVolume.ToString("0.############################", CultureInfo.InvariantCulture);
+                SliderCloud2Contrast.ToolTip = SliderChartCloud2Contrast.ToolTip = (_chart.IsReplaying
+                    ? L("Cloud 2 replay reference = effective volume threshold: ", "Опорный объём реплея Cloud 2 = действующий порог объёма: ")
+                    : L("Cloud 2 full-result median volume: ", "Медианный объём всего результата Cloud 2: "))
+                    + _chart.Cloud2ReferenceVolume.ToString("0.############################", CultureInfo.InvariantCulture);
             }
             catch (Exception error) { ShowError(error); }
             finally { _updatingChartRange = false; }
@@ -206,18 +247,22 @@ namespace OsEngine.OsData.OrderFlow
             catch (Exception error) { ShowError(error); }
         }
 
-        private void ButtonBrowseDeals_Click(object sender, RoutedEventArgs e)
+        #endregion
+
+        #region Replay and input
+
+        private void ButtonBrowseTicks_Click(object sender, RoutedEventArgs e)
         {
             try
             {
                 Microsoft.Win32.OpenFileDialog dialog = new Microsoft.Win32.OpenFileDialog();
-                dialog.Filter = "Deals QSH (*.Deals.qsh)|*.Deals.qsh|QSH files (*.qsh)|*.qsh|All files (*.*)|*.*";
+                dialog.Filter = "Tick text (*.txt;*.csv)|*.txt;*.csv|All files (*.*)|*.*";
                 dialog.CheckFileExists = true;
 
                 if (dialog.ShowDialog() == true)
                 {
-                    TextBoxDealsPath.Text = dialog.FileName;
-                    TryFillPairedPath(dialog.FileName, ".Deals.qsh", ".Quotes.qsh", TextBoxQuotesPath);
+                    TextBoxTicksPath.Text = dialog.FileName;
+                    TextBoxPriceStep.Clear();
                     SetDefaultOutputPath(dialog.FileName);
                 }
             }
@@ -225,69 +270,6 @@ namespace OsEngine.OsData.OrderFlow
             {
                 ShowError(error);
             }
-        }
-
-        private void ButtonBrowseQuotes_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                Microsoft.Win32.OpenFileDialog dialog = new Microsoft.Win32.OpenFileDialog();
-                dialog.Filter = "Quotes QSH (*.Quotes.qsh)|*.Quotes.qsh|QSH files (*.qsh)|*.qsh|All files (*.*)|*.*";
-                dialog.CheckFileExists = true;
-
-                if (dialog.ShowDialog() == true)
-                {
-                    TextBoxQuotesPath.Text = dialog.FileName;
-                    TryFillPairedPath(dialog.FileName, ".Quotes.qsh", ".Deals.qsh", TextBoxDealsPath);
-                    SetDefaultOutputPath(dialog.FileName);
-                }
-            }
-            catch (Exception error)
-            {
-                ShowError(error);
-            }
-        }
-
-        private void ButtonDownloadQsh_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                OrderFlowDownloadUi dialog = new OrderFlowDownloadUi { Owner = this };
-                if (dialog.ShowDialog() == true && dialog.SelectedPair != null)
-                {
-                    OrderFlowArchivePair pair = dialog.SelectedPair;
-                    if (!HasSameDealsInstrument(TextBoxDealsPath.Text, pair.Instrument))
-                    {
-                        TextBoxPriceStep.Clear();
-                        TextBoxVolumeStep.Clear();
-                    }
-                    TextBoxDealsPath.Text = pair.DealsPath;
-                    TextBoxQuotesPath.Text = pair.QuotesPath;
-                    SetDefaultOutputPath(pair.DealsPath);
-                    TextBlockStatus.Text = L("Pair selected. Review price and volume steps, then run research.",
-                        "Пара выбрана. Проверьте шаг цены и объёма, затем запустите расчёт.");
-                }
-            }
-            catch (Exception error)
-            {
-                ShowError(error);
-            }
-        }
-
-        /// <summary>
-        /// Permits retaining manual steps only for the exact instrument in a valid Deals filename.
-        /// Date or case changes alone do not change identity; malformed names cannot retain overrides.
-        /// </summary>
-        internal static bool HasSameDealsInstrument(string path, string instrument)
-        {
-            string name = Path.GetFileName(path ?? string.Empty);
-            const string suffix = ".Deals.qsh";
-            int dateSeparator = name.Length - suffix.Length - 11;
-            return dateSeparator > 0 && name.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) &&
-                name[dateSeparator] == '.' &&
-                DateTime.TryParseExact(name.Substring(dateSeparator + 1, 10), "yyyy-MM-dd",
-                    CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime date) &&
-                string.Equals(name.Substring(0, dateSeparator), instrument, StringComparison.OrdinalIgnoreCase);
         }
 
         private void ButtonBrowseOutput_Click(object sender, RoutedEventArgs e)
@@ -316,7 +298,7 @@ namespace OsEngine.OsData.OrderFlow
         {
             try
             {
-                if (_analysisThread != null && _analysisThread.IsAlive)
+                if (_replay != null || (_analysisThread != null && _analysisThread.IsAlive))
                 {
                     return;
                 }
@@ -329,7 +311,7 @@ namespace OsEngine.OsData.OrderFlow
 
                 SetRunningState(true);
                 TextBlockStatus.Text = OsLocalization.ConvertToLocString(
-                    "Eng:Reading and replaying the QSH pair_Ru:Чтение и воспроизведение пары QSH_");
+                    "Eng:Validating tick file and calculating the selected period_Ru:Проверка файла тиков и расчёт выбранного периода_");
 
                 _analysisThread = new Thread(ResearchThreadArea);
                 _analysisThread.IsBackground = true;
@@ -439,18 +421,35 @@ namespace OsEngine.OsData.OrderFlow
                 return;
             }
 
+            ClearStatistics();
+            _displayedResult = result;
+            _displayedRequest = _pendingRequest;
+            ButtonReplayPlay.IsEnabled = result.Quality.ResearchAccepted;
+            UpdateStatisticsControls(false);
             TextBoxSummary.Text = BuildSummary(result, OsLocalization.CurLocalization == OsLocalization.OsLocalType.Ru);
             TextBoxSummary.ScrollToHome();
             List<OrderFlowCandidateView> candidateViews = OrderFlowCandidateView.Create(result);
             DataGridCandidates.ItemsSource = candidateViews;
             DataGridJournal.ItemsSource = result.Journal;
+            DataGridClouds.ItemsSource = result.Clouds;
+            DataGridClouds2.ItemsSource = result.Clouds2;
+            TextBlockCandidateDetails.Text = string.Empty;
             _chart.SetResult(result);
+            _chart.SetCloudFilters(null, null);
+            try { ApplyCloudViewFilters(); }
+            catch (Exception error) { RefreshCloudViewRows(); ShowError(error); }
+            _chart.SetLayers(CheckBoxShowDelta.IsChecked == true, CheckBoxShowCloud.IsChecked == true, CheckBoxShowCloud2.IsChecked == true);
             string horizon = result.Labels.Count == 0 ? "—" : result.Labels.Min(label => label.HorizonSeconds).ToString(CultureInfo.InvariantCulture);
             TextBlockChartLegend.Text = L(
                 "▲ Long / ▼ Short. Marker color = future outcome at the shortest horizon ",
                 "▲ Long / ▼ Short. Цвет метки = будущий исход на коротком горизонте ") + horizon + L(" s. ", " сек. ") + L(
-                "Green: target first; red: adverse barrier first; yellow: same timestamp; blue: neither; gray: incomplete / no trades. Gold outline: selected. Markers can overlap within a bar. Red book shading: missing or stale book. Bars with no trades are omitted; time is from QSH without conversion.",
-                "Зелёный: цель раньше; красный: против раньше; жёлтый: один timestamp; синий: ни одна граница; серый: неполный горизонт / нет сделок. Золотой контур: выбранный кандидат. Метки в одной свече могут перекрываться. Красный фон стакана: нет данных или стакан устарел. Свечи без сделок пропущены; время из QSH без пересчёта.");
+                "Green: target first; red: adverse barrier first; yellow: same timestamp; blue: neither; gray: incomplete / no trades. Gold outline: selected. Markers can overlap within a bar. Bars with no trades are omitted; time is from the tick file without conversion.",
+                "Зелёный: цель раньше; красный: против раньше; жёлтый: один timestamp; синий: ни одна граница; серый: неполный горизонт / нет сделок. Золотой контур: выбранный кандидат. Метки в одной свече могут перекрываться. Свечи без сделок пропущены; время из файла тиков без пересчёта.");
+            TextBlockChartLegend.Text = (result.DeltaCalculated ? TextBlockChartLegend.Text : string.Empty) + L(
+                " Clouds: squares for single trades, circles for chains. Green = more Buy ticks, red = more Sell ticks, blue = equal counts. Size reflects volume. Anchor is the last tick; completion may be later. OpenAtEnd is unfinished.",
+                " Cloud: квадраты — одиночные сделки, круги — цепочки. Зелёный — больше тиков Buy, красный — Sell, синий — поровну. Размер отражает объём. Метка стоит на последнем тике; завершение может быть позже. OpenAtEnd — незавершённая цепочка.");
+            TextBlockChartLegend.Text += L(" Cloud 2: thick outlined markers; its Cloud path is purple. Layers have independent size/contrast and visibility.",
+                " Cloud 2: метки с толстым контуром; линия по Cloud — фиолетовая. Размер, контраст и видимость слоёв независимы.");
             ButtonOpenArtifacts.IsEnabled = Directory.Exists(result.ArtifactDirectory);
             TabControlResults.SelectedItem = TabItemSummary;
 
@@ -468,6 +467,7 @@ namespace OsEngine.OsData.OrderFlow
         {
             try
             {
+                if (_statisticsJob != null) { _statisticsJob.Cancel(); return; }
                 if (_cancellation != null)
                 {
                     _cancellation.Cancel();
@@ -543,7 +543,7 @@ namespace OsEngine.OsData.OrderFlow
                 if (selected != null)
                 {
                     _chart.SelectCandidate(selected.CandidateId);
-                    TabControlResults.SelectedItem = TabItemChart;
+                    ShowChartView();
                 }
             }
             catch (Exception error)
@@ -555,27 +555,61 @@ namespace OsEngine.OsData.OrderFlow
         private OrderFlowResearchRequest BuildRequest()
         {
             OrderFlowResearchRequest request = new OrderFlowResearchRequest();
-            request.DealsFilePath = TextBoxDealsPath.Text.Trim();
-            request.QuotesFilePath = TextBoxQuotesPath.Text.Trim();
+            request.TicksFilePath = TextBoxTicksPath.Text.Trim();
             request.OutputRootPath = TextBoxOutputPath.Text.Trim();
-            request.FeatureWindowSeconds = ParseInt(TextBoxWindowSeconds.Text, "Feature window");
-            request.MinimumAbsoluteDelta = TextBoxMinimumDelta.Text.ToDecimal();
-            request.MinimumPriceChangeTicks = ParseNonNegativeInt(TextBoxMinimumPriceTicks.Text, "Price ticks");
-            request.TopBookLevels = ParseInt(TextBoxTopLevels.Text, "Book levels");
-            request.MaximumBookAgeMilliseconds = ParseInt(TextBoxBookAge.Text, "Book age");
-            request.CandidateCooldownMilliseconds = ParseNonNegativeInt(TextBoxCooldown.Text, "Cooldown");
-            request.BackgroundSampleSeconds = ParseInt(TextBoxBackground.Text, "Background interval");
-            request.LabelHorizonsSeconds = ParseHorizons(TextBoxHorizons.Text);
-            request.TargetTicks = ParseInt(TextBoxTargetTicks.Text, "Target ticks");
-            request.InvalidationTicks = ParseInt(TextBoxInvalidationTicks.Text, "Invalidation ticks");
-            request.PriceStepOverride = string.IsNullOrWhiteSpace(TextBoxPriceStep.Text)
-                ? 0
-                : TextBoxPriceStep.Text.ToDecimal();
-            request.VolumeStepOverride = string.IsNullOrWhiteSpace(TextBoxVolumeStep.Text)
-                ? 0
-                : TextBoxVolumeStep.Text.ToDecimal();
+            request.CalculateDelta = CheckBoxCalculateDelta.IsChecked == true;
+            request.CalculateCloud = CheckBoxCalculateCloud.IsChecked == true;
+            if (request.CalculateCloud)
+            {
+                request.Cloud = new OrderFlowCloudSettings
+                {
+                    MinimumTickVolume = TextBoxCloudMinTick.Text.ToDecimal(),
+                    MinimumSumVolume = TextBoxCloudSum.Text.ToDecimal(),
+                    MaximumGapMilliseconds = ParseNonNegativeInt(TextBoxCloudGap.Text, "Cloud gap"),
+                    MaximumRangeTicks = ParseNonNegativeInt(TextBoxCloudRange.Text, "Cloud range")
+                };
+            }
+            if (request.CalculateDelta)
+            {
+                request.FeatureWindowSeconds = ParseInt(TextBoxWindowSeconds.Text, "Feature window");
+                request.MinimumAbsoluteDelta = TextBoxMinimumDelta.Text.ToDecimal();
+                request.MinimumPriceChangeTicks = ParseNonNegativeInt(TextBoxMinimumPriceTicks.Text, "Price ticks");
+                request.CandidateCooldownMilliseconds = ParseNonNegativeInt(TextBoxCooldown.Text, "Cooldown");
+                request.BackgroundSampleSeconds = ParseInt(TextBoxBackground.Text, "Background interval");
+                request.LabelHorizonsSeconds = ParseHorizons(TextBoxHorizons.Text);
+                request.TargetTicks = ParseInt(TextBoxTargetTicks.Text, "Target ticks");
+                request.InvalidationTicks = ParseInt(TextBoxInvalidationTicks.Text, "Invalidation ticks");
+            }
+            BuildCloud2Request(request);
+            if (request.CalculateCloud) { request.Cloud.Imbalance = ReadImbalanceSettings("Cloud"); }
+            if (request.CalculateCloud2) { request.Cloud2.Imbalance = ReadImbalanceSettings("Cloud2"); }
+            request.PriceStep = ParsePriceStep(TextBoxPriceStep.Text);
+            request.FromDate = _fromDateInput.ReadDate();
+            request.ToDate = _toDateInput.ReadDate();
             request.Validate();
             return request;
+        }
+
+        private void ButtonAllDates_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                _fromDateInput.Clear();
+                _toDateInput.Clear();
+            }
+            catch (Exception error) { ShowError(error); }
+        }
+
+        /// <summary>Parses a required positive decimal tick size, accepting either comma or dot without grouping.</summary>
+        internal static decimal ParsePriceStep(string text)
+        {
+            if (!decimal.TryParse((text ?? string.Empty).Trim().Replace(',', '.'), NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign,
+                CultureInfo.InvariantCulture, out decimal step) || step <= 0)
+            {
+                throw new ArgumentException(L("Enter a positive price step, for example 5 or 0.00001.",
+                    "Укажите положительный шаг цены, например 5 или 0,00001."));
+            }
+            return step;
         }
 
         private static int ParseInt(string value, string fieldName)
@@ -613,21 +647,6 @@ namespace OsEngine.OsData.OrderFlow
             return horizons;
         }
 
-        private static void TryFillPairedPath(string selectedPath, string selectedSuffix,
-            string pairedSuffix, TextBox target)
-        {
-            if (selectedPath.EndsWith(selectedSuffix, StringComparison.OrdinalIgnoreCase) == false)
-            {
-                return;
-            }
-
-            string pairedPath = selectedPath.Substring(0, selectedPath.Length - selectedSuffix.Length) + pairedSuffix;
-            if (File.Exists(pairedPath))
-            {
-                target.Text = pairedPath;
-            }
-        }
-
         private void SetDefaultOutputPath(string selectedPath)
         {
             if (string.IsNullOrWhiteSpace(TextBoxOutputPath.Text))
@@ -640,6 +659,10 @@ namespace OsEngine.OsData.OrderFlow
             }
         }
 
+        #endregion
+
+        #region Presentation and lifecycle
+
         internal static string BuildSummary(OrderFlowResearchResult result, bool russian)
         {
             Func<string, string, string> text = (english, translated) => russian ? translated : english;
@@ -647,19 +670,27 @@ namespace OsEngine.OsData.OrderFlow
             builder.AppendLine(result.Quality.ResearchAccepted ? text("RESEARCH ACCEPTED", "ИССЛЕДОВАНИЕ ПРИНЯТО") : text("RESEARCH REJECTED", "ИССЛЕДОВАНИЕ ОТКЛОНЕНО"));
             builder.AppendLine(text("This result contains no order, fill, execution PnL or profitability claim.", "Оценка исторических данных. Заявки и торговая прибыль не рассчитываются."));
             builder.AppendLine();
-            builder.AppendLine(text("Deals: ", "Сделки QSH: ") + result.Quality.DealCount.ToString(CultureInfo.InvariantCulture));
-            builder.AppendLine(text("Quotes: ", "Снимки стакана QSH: ") + result.Quality.QuoteCount.ToString(CultureInfo.InvariantCulture));
-            builder.AppendLine(text("Valid books: ", "Валидные стаканы: ") + result.Quality.ValidBookCount.ToString(CultureInfo.InvariantCulture));
+            builder.AppendLine(text("Calculated: ", "Рассчитано: ") + (result.DeltaCalculated ? "Delta " : "") + (result.CloudCalculated ? "Cloud 1 " : "") + (result.Cloud2Calculated ? "Cloud 2" : ""));
+            builder.AppendLine("Clouds: " + result.Clouds.Count + text("; open at end: ", "; незавершённых: ") + result.Clouds.Count(cloud => cloud.CompletedAt == null));
+            builder.AppendLine("Cloud hash: " + result.CloudHash);
+            builder.AppendLine("Cloud 2: " + result.Clouds2.Count + text("; single ticks: ", "; одиночных тиков: ") + result.Clouds2.Count(cloud => cloud.CompletionReason == "SingleTick"));
+            builder.AppendLine("Cloud 2 hash: " + result.Cloud2Hash);
+            builder.AppendLine(text("Cloud filter PASS / total: ", "Cloud прошли фильтр / всего: ")
+                + result.Clouds.Count(cloud => cloud.ImbalancePassed) + " / " + result.Clouds.Count);
+            builder.AppendLine(text("Cloud 2 filter PASS / total: ", "Cloud 2 прошли фильтр / всего: ")
+                + result.Clouds2.Count(cloud => cloud.ImbalancePassed) + " / " + result.Clouds2.Count);
+            builder.AppendLine(text("Selected ticks: ", "Тики выбранного периода: ") + result.Quality.DealCount.ToString(CultureInfo.InvariantCulture));
             builder.AppendLine(text("Deals range: ", "Период сделок: ") + FormatRange(result.Quality.FirstDealTime, result.Quality.LastDealTime));
-            builder.AppendLine(text("Quotes range: ", "Период стакана: ") + FormatRange(result.Quality.FirstQuoteTime, result.Quality.LastQuoteTime));
+            if (result.Input != null)
+            {
+                builder.AppendLine(text("Instrument (filename): ", "Инструмент (имя файла): ") + result.Input.Instrument);
+                builder.AppendLine(text("Validated source ticks: ", "Проверено тиков во всём файле: ") + result.Input.RecordCount);
+                builder.AppendLine(text("Full source range: ", "Весь файл: ") + FormatRange(result.Input.FirstTime, result.Input.LastTime));
+            }
             builder.AppendLine(text("Closed buckets: ", "Обработанные группы событий с одинаковым временем: ") + result.Quality.BucketCount.ToString(CultureInfo.InvariantCulture));
             builder.AppendLine(text("Observations: ", "Наблюдения (кандидаты + фон): ") + result.Observations.Count.ToString(CultureInfo.InvariantCulture));
             builder.AppendLine(text("Broad candidates: ", "Кандидаты Long/Short: ") + result.Candidates.Count.ToString(CultureInfo.InvariantCulture));
             builder.AppendLine(text("Market path labels: ", "Оценки будущего движения (все горизонты): ") + result.Labels.Count.ToString(CultureInfo.InvariantCulture));
-            builder.AppendLine(text("Invalid deals: ", "Некорректные сделки: ") + result.Quality.InvalidDealCount.ToString(CultureInfo.InvariantCulture));
-            builder.AppendLine(text("Invalid books: ", "Некорректные стаканы: ") + result.Quality.InvalidBookCount.ToString(CultureInfo.InvariantCulture));
-            builder.AppendLine(text("Missing book features: ", "Расчёты признаков без доступного стакана: ") + result.Quality.MissingBookFeatureCount.ToString(CultureInfo.InvariantCulture));
-            builder.AppendLine(text("Stale book features: ", "Расчёты признаков с устаревшим стаканом: ") + result.Quality.StaleBookFeatureCount.ToString(CultureInfo.InvariantCulture));
             builder.AppendLine();
             builder.AppendLine(text("Input hash: ", "Хеш входных данных: ") + result.InputHash);
             builder.AppendLine(text("ResearchSpec hash: ", "Хеш параметров: ") + result.ResearchSpecHash);
@@ -687,33 +718,70 @@ namespace OsEngine.OsData.OrderFlow
                 return "n/a";
             }
 
-            return first.Value.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture) +
-                " .. " + last.Value.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture);
+            return first.Value.ToString("yyyy-MM-dd HH:mm:ss.ffffff", CultureInfo.InvariantCulture) +
+                " .. " + last.Value.ToString("yyyy-MM-dd HH:mm:ss.ffffff", CultureInfo.InvariantCulture);
         }
 
         private void SetRunningState(bool isRunning)
         {
+            UpdateStatisticsControls(isRunning);
+            ButtonReplayPlay.IsEnabled = !isRunning && _displayedResult?.Quality.ResearchAccepted == true;
+            CheckBoxCalculateDelta.IsEnabled = CheckBoxCalculateCloud.IsEnabled = CheckBoxCalculateCloud2.IsEnabled = !isRunning;
+            UpdateCalculationControls();
+            DateFrom.IsEnabled = DateTo.IsEnabled = isRunning == false;
+            ButtonAllDates.IsEnabled = isRunning == false;
             ButtonRun.IsEnabled = isRunning == false;
             ButtonCancel.IsEnabled = isRunning;
-            ButtonBrowseDeals.IsEnabled = isRunning == false;
-            ButtonBrowseQuotes.IsEnabled = isRunning == false;
+            ButtonBrowseTicks.IsEnabled = isRunning == false;
             ButtonBrowseOutput.IsEnabled = isRunning == false;
-            ButtonDownloadQsh.IsEnabled = isRunning == false;
-            TextBoxDealsPath.IsEnabled = isRunning == false;
-            TextBoxQuotesPath.IsEnabled = isRunning == false;
+            TextBoxTicksPath.IsEnabled = isRunning == false;
             TextBoxOutputPath.IsEnabled = isRunning == false;
             TextBoxWindowSeconds.IsEnabled = isRunning == false;
             TextBoxMinimumDelta.IsEnabled = isRunning == false;
             TextBoxMinimumPriceTicks.IsEnabled = isRunning == false;
-            TextBoxTopLevels.IsEnabled = isRunning == false;
-            TextBoxBookAge.IsEnabled = isRunning == false;
             TextBoxCooldown.IsEnabled = isRunning == false;
             TextBoxBackground.IsEnabled = isRunning == false;
             TextBoxHorizons.IsEnabled = isRunning == false;
             TextBoxTargetTicks.IsEnabled = isRunning == false;
             TextBoxInvalidationTicks.IsEnabled = isRunning == false;
             TextBoxPriceStep.IsEnabled = isRunning == false;
-            TextBoxVolumeStep.IsEnabled = isRunning == false;
+        }
+
+        private void UpdateCalculationControls()
+        {
+            UpdateCloud2Controls();
+            GridDeltaSettings.IsEnabled = CheckBoxCalculateDelta.IsEnabled && CheckBoxCalculateDelta.IsChecked == true;
+            GridCloudSettings.IsEnabled = CheckBoxCalculateCloud.IsEnabled && CheckBoxCalculateCloud.IsChecked == true;
+        }
+
+        private void CalculationMode_Click(object sender, RoutedEventArgs e)
+        {
+            try { UpdateCalculationControls(); }
+            catch (Exception error) { ShowError(error); }
+        }
+
+        private void ChartLayers_Click(object sender, RoutedEventArgs e)
+        {
+            try { _chart?.SetLayers(CheckBoxShowDelta.IsChecked == true, CheckBoxShowCloud.IsChecked == true, CheckBoxShowCloud2.IsChecked == true); }
+            catch (Exception error) { ShowError(error); }
+        }
+
+        private void SliderCloudScale_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            try { _chart?.SetCloudScale(e.NewValue); }
+            catch (Exception error) { ShowError(error); }
+        }
+
+        private void DataGridClouds_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            try
+            {
+                if (sender is DataGrid grid && grid.SelectedItem is OrderFlowCloud cloud)
+                {
+                    ShowCloudOnChart(cloud);
+                }
+            }
+            catch (Exception error) { ShowError(error); }
         }
 
         private void ShowError(Exception error)
@@ -730,16 +798,29 @@ namespace OsEngine.OsData.OrderFlow
             try
             {
                 _isClosing = true;
+                DisposeCloudImbalanceControls();
+                DisposeCloudNavigation();
+                DisposeStatistics();
+                DisposeCloud2Controls();
+                DisposeReplay();
+                DisposeChartTools();
 
                 if (_cancellation != null)
                 {
                     _cancellation.Cancel();
                 }
 
-                ButtonBrowseDeals.Click -= ButtonBrowseDeals_Click;
-                ButtonBrowseQuotes.Click -= ButtonBrowseQuotes_Click;
+                CheckBoxCalculateDelta.Click -= CalculationMode_Click;
+                CheckBoxCalculateCloud.Click -= CalculationMode_Click;
+                CheckBoxShowDelta.Click -= ChartLayers_Click;
+                CheckBoxShowCloud.Click -= ChartLayers_Click;
+                SliderCloudScale.ValueChanged -= SliderCloudScale_ValueChanged;
+                DataGridClouds.MouseDoubleClick -= DataGridClouds_MouseDoubleClick;
+                ButtonBrowseTicks.Click -= ButtonBrowseTicks_Click;
+                ButtonAllDates.Click -= ButtonAllDates_Click;
+                _fromDateInput.Dispose();
+                _toDateInput.Dispose();
                 ButtonBrowseOutput.Click -= ButtonBrowseOutput_Click;
-                ButtonDownloadQsh.Click -= ButtonDownloadQsh_Click;
                 ButtonRun.Click -= ButtonRun_Click;
                 ButtonCancel.Click -= ButtonCancel_Click;
                 ButtonOpenArtifacts.Click -= ButtonOpenArtifacts_Click;
@@ -764,5 +845,6 @@ namespace OsEngine.OsData.OrderFlow
                 ServerMaster.SendNewLogMessage(error.ToString(), LogMessageType.Error);
             }
         }
+        #endregion
     }
 }

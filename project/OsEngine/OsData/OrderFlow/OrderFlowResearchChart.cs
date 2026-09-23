@@ -22,11 +22,24 @@ namespace OsEngine.OsData.OrderFlow
     /// <remarks>
     /// Changing the display timeframe or selected marker never recalculates
     /// features, candidates or labels. View changes are UI-thread-only; the owner
-    /// subscribes to ViewChanged and unsubscribes when closing. Contract: ORDER-FLOW-RESEARCH-001.
+    /// subscribes to ViewChanged/DrawingChanged and unsubscribes when closing. Temporary
+    /// source-time/price annotations survive view changes but reset on SetResult; no persistence.
+    /// Price styles and Cloud paths are historical display only. Contract: ORDER-FLOW-MVP-RUNBOOK-001.
     /// </remarks>
-    internal sealed class OrderFlowResearchChart : FrameworkElement
+    internal sealed partial class OrderFlowResearchChart : FrameworkElement
     {
+        #region State and navigation
+
         private OrderFlowResearchResult _result;
+        private Rect _cloudPlotBounds = Rect.Empty;
+        private double _cloudScale = 1;
+        private bool _showDelta = true;
+        private bool _showCloud = true;
+        private bool _showCloud2 = true;
+        private string _selectedCloudId;
+        private readonly List<(Point Center, double Radius, OrderFlowCloud Cloud)> _cloudHits = new List<(Point, double, OrderFlowCloud)>();
+        private readonly List<(Point Center, double Radius, OrderFlowCloud Cloud)> _cloudHits2 = new List<(Point, double, OrderFlowCloud)>();
+        private Dictionary<string, OrderFlowMarketPathLabel> _shortestLabels = new Dictionary<string, OrderFlowMarketPathLabel>();
         private OrderFlowDisplayTimeFrame _timeFrame = OrderFlowDisplayTimeFrame.Min1;
         private string _selectedCandidateId;
         private readonly Dictionary<OrderFlowDisplayTimeFrame, List<OrderFlowDisplayBar>> _displayBarCache
@@ -59,7 +72,7 @@ namespace OsEngine.OsData.OrderFlow
                 if (_result.Bars.TryGetValue(_timeFrame, out bars)) { return bars; }
                 if (_displayBarCache.TryGetValue(_timeFrame, out bars)) { return bars; }
                 List<OrderFlowDisplayBar> minutes;
-                if (OrderFlowChartTimeFrames.GetDuration(_timeFrame) <= TimeSpan.FromMinutes(1) ||
+                if ((_timeFrame != OrderFlowDisplayTimeFrame.Month1 && OrderFlowChartTimeFrames.GetDuration(_timeFrame) <= TimeSpan.FromMinutes(1)) ||
                     _result.Bars.TryGetValue(OrderFlowDisplayTimeFrame.Min1, out minutes) == false)
                 {
                     return _emptyBars;
@@ -77,11 +90,11 @@ namespace OsEngine.OsData.OrderFlow
                 List<OrderFlowDisplayBar> bars = CurrentBars;
                 if (bars.Count == 0) { return L("No trade bars", "Нет свечей со сделками"); }
                 return bars[_startIndex].TimeStart.ToString("dd.MM.yyyy HH:mm:ss", CultureInfo.InvariantCulture) +
-                    " — " + bars[_startIndex + VisibleCount - 1].TimeEnd.ToString("HH:mm:ss", CultureInfo.InvariantCulture) +
+                    " — " + bars[_startIndex + VisibleCount - 1].TimeEnd.ToString("dd.MM.yyyy HH:mm:ss", CultureInfo.InvariantCulture) +
                     " · " + L("bars", "свечи") + " " + (_startIndex + 1) + "–" + (_startIndex + VisibleCount) +
-                    " / " + bars.Count + " · " + L("Entire file", "Весь файл") + " " +
-                    bars[0].TimeStart.ToString("HH:mm:ss", CultureInfo.InvariantCulture) + "–" +
-                    bars[bars.Count - 1].TimeEnd.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+                    " / " + bars.Count + " · " + L("Calculated period", "Расчётный период") + " " +
+                    bars[0].TimeStart.ToString("dd.MM.yyyy HH:mm:ss", CultureInfo.InvariantCulture) + "–" +
+                    bars[bars.Count - 1].TimeEnd.ToString("dd.MM.yyyy HH:mm:ss", CultureInfo.InvariantCulture);
             }
         }
 
@@ -89,25 +102,113 @@ namespace OsEngine.OsData.OrderFlow
         {
             SnapsToDevicePixels = true;
             MinHeight = 320;
+            Focusable = true;
         }
 
-        /// <summary>Resets the display viewport for a new offline result without changing research data.</summary>
+        /// <summary>Resets the viewport and temporary annotations for a new result without changing research data.</summary>
         /// <param name="result">Offline result to display, or null to clear the viewport.</param>
         public void SetResult(OrderFlowResearchResult result)
         {
             EndDrag();
             _result = result;
+            ClearImbalanceDisplayCache();
+            UpdateCloudReference();
+            ClearDrawings();
+            _shortestLabels = result == null ? new Dictionary<string, OrderFlowMarketPathLabel>() : OrderFlowCandidateView.ShortestLabels(result);
             _displayBarCache.Clear();
             _selectedCandidateId = null;
+            _selectedCloudId = null;
+            _cloudHits.Clear();
+            _cloudHits2.Clear();
+            _cloudPlotBounds = Rect.Empty;
             _visibleCount = 120;
             ScrollTo(Math.Max(0, TotalBars - _visibleCount));
+        }
+
+        /// <summary>Toggles Delta and both independent Cloud layers on the UI thread without recalculation; hidden Clouds have neither markers, hits nor price paths.</summary>
+        public void SetLayers(bool delta, bool cloud, bool cloud2 = false)
+        {
+            CancelDrawingGesture();
+            _drawingPlot = Rect.Empty;
+            _showDelta = delta;
+            _showCloud = cloud;
+            _showCloud2 = cloud2;
+            _cloudHits.Clear();
+            _cloudHits2.Clear();
+            _cloudPlotBounds = Rect.Empty;
+            ToolTip = null;
+            InvalidateVisual();
+        }
+
+        /// <summary>Scales Cloud circle radii and pointer hit areas by a display-only coefficient, without modifying results.</summary>
+        /// <param name="coefficient">Finite radius multiplier from 0.1 through 3; initial value is 1.</param>
+        /// <param name="secondLayer">True targets Cloud 2; false targets Cloud 1.</param>
+        /// <remarks>UI-thread-only. Invalidates the last painted hit targets until the next render.</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">The coefficient is non-finite or outside the supported range.</exception>
+        public void SetCloudScale(double coefficient, bool secondLayer = false)
+        {
+            if (!double.IsFinite(coefficient) || coefficient < 0.1 || coefficient > 3)
+            {
+                throw new ArgumentOutOfRangeException(nameof(coefficient));
+            }
+            if (secondLayer) { _cloudScale2 = coefficient; }
+            else { _cloudScale = coefficient; }
+            _cloudHits.Clear();
+            _cloudHits2.Clear();
+            _cloudPlotBounds = Rect.Empty;
+            ToolTip = null;
+            InvalidateVisual();
+        }
+
+        /// <summary>Centers and temporarily reveals a selected Cloud even if filtered out; completion time remains separate from its anchor.</summary>
+        public void SelectCloud(string cloudId)
+        {
+            _selectedCloudId = cloudId;
+            _passingClouds = _passingClouds2 = null;
+            _cloudHits.Clear(); _cloudHits2.Clear(); _cloudPlotBounds = Rect.Empty;
+            OrderFlowCloud cloud = _result?.Clouds.Find(item => item.CloudId == cloudId) ?? _result?.Clouds2.Find(item => item.CloudId == cloudId);
+            int index = cloud == null ? -1 : CurrentBars.FindIndex(bar => bar.TimeStart <= cloud.Time && bar.TimeEnd > cloud.Time);
+            ScrollTo(index < 0 ? _startIndex : index - VisibleCount / 2);
+        }
+
+        /// <summary>Returns the topmost visible Cloud under the pointer within the last rendered price-panel clip.</summary>
+        /// <remarks>UI-thread query; hidden portions of markers never own a Cloud tooltip.</remarks>
+        internal OrderFlowCloud CloudAt(Point point)
+        {
+            if (!_cloudPlotBounds.Contains(point)) { return null; }
+            for (int i = _cloudHits2.Count - 1; i >= 0; i--)
+            {
+                if (CloudHitContains(point, _cloudHits2[i])) { return _cloudHits2[i].Cloud; }
+            }
+            for (int i = _cloudHits.Count - 1; i >= 0; i--)
+            {
+                if (CloudHitContains(point, _cloudHits[i])) { return _cloudHits[i].Cloud; }
+            }
+            return null;
+        }
+
+        private static bool CloudHitContains(Point point, (Point Center, double Radius, OrderFlowCloud Cloud) hit)
+        {
+            Vector offset = point - hit.Center;
+            return hit.Cloud.TradeCount == 1 ? Math.Abs(offset.X) <= hit.Radius && Math.Abs(offset.Y) <= hit.Radius : offset.Length <= hit.Radius;
+        }
+
+        internal static string CloudDetails(OrderFlowCloud cloud)
+        {
+            return (cloud.CloudId.StartsWith("CL2-", StringComparison.Ordinal) ? "Cloud 2 " : "Cloud 1 ") + cloud.CloudId + " · " + cloud.Time.ToString("yyyy-MM-dd HH:mm:ss.ffffff", CultureInfo.InvariantCulture) +
+                "\n" + L("Price", "Цена") + " " + F(cloud.Price) + " · V " + F(cloud.Volume) +
+                " · Buy " + F(cloud.BuyVolume) + " / " + cloud.BuyCount + " · Sell " + F(cloud.SellVolume) + " / " + cloud.SellCount +
+                "\n" + L("Qualified", "Порог достигнут") + " " + cloud.Qualified.Time.ToString("yyyy-MM-dd HH:mm:ss.ffffff", CultureInfo.InvariantCulture) +
+                " · V " + F(cloud.Qualified.Volume) + " · VWAP " + F(cloud.Qualified.Vwap) +
+                "\n" + L("Count imbalance", "Перевес числа тиков") + " " + F(cloud.SidePercent) + "% · " + cloud.CompletionReason +
+                " · " + L("Completed", "Завершён") + " " + (cloud.CompletedAt?.ToString("yyyy-MM-dd HH:mm:ss.ffffff", CultureInfo.InvariantCulture) ?? (cloud.CompletionReason == "Forming" ? L("forming", "формируется") : L("open at end", "открыт в конце данных"))) + ImbalanceDetails(cloud);
         }
 
         /// <summary>Changes display bars, retaining the visible midpoint time when possible.</summary>
         /// <param name="timeFrame">Base display bars or a larger aggregation cached from Min1 bars in this presenter.</param>
         public void SetTimeFrame(OrderFlowDisplayTimeFrame timeFrame)
         {
-            EndDrag();
+            CancelDrawingGesture();
             List<OrderFlowDisplayBar> previous = CurrentBars;
             DateTime? anchor = previous.Count == 0 ? null
                 : previous[Math.Min(previous.Count - 1, _startIndex + VisibleCount / 2)].TimeStart;
@@ -134,6 +235,8 @@ namespace OsEngine.OsData.OrderFlow
         public void ScrollTo(int startIndex)
         {
             _startIndex = Math.Clamp(startIndex, 0, Math.Max(0, TotalBars - VisibleCount));
+            _drawingPlot = Rect.Empty;
+            _lineHits.Clear();
             InvalidateVisual();
             ViewChanged?.Invoke(this, EventArgs.Empty);
         }
@@ -184,7 +287,7 @@ namespace OsEngine.OsData.OrderFlow
             }
         }
 
-        /// <summary>Starts panning on the plot or horizontal scaling on the bottom time axis.</summary>
+        /// <summary>Handles drawing/selection in the price panel before panning, or scaling on the bottom time axis.</summary>
         /// <param name="e">Pointer press within the plot width.</param>
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
@@ -193,6 +296,14 @@ namespace OsEngine.OsData.OrderFlow
             {
                 Point point = e.GetPosition(this);
                 if (TotalBars == 0 || point.X < 92 || point.X > ActualWidth - 12) { return; }
+                Focus();
+                if (DrawingPointerDown(point))
+                {
+                    if (_movingAnchor != 0 && !CaptureMouse()) { _movingAnchor = 0; }
+                    e.Handled = true;
+                    return;
+                }
+                if (DrawingTool != OrderFlowDrawingTool.Select && point.Y < ActualHeight - TimeAxisHeight) { e.Handled = true; return; }
                 _dragOrigin = point;
                 _dragStart = _startIndex;
                 _dragCount = VisibleCount;
@@ -211,7 +322,7 @@ namespace OsEngine.OsData.OrderFlow
         protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
         {
             base.OnMouseLeftButtonUp(e);
-            if (_dragging) { EndDrag(); e.Handled = true; }
+            if (_dragging || _movingAnchor != 0) { EndDrag(); e.Handled = true; }
         }
 
         /// <summary>Clears drag state if another control takes pointer capture.</summary>
@@ -220,22 +331,49 @@ namespace OsEngine.OsData.OrderFlow
         {
             base.OnLostMouseCapture(e);
             _dragging = false;
+            _movingAnchor = 0;
             Cursor = null;
         }
 
         private void EndDrag()
         {
             _dragging = false;
+            _movingAnchor = 0;
             if (IsMouseCaptured) { ReleaseMouseCapture(); }
             Cursor = null;
         }
 
-        private double PointerFraction(double x)
+        /// <summary>Processes an active navigation drag before a drawing preview; called by mouse input and offline component tests.</summary>
+        internal bool MovePointerInteraction(Point point)
         {
-            return Math.Clamp((x - 92) / Math.Max(1, ActualWidth - 104), 0, 1);
+            if (_dragging)
+            {
+                double distance = point.X - _dragOrigin.X;
+                if (_dragTimeAxis)
+                {
+                    int count = (int)Math.Clamp(Math.Round(_dragCount * Math.Exp(Math.Clamp(-distance / 180, -10, 10))), 1, Math.Max(1, TotalBars));
+                    ApplyZoom(_dragStart, _dragCount, count, _dragAnchor);
+                }
+                else
+                {
+                    ScrollTo(_dragStart - (int)Math.Round(distance * _dragCount / DataWidth));
+                }
+                return true;
+            }
+            if (DrawingPointerMove(point)) { Cursor = Cursors.Cross; return true; }
+            return false;
         }
 
-        /// <summary>Shows the display bar under the pointer, including its book quality.</summary>
+        private double PointerFraction(double x)
+        {
+            return Math.Clamp((x - 92) / DataWidth, 0, 1);
+        }
+
+        #endregion
+
+        #region Rendering
+
+        /// <summary>Shows the display bar under the pointer, with OHLC, signed bar volume and the last window response.</summary>
         /// <param name="e">Pointer coordinates in the chart.</param>
         protected override void OnMouseMove(MouseEventArgs e)
         {
@@ -243,31 +381,19 @@ namespace OsEngine.OsData.OrderFlow
             try
             {
                 Point point = e.GetPosition(this);
-                if (_dragging)
-                {
-                    double distance = point.X - _dragOrigin.X;
-                    if (_dragTimeAxis)
-                    {
-                        int count = (int)Math.Clamp(Math.Round(_dragCount * Math.Exp(Math.Clamp(-distance / 180, -10, 10))), 1, Math.Max(1, TotalBars));
-                        ApplyZoom(_dragStart, _dragCount, count, _dragAnchor);
-                    }
-                    else
-                    {
-                        ScrollTo(_dragStart - (int)Math.Round(distance * _dragCount / Math.Max(1, ActualWidth - 104)));
-                    }
-                    e.Handled = true;
-                    return;
-                }
-                Cursor = point.Y >= ActualHeight - TimeAxisHeight ? Cursors.SizeWE : null;
-                double position = (point.X - 92) / Math.Max(1, ActualWidth - 104);
-                if (position < 0 || position >= 1 || VisibleCount == 0) { ToolTip = null; return; }
-                OrderFlowDisplayBar bar = CurrentBars[_startIndex + Math.Min(VisibleCount - 1, (int)(position * VisibleCount))];
+                if (MovePointerInteraction(point)) { ToolTip = null; e.Handled = true; return; }
+                Cursor = point.Y >= ActualHeight - TimeAxisHeight ? Cursors.SizeWE
+                    : DrawingTool != OrderFlowDrawingTool.Select ? Cursors.Cross : DrawingAt(point) != null ? Cursors.Hand : null;
+                OrderFlowCloud hovered = CloudAt(point);
+                if (hovered != null) { ToolTip = CloudDetails(hovered); return; }
+                int barIndex = BarIndexAt(point.X);
+                if (barIndex < 0) { ToolTip = null; return; }
+                OrderFlowDisplayBar bar = CurrentBars[barIndex];
                 ToolTip = bar.TimeStart.ToString("dd.MM.yyyy HH:mm:ss", CultureInfo.InvariantCulture) +
                     "\nO " + F(bar.Open) + " · H " + F(bar.High) + " · L " + F(bar.Low) + " · C " + F(bar.Close) +
                     "\n" + L("Bar delta", "Дельта свечи") + " " + F(bar.Delta) +
-                    " · " + L("Window response", "Отклик окна") + " " + F(bar.PriceResponse) +
-                    "\n" + L("Book imbalance", "Дисбаланс стакана") + " " + (bar.BookAvailable ? F(bar.BookImbalance) : L("missing", "нет данных")) +
-                    (bar.BookStale ? " · " + L("stale", "устарел") : "");
+                    " · " + L("Window response", "Отклик окна") + " " + F(bar.PriceResponse);
+
             }
             catch (Exception error)
             {
@@ -291,12 +417,17 @@ namespace OsEngine.OsData.OrderFlow
 
         private void DrawChart(DrawingContext drawingContext)
         {
+            _drawingPlot = Rect.Empty;
+            _lineHits.Clear();
+            _cloudHits.Clear();
+            _cloudHits2.Clear();
+            _cloudPlotBounds = Rect.Empty;
             Rect bounds = new Rect(0, 0, ActualWidth, ActualHeight);
             drawingContext.DrawRectangle(BackgroundBrush, null, bounds);
 
             if (_result == null || ActualWidth < 200 || ActualHeight < 200)
             {
-                DrawText(drawingContext, L("Run paired QSH research to display diagnostic bars.", "Запустите расчёт по паре QSH для просмотра графика."),
+                DrawText(drawingContext, L("Run tick research to display diagnostic bars.", "Запустите расчёт по файлу тиков для просмотра графика."),
                     new Point(12, 12), ForegroundBrush, 13);
                 return;
             }
@@ -313,21 +444,27 @@ namespace OsEngine.OsData.OrderFlow
             double left = 92;
             double right = Math.Max(left + 10, ActualWidth - 12);
             double width = right - left;
-            double usable = ActualHeight - 120;
+            double usable = ActualHeight - 100;
             double priceTop = 24;
-            double priceBottom = priceTop + usable * 0.46;
+            double priceBottom = priceTop + usable * 0.54;
             double deltaTop = priceBottom + 20;
-            double deltaBottom = deltaTop + usable * 0.18;
+            double deltaBottom = deltaTop + usable * 0.23;
             double responseTop = deltaBottom + 20;
-            double responseBottom = responseTop + usable * 0.18;
-            double bookTop = responseBottom + 20;
-            double bookBottom = bookTop + usable * 0.18;
+            double responseBottom = responseTop + usable * 0.23;
 
-            DrawPanelBoundaries(drawingContext, left, right, priceBottom, deltaBottom, responseBottom, bookBottom);
-            DrawText(drawingContext, L("Price · OHLC", "Цена · OHLC"), new Point(left, 3), ForegroundBrush, 11);
+            bool deltaVisible = _showDelta && _result.DeltaCalculated;
+            if (!deltaVisible) { priceBottom = ActualHeight - 60; responseBottom = priceBottom; }
+            else { DrawPanelBoundaries(drawingContext, left, right, priceBottom, deltaBottom, responseBottom); }
+            string priceCaption = _cloudPriceMode ? L("Cloud line · grey High/Low background", "Линия Cloud · серый фон High/Low")
+                : _priceDisplay == OrderFlowPriceDisplay.MutedHighLow ? L("Price · grey High/Low", "Цена · серые High/Low")
+                : _priceDisplay == OrderFlowPriceDisplay.HighLow ? L("Price · High/Low lines", "Цена · линии High/Low") : L("Price · OHLC", "Цена · OHLC");
+            DrawText(drawingContext, priceCaption, new Point(left, 3), ForegroundBrush, 11);
+            if (deltaVisible)
+            {
             DrawText(drawingContext, L("Bar delta · buy − sell volume", "Дельта свечи · объём покупок − продаж"), new Point(left, deltaTop - 17), ForegroundBrush, 11);
             DrawText(drawingContext, L("Window response · price change / |delta|", "Отклик окна · изменение цены / |дельта|"), new Point(left, responseTop - 17), ForegroundBrush, 11);
-            DrawText(drawingContext, L("Book imbalance · + bids / − asks", "Дисбаланс стакана · + покупатели / − продавцы"), new Point(left, bookTop - 17), ForegroundBrush, 11);
+
+            }
 
             decimal minPrice = bars.Where(bar => bar.HasTrades).Min(bar => bar.Low);
             decimal maxPrice = bars.Where(bar => bar.HasTrades).Max(bar => bar.High);
@@ -349,34 +486,87 @@ namespace OsEngine.OsData.OrderFlow
                 maxResponse = 1;
             }
 
-            DrawScale(drawingContext, minPrice, maxPrice, priceTop, priceBottom);
-            DrawScale(drawingContext, -maxDelta, maxDelta, deltaTop, deltaBottom);
-            DrawScale(drawingContext, -maxResponse, maxResponse, responseTop, responseBottom);
-            DrawScale(drawingContext, -1, 1, bookTop, bookBottom);
-            double slotWidth = width / bars.Count;
-            DrawTimeAxis(drawingContext, bars, left, right, slotWidth, priceTop, bookBottom);
-            DrawPriceBars(drawingContext, bars, left, slotWidth, priceTop, priceBottom, minPrice, maxPrice);
-            DrawDeltaBars(drawingContext, bars, left, slotWidth, deltaTop, deltaBottom, maxDelta);
-            DrawResponse(drawingContext, bars, left, slotWidth, responseTop, responseBottom, maxResponse);
-            DrawBook(drawingContext, bars, left, slotWidth, bookTop, bookBottom);
-            DrawCandidates(drawingContext, bars, left, slotWidth, priceTop, priceBottom, minPrice, maxPrice);
+            DrawPriceGrid(drawingContext, minPrice, maxPrice, left, right, priceTop, priceBottom);
+            if (deltaVisible)
+            {
+                DrawScale(drawingContext, -maxDelta, maxDelta, deltaTop, deltaBottom);
+                DrawScale(drawingContext, -maxResponse, maxResponse, responseTop, responseBottom);
+            }
+            double slotWidth = DataWidth / bars.Count;
+            DrawTimeAxis(drawingContext, bars, left, right, slotWidth, priceTop, responseBottom);
+            DrawPriceDisplay(drawingContext, bars, left, slotWidth, priceTop, priceBottom, minPrice, maxPrice);
+            if (_showCloud && _result.CloudCalculated)
+            {
+                DrawClouds(drawingContext, bars, left, slotWidth, priceTop, priceBottom, minPrice, maxPrice, false);
+            }
+            if (_showCloud2 && _result.Cloud2Calculated)
+            {
+                DrawClouds(drawingContext, bars, left, slotWidth, priceTop, priceBottom, minPrice, maxPrice, true);
+            }
+            if (deltaVisible)
+            {
+                DrawDeltaBars(drawingContext, bars, left, slotWidth, deltaTop, deltaBottom, maxDelta);
+                DrawResponse(drawingContext, bars, left, slotWidth, responseTop, responseBottom, maxResponse);
+                DrawCandidates(drawingContext, bars, left, slotWidth, priceTop, priceBottom, minPrice, maxPrice);
+            }
+
+            DrawAnnotations(drawingContext, new Rect(left, priceTop, width, priceBottom - priceTop), minPrice, maxPrice);
 
             DrawText(drawingContext, OrderFlowChartTimeFrames.GetDisplayName(_timeFrame, OsLocalization.CurLocalization == OsLocalization.OsLocalType.Ru) + " · " + L("display", "отображение"), new Point(right - 135, 4),
                 ForegroundBrush, 10);
         }
 
+        private void DrawClouds(DrawingContext context, List<OrderFlowDisplayBar> bars, double left, double slotWidth,
+            double top, double bottom, decimal minPrice, decimal maxPrice, bool secondLayer)
+        {
+            List<OrderFlowCloud> clouds = DisplayClouds(secondLayer);
+            List<(Point Center, double Radius, OrderFlowCloud Cloud)> hits = secondLayer ? _cloudHits2 : _cloudHits;
+            int low = 0;
+            int high = clouds.Count;
+            while (low < high)
+            {
+                int middle = low + (high - low) / 2;
+                if (clouds[middle].Time < bars[0].TimeStart) { low = middle + 1; }
+                else { high = middle; }
+            }
+            int barIndex = 0;
+            _cloudPlotBounds = new Rect(left, top, Math.Max(1, ActualWidth - 12 - left), bottom - top);
+            context.PushClip(new RectangleGeometry(_cloudPlotBounds));
+            for (int i = low; i < clouds.Count; i++)
+            {
+                OrderFlowCloud cloud = clouds[i];
+                if (cloud.Time >= bars[bars.Count - 1].TimeEnd) { break; }
+                while (barIndex < bars.Count && bars[barIndex].TimeEnd <= cloud.Time) { barIndex++; }
+                if (barIndex == bars.Count || cloud.Time < bars[barIndex].TimeStart) { continue; }
+                double fraction = (cloud.Time.Ticks - bars[barIndex].TimeStart.Ticks) /
+                    (double)(bars[barIndex].TimeEnd.Ticks - bars[barIndex].TimeStart.Ticks);
+                Point center = new Point(left + slotWidth * (barIndex + fraction), Scale(cloud.Price, minPrice, maxPrice, bottom, top));
+                double radius = CloudVolumeRadius(cloud.Volume, secondLayer);
+                Color color = cloud.BuyCount > cloud.SellCount ? Colors.LimeGreen : cloud.BuyCount < cloud.SellCount ? Colors.Tomato : Colors.SteelBlue;
+                if (!cloud.ImbalancePassed) { color = Colors.Gray; }
+                Brush fill = secondLayer ? Brushes.Transparent : new SolidColorBrush(Color.FromArgb(75, color.R, color.G, color.B));
+                Pen outline = new Pen(cloud.CloudId == _selectedCloudId ? Brushes.Gold : new SolidColorBrush(color), secondLayer ? 2.5 : 1.3);
+                if (cloud.CompletedAt == null) { outline.DashStyle = DashStyles.Dash; }
+                if (cloud.TradeCount == 1) { context.DrawRectangle(fill, outline, new Rect(center.X - radius, center.Y - radius, radius * 2, radius * 2)); }
+                else { context.DrawEllipse(fill, outline, center, radius, radius); }
+                hits.Add((center, radius, cloud));
+            }
+            DrawCloudVolumeLabels(context, hits, secondLayer);
+            context.Pop();
+        }
+
         private void DrawTimeAxis(DrawingContext context, List<OrderFlowDisplayBar> bars, double left, double right,
-            double slotWidth, double priceTop, double bookBottom)
+            double slotWidth, double priceTop, double panelBottom)
         {
             Pen grid = new Pen(new SolidColorBrush(Color.FromArgb(55, 128, 128, 128)), 0.5);
             double axisTop = ActualHeight - TimeAxisHeight;
             context.DrawLine(new Pen(Brushes.Gray, 0.5), new Point(left, axisTop), new Point(right, axisTop));
             DrawText(context, L("Time", "Время"), new Point(8, axisTop + 12), ForegroundBrush, 10);
-            List<OrderFlowChartTimeTick> ticks = OrderFlowChartNavigation.TimeTicks(bars, right - left);
+            List<OrderFlowChartTimeTick> ticks = OrderFlowChartNavigation.TimeTicks(bars, DataWidth);
             for (int i = 0; i < ticks.Count; i++)
             {
                 double x = left + slotWidth * (ticks[i].BarIndex + 0.5);
-                context.DrawLine(grid, new Point(x, priceTop), new Point(x, bookBottom));
+                context.DrawLine(grid, new Point(x, priceTop), new Point(x, panelBottom));
                 context.DrawLine(new Pen(Brushes.Gray, 1), new Point(x, axisTop), new Point(x, axisTop + 5));
                 FormattedText label = new FormattedText(ticks[i].Text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
                     new Typeface("Segoe UI"), 10, ForegroundBrush, VisualTreeHelper.GetDpi(this).PixelsPerDip);
@@ -410,13 +600,12 @@ namespace OsEngine.OsData.OrderFlow
         }
 
         private static void DrawPanelBoundaries(DrawingContext drawingContext, double left, double right,
-            double priceBottom, double deltaBottom, double responseBottom, double bookBottom)
+            double priceBottom, double deltaBottom, double responseBottom)
         {
             Pen separator = new Pen(Brushes.Gray, 0.5);
             drawingContext.DrawLine(separator, new Point(left, priceBottom), new Point(right, priceBottom));
             drawingContext.DrawLine(separator, new Point(left, deltaBottom), new Point(right, deltaBottom));
             drawingContext.DrawLine(separator, new Point(left, responseBottom), new Point(right, responseBottom));
-            drawingContext.DrawLine(separator, new Point(left, bookBottom), new Point(right, bookBottom));
         }
 
         private static void DrawPriceBars(DrawingContext drawingContext, List<OrderFlowDisplayBar> bars,
@@ -487,44 +676,13 @@ namespace OsEngine.OsData.OrderFlow
             }
         }
 
-        private static void DrawBook(DrawingContext drawingContext, List<OrderFlowDisplayBar> bars,
-            double left, double slotWidth, double top, double bottom)
-        {
-            Point? previous = null;
-            Pen line = new Pen(Brushes.MediumPurple, 1.2);
-
-            for (int i = 0; i < bars.Count; i++)
-            {
-                OrderFlowDisplayBar bar = bars[i];
-                double x = left + slotWidth * i + slotWidth / 2;
-
-                if (bar.BookAvailable == false || bar.BookStale)
-                {
-                    Brush warning = new SolidColorBrush(Color.FromArgb(42, 220, 80, 60));
-                    drawingContext.DrawRectangle(warning, null,
-                        new Rect(left + slotWidth * i, top, Math.Max(1, slotWidth), bottom - top));
-                }
-
-                if (bar.BookAvailable == false) { previous = null; continue; }
-                double normalized = Math.Max(-1, Math.Min(1, Convert.ToDouble(bar.BookImbalance)));
-                double y = (top + bottom) / 2 - normalized * (bottom - top) / 2;
-                Point current = new Point(x, y);
-
-                if (previous.HasValue)
-                {
-                    drawingContext.DrawLine(line, previous.Value, current);
-                }
-
-                previous = current;
-            }
-        }
-
         private void DrawCandidates(DrawingContext drawingContext, List<OrderFlowDisplayBar> bars,
             double left, double slotWidth, double top, double bottom, decimal minPrice, decimal maxPrice)
         {
             DateTime startTime = bars[0].TimeStart;
             DateTime endTime = bars[bars.Count - 1].TimeEnd;
 
+            int barCursor = 0;
             for (int i = 0; i < _result.Candidates.Count; i++)
             {
                 OrderFlowCandidate candidate = _result.Candidates[i];
@@ -533,16 +691,8 @@ namespace OsEngine.OsData.OrderFlow
                     continue;
                 }
 
-                int barIndex = -1;
-                for (int barIndexCandidate = 0; barIndexCandidate < bars.Count; barIndexCandidate++)
-                {
-                    if (candidate.Time >= bars[barIndexCandidate].TimeStart &&
-                        candidate.Time < bars[barIndexCandidate].TimeEnd)
-                    {
-                        barIndex = barIndexCandidate;
-                        break;
-                    }
-                }
+                while (barCursor < bars.Count && bars[barCursor].TimeEnd <= candidate.Time) { barCursor++; }
+                int barIndex = barCursor < bars.Count && candidate.Time >= bars[barCursor].TimeStart ? barCursor : -1;
 
                 if (barIndex < 0)
                 {
@@ -579,10 +729,7 @@ namespace OsEngine.OsData.OrderFlow
 
         private Brush GetCandidateBrush(string candidateId)
         {
-            OrderFlowMarketPathLabel label = _result.Labels
-                .Where(item => item.CandidateId == candidateId)
-                .OrderBy(item => item.HorizonSeconds)
-                .FirstOrDefault();
+            _shortestLabels.TryGetValue(candidateId, out OrderFlowMarketPathLabel label);
 
             if (label == null || label.Outcome == OrderFlowBarrierOutcome.Incomplete ||
                 label.Outcome == OrderFlowBarrierOutcome.NoFutureTrade)
@@ -618,13 +765,13 @@ namespace OsEngine.OsData.OrderFlow
 
         private static string F(decimal value)
         {
-            return value.ToString("0.######", CultureInfo.InvariantCulture);
+            return value.ToString("0.############################", CultureInfo.InvariantCulture);
         }
 
         private void DrawScale(DrawingContext context, decimal minimum, decimal maximum, double top, double bottom)
         {
-            DrawText(context, F(maximum), new Point(4, top - 5), ForegroundBrush, 10);
-            DrawText(context, F(minimum), new Point(4, bottom - 10), ForegroundBrush, 10);
+            DrawText(context, maximum.ToString("G6", CultureInfo.InvariantCulture), new Point(4, top - 5), ForegroundBrush, 10);
+            DrawText(context, minimum.ToString("G6", CultureInfo.InvariantCulture), new Point(4, bottom - 10), ForegroundBrush, 10);
         }
 
         private static double Scale(decimal value, decimal minimum, decimal maximum,
@@ -646,5 +793,6 @@ namespace OsEngine.OsData.OrderFlow
                 VisualTreeHelper.GetDpi(this).PixelsPerDip);
             drawingContext.DrawText(formattedText, point);
         }
+        #endregion
     }
 }

@@ -7,10 +7,27 @@
 и подгонки final out-of-sample.
 
 Текущий workbench реализует causal observations, broad candidates, background
-sampling, отдельные future market-path labels и immutable artifacts для одной
-пары файлов. Experiment registry, temporal split/purge, статистический анализ,
-policy selection и final OOS остаются target. См.
+sampling, отдельные future market-path labels и immutable artifacts для одного
+локального файла тиков и выбранных inclusive дат. Добавлена отдельная exploratory
+статистика реакций завершённых Cloud: локальный split/purge, подбор ограниченных
+правил на раннем участке и описательная проверка на более позднем. Experiment
+registry, полноценный train/validation/final-OOS, выбор торговой policy с издержками
+и её квалификация остаются target. Точная текущая методика — в
 [runbook](RESEARCH_MVP_RUNBOOK.md).
+
+Cloud — отдельный исторический набор визуализации, включаемый независимо
+от delta detector. Полные группы нельзя использовать как causal features по
+времени последнего тика: для момента квалификации используется только Qualified snapshot;
+для итоговых полей нужен учёт CompletedAt/CompletionSourceSequence.
+Открытые в конце цепочки не имеют подтверждения завершения. Канонические
+формулы и ограничения — [runbook](RESEARCH_MVP_RUNBOOK.md#45-cloud-цепочки-сделок).
+Cloud не меняет кандидаты дельты. Его будущие реакции рассчитываются отдельным
+проходом после готового результата и сохраняются отдельно от исходных Cloud;
+[методика и отличие source-order labels](RESEARCH_MVP_RUNBOOK.md#47-статистика-реакций-cloud).
+Рекомендация UI — условие визуального исследования, не StrategySpec, intent или
+разрешение real-time входа. Повторный подбор после просмотра проверки требует
+нового неиспользованного периода; текущая двухчастная схема не выполняет весь
+целевой протокол ниже.
 
 ## 1. Основной ответ
 
@@ -54,7 +71,7 @@ Label никогда не входит в feature vector и недоступен
 
 До расчёта labels создаётся неизменяемый `ResearchSpec vN`. Он фиксирует:
 
-- dataset/manifest versions и реальный контракт;
+- dataset/manifest versions, реальный контракт, ручной PriceStep и выбранные даты;
 - unit of observation и детерминированную sampling policy;
 - формулы признаков, типы и размеры окон;
 - broad candidate detector для Long и Short;
@@ -102,17 +119,16 @@ Label никогда не входит в feature vector и недоступен
 | Идентичность | Experiment ID, manifest hash, instrument, session/date, bucket, direction |
 | Поток сделок | Buy/Sell volume, delta, число сделок, средний/крупный размер, нормированные значения |
 | Цена и реакция | Изменение, диапазон, локальный уровень, продвижение цены на единицу потока, удержание/пробой |
-| Стакан | Spread, top-N imbalance, book age, видимая ликвидность, quality flags |
-| Контекст | Время сессии, volatility/liquidity regime, расстояние до клиринга/cutoff |
+| Контекст | Время сессии, volatility/trade-activity regime, расстояние до клиринга/cutoff |
 | Candidate state | Причина, возраст, confirmation/invalidation level, expiry, detector version |
-| Доступность | Пропуски, stale source, unknown side, invalid book и иные reason codes |
+| Доступность | Пропуски, неполнота источника, unknown side, регрессия времени и иные reason codes |
 
 Все нормировки в строке рассчитываются только по текущему и прошлому. Если
 нужна статистика прошлых сессий, её cutoff и версия сохраняются явно.
 
 ## 5. Market-path labels и отдельные execution results
 
-### 5.1. Market-path labels: результат этапа 5
+### 5.1. Market-path labels: исследовательский результат
 
 Один будущий `price up/down` недостаточен. Для каждого заранее заданного
 горизонта сохраняются:
@@ -121,8 +137,11 @@ Label никогда не входит в feature vector и недоступен
 - maximum favorable excursion (`MFE`) и maximum adverse excursion (`MAE`);
 - время до MFE/MAE и до первого достижения заданных barriers;
 - порядок `target first` / `invalidation first` / `neither`;
-- достижение session cutoff;
-- наличие причинно доступного стакана для гипотетической активации.
+- полнота horizon внутри выбранного периода.
+
+Session cutoff требует будущей календарной модели; текущие labels его не распознают.
+Время до экстремумов/барьеров текущего MVP хранится в микросекундах. Данные вне
+выбранных дат не дополняют признаки или labels; начальное окно может быть неполным.
 
 Reference price, горизонты и barriers задаются в ResearchSpec. Эти labels
 описывают будущую траекторию рынка, но не моделируют заявку и не называются
@@ -132,14 +151,15 @@ Reference price, горизонты и barriers задаются в ResearchSpec
 использует ограниченный набор заранее выбранных горизонтов. Выбирать лучший
 горизонт задним числом по final OOS запрещено.
 
-### 5.2. Execution results: только после квалификации этапа 6
+### 5.2. Execution results: только после отдельной квалификации
 
-После того как [ORDER-FLOW-EXECUTION-001](EXECUTION_MODEL.md) прошёл свои
-synthetic/invariant tests, для observations отдельным набором рассчитываются:
+Тики не раскрывают доступные котировки/ликвидность и не доказывают fill.
+После выбора модели по [ORDER-FLOW-EXECUTION-001](EXECUTION_MODEL.md) и прохождения
+её synthetic/invariant tests для observations отдельным набором рассчитываются:
 
-- activation/fill times и использованные book snapshot IDs;
+- activation/fill times и использованное execution evidence/profile;
 - full/partial/no-fill, исполненный объём и VWAP;
-- комиссия, spread, latency и adverse slippage;
+- комиссия, latency и явно заданные ценовые издержки/adverse slippage;
 - net PnL/MAE/MFE позиции по каждому заранее заданному execution profile;
 - отказ/expiry и соответствующие reason codes.
 
@@ -217,7 +237,7 @@ labels пересекают границу (`purge`); величина буфе�
 - подтверждённые, invalidated и expired;
 - принятые и отклонённые policy;
 - хорошие сигналы с плохим исполнением и наоборот;
-- разные интервалы сессии и volatility/liquidity regimes.
+- разные интервалы сессии и volatility/trade-activity regimes.
 
 Эпизоды выбираются детерминированно и стратифицированно, а не только из лучших
 сделок. График M1 используется по умолчанию, `Sec15/Sec30` — для порядка внутри

@@ -35,7 +35,7 @@ namespace OsEngine.OsData.OrderFlow
         /// Execution is synchronous on the calling thread. Cancellation is
         /// observed during replay and immediately before export; once export
         /// starts, filesystem completion is not cooperatively cancelled.
-        /// Input access or decoding failures produce a rejected bundle with per-role metadata.
+        /// Input access or decoding failures produce a rejected bundle with single-input provenance.
         /// The returned bundle is research evidence, not execution or PnL.
         /// </remarks>
         /// <param name="request">Validated local-file request and output root.</param>
@@ -89,12 +89,10 @@ namespace OsEngine.OsData.OrderFlow
         /// <exception cref="InvalidOperationException">The identity already exists with different bytes.</exception>
         public string Write(OrderFlowResearchRequest request, OrderFlowResearchResult result)
         {
-            string tradingDate = result.DealsHeader == null || result.DealsHeader.TradingDate == DateTime.MinValue
-                ? "unknown-date"
-                : result.DealsHeader.TradingDate.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
+            string tradingDate = result.Quality.FirstEventTime?.ToString("yyyyMMdd", CultureInfo.InvariantCulture) ?? "empty";
             string inputPrefix = GetHashPrefix(result.InputHash);
             string specPrefix = GetHashPrefix(result.ResearchSpecHash);
-            string directoryName = "order-flow-" + tradingDate + "-" + inputPrefix + "-" + specPrefix;
+            string directoryName = "tick-flow-" + tradingDate + "-" + inputPrefix + "-" + specPrefix;
             string outputRoot = Path.GetFullPath(request.OutputRootPath);
             string targetDirectory = Path.Combine(outputRoot, directoryName);
             string stagingDirectory = targetDirectory + ".staging-" + Guid.NewGuid().ToString("N");
@@ -146,18 +144,30 @@ namespace OsEngine.OsData.OrderFlow
             manifest.FeatureSchemaVersion = OrderFlowResearchSchema.FeatureSchemaVersion;
             manifest.CandidateDetectorVersion = OrderFlowResearchSchema.CandidateDetectorVersion;
             manifest.LabelSchemaVersion = OrderFlowResearchSchema.LabelSchemaVersion;
+            manifest.CloudVersion = OrderFlowResearchSchema.CloudVersion;
+            manifest.CalculateDelta = request.CalculateDelta;
+            manifest.CalculateCloud = request.CalculateCloud;
+            manifest.CalculateCloud2 = request.CalculateCloud2;
+            manifest.Cloud2 = request.Cloud2;
+            manifest.Cloud2Hash = result.Cloud2Hash;
+            manifest.Cloud2Count = result.Clouds2.Count;
+            manifest.Cloud2PassedCount = result.Clouds2.Count(cloud => cloud.ImbalancePassed);
+            manifest.CloudPassedCount = result.Clouds.Count(cloud => cloud.ImbalancePassed);
+            manifest.Cloud = request.Cloud;
+            manifest.CloudHash = result.CloudHash;
+            manifest.CloudCount = result.Clouds.Count;
             manifest.InputHash = result.InputHash;
             manifest.ResearchSpecHash = result.ResearchSpecHash;
             manifest.NormalizedEventHash = result.NormalizedEventHash;
             manifest.FeatureHash = result.FeatureHash;
             manifest.CandidateHash = result.CandidateHash;
-            manifest.Deals = result.DealsHeader;
-            manifest.Quotes = result.QuotesHeader;
+            manifest.Input = result.Input;
+            manifest.PriceStep = request.PriceStep;
+            manifest.FromDate = request.FromDate;
+            manifest.ToDate = request.ToDate;
             manifest.FeatureWindowSeconds = request.FeatureWindowSeconds;
             manifest.MinimumAbsoluteDelta = request.MinimumAbsoluteDelta;
             manifest.MinimumPriceChangeTicks = request.MinimumPriceChangeTicks;
-            manifest.TopBookLevels = request.TopBookLevels;
-            manifest.MaximumBookAgeMilliseconds = request.MaximumBookAgeMilliseconds;
             manifest.CandidateCooldownMilliseconds = request.CandidateCooldownMilliseconds;
             manifest.BackgroundSampleSeconds = request.BackgroundSampleSeconds;
             manifest.LabelHorizonsSeconds = request.LabelHorizonsSeconds;
@@ -170,6 +180,10 @@ namespace OsEngine.OsData.OrderFlow
             manifest.EvidenceBoundary = "Research-only market-path evidence. No orders, fills, execution PnL or profitability qualification.";
 
             WriteText(directory, "manifest.json", JsonSerializer.Serialize(manifest, jsonOptions));
+            WriteText(directory, "clouds.csv", BuildCloudsCsv(result.Clouds));
+            WriteText(directory, "clouds2.csv", BuildCloudsCsv(result.Clouds2));
+            WriteCloudPairs(directory, "cloud-pairs.csv", result.Clouds);
+            WriteCloudPairs(directory, "cloud2-pairs.csv", result.Clouds2);
             WriteText(directory, "quality.json", JsonSerializer.Serialize(result.Quality, jsonOptions));
             WriteText(directory, "observations.csv", BuildObservationsCsv(result.Observations));
             WriteText(directory, "candidates.csv", BuildCandidatesCsv(result.Candidates));
@@ -181,10 +195,79 @@ namespace OsEngine.OsData.OrderFlow
             WriteText(directory, "README.txt", BuildBoundaryReadme());
         }
 
+        private static void WriteCloudPairs(string directory, string name, List<OrderFlowCloud> clouds)
+        {
+            using StreamWriter writer = new StreamWriter(Path.Combine(directory, name), false, new UTF8Encoding(false));
+            writer.WriteLine("cloud_id,profile,lower_price,buy_volume,sell_volume");
+            foreach (OrderFlowCloud cloud in clouds)
+            foreach ((string profile, OrderFlowImbalanceSnapshot snapshot) in new[] { ("inside", cloud.InsideImbalance), ("context", cloud.ContextImbalance) })
+            {
+                if (snapshot == null) { continue; }
+                foreach (OrderFlowDiagonalPair pair in snapshot.Pairs.Values)
+                { writer.WriteLine(string.Join(",", cloud.CloudId, profile, FormatDecimal(pair.LowerPrice), FormatDecimal(pair.Buy), FormatDecimal(pair.Sell))); }
+            }
+        }
+
+        private static string ImbalanceCsvHeader(string prefix)
+        {
+            StringBuilder header = new StringBuilder("," + prefix + "_buy_volume," + prefix + "_sell_volume," + prefix + "_delta_percent," + prefix + "_comparable_pairs");
+            foreach (string name in new[] { "best_buy", "best_sell", "eligible_buy", "eligible_sell" })
+            { header.Append("," + prefix + "_" + name + "_lower_price," + prefix + "_" + name + "_buy_volume," + prefix + "_" + name + "_sell_volume," + prefix + "_" + name + "_ratio_percent"); }
+            return header.ToString();
+        }
+
+        private static void AppendImbalanceCsv(List<string> fields, OrderFlowImbalanceSnapshot snapshot)
+        {
+            if (snapshot == null) { for (int i = 0; i < 20; i++) { fields.Add(null); } return; }
+            fields.Add(FormatDecimal(snapshot.BuyVolume)); fields.Add(FormatDecimal(snapshot.SellVolume));
+            fields.Add(FormatDecimal(snapshot.DeltaPercent)); fields.Add(snapshot.ComparablePairs.ToString(CultureInfo.InvariantCulture));
+            OrderFlowDiagonalPair[] pairs = { snapshot.BestBuy, snapshot.BestSell, snapshot.EligibleBuy, snapshot.EligibleSell };
+            for (int i = 0; i < pairs.Length; i++)
+            {
+                OrderFlowDiagonalPair pair = pairs[i];
+                fields.Add(pair == null ? null : FormatDecimal(pair.LowerPrice));
+                fields.Add(pair == null ? null : FormatDecimal(pair.Buy));
+                fields.Add(pair == null ? null : FormatDecimal(pair.Sell));
+                fields.Add(pair == null ? null : (i % 2 == 0 ? pair.BuyRatioPercent : pair.SellRatioPercent).ToString("R", CultureInfo.InvariantCulture));
+            }
+        }
+
+        private static string BuildCloudsCsv(List<OrderFlowCloud> clouds)
+        {
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine("cloud_id,start_time,last_tick_time,completed_at,last_source_sequence,completion_source_sequence,completion_reason,price,low,high,volume,buy_volume,sell_volume,delta,buy_count,sell_count,side_percent,largest_tick,first_source_sequence,first_price,vwap,range_price,range_ticks,price_change,duration_ms,kind,qualified_time,qualified_source_sequence,qualified_price,qualified_low,qualified_high,qualified_volume,qualified_buy_volume,qualified_sell_volume,qualified_trade_count,qualified_vwap,delta_percent,imbalance_source,imbalance_pass" + ImbalanceCsvHeader("inside") + ImbalanceCsvHeader("context"));
+            foreach (OrderFlowCloud cloud in clouds)
+            {
+                List<string> fields = new List<string>
+                {
+                    cloud.CloudId, FormatTime(cloud.StartTime), FormatTime(cloud.Time),
+                    cloud.CompletedAt.HasValue ? FormatTime(cloud.CompletedAt.Value) : null,
+                    cloud.LastSourceSequence.ToString(CultureInfo.InvariantCulture),
+                    cloud.CompletionSourceSequence?.ToString(CultureInfo.InvariantCulture), cloud.CompletionReason,
+                    FormatDecimal(cloud.Price), FormatDecimal(cloud.Low), FormatDecimal(cloud.High), FormatDecimal(cloud.Volume),
+                    FormatDecimal(cloud.BuyVolume), FormatDecimal(cloud.SellVolume), FormatDecimal(cloud.Delta),
+                    cloud.BuyCount.ToString(CultureInfo.InvariantCulture), cloud.SellCount.ToString(CultureInfo.InvariantCulture),
+                    FormatDecimal(cloud.SidePercent), FormatDecimal(cloud.LargestTick),
+                    cloud.FirstSourceSequence.ToString(CultureInfo.InvariantCulture),
+                    FormatDecimal(cloud.FirstPrice), FormatDecimal(cloud.Vwap), FormatDecimal(cloud.RangePrice),
+                    FormatDecimal(cloud.RangeTicks), FormatDecimal(cloud.PriceChange), FormatDecimal(cloud.DurationMilliseconds), cloud.Kind,
+                    FormatTime(cloud.Qualified.Time), cloud.Qualified.SourceSequence.ToString(CultureInfo.InvariantCulture),
+                    FormatDecimal(cloud.Qualified.Price), FormatDecimal(cloud.Qualified.Low), FormatDecimal(cloud.Qualified.High),
+                    FormatDecimal(cloud.Qualified.Volume), FormatDecimal(cloud.Qualified.BuyVolume), FormatDecimal(cloud.Qualified.SellVolume),
+                    cloud.Qualified.TradeCount.ToString(CultureInfo.InvariantCulture), FormatDecimal(cloud.Qualified.Vwap),
+                    FormatDecimal(cloud.DeltaPercent), cloud.ImbalanceSource.ToString(), cloud.ImbalancePassed ? "true" : "false"
+                };
+                AppendImbalanceCsv(fields, cloud.InsideImbalance);
+                AppendImbalanceCsv(fields, cloud.ContextImbalance);
+                AppendCsvRow(builder, fields.ToArray());
+            }
+            return builder.ToString();
+        }
+
         private static string BuildObservationsCsv(List<OrderFlowObservation> observations)
         {
             StringBuilder builder = new StringBuilder();
-            builder.Append("observation_key,observation_type,candidate_id,direction,snapshot_id,bucket_sequence,time,reference_price,buy_volume,sell_volume,delta,trade_count,price_change,price_response,book_available,book_stale,book_time,book_age_ms,spread,book_imbalance,data_quality_code\n");
+            builder.Append("observation_key,observation_type,candidate_id,direction,snapshot_id,bucket_sequence,time,reference_price,buy_volume,sell_volume,delta,trade_count,price_change,price_response,data_quality_code\n");
 
             for (int i = 0; i < observations.Count; i++)
             {
@@ -206,12 +289,6 @@ namespace OsEngine.OsData.OrderFlow
                     feature.TradeCount.ToString(CultureInfo.InvariantCulture),
                     FormatDecimal(feature.PriceChange),
                     FormatDecimal(feature.PriceResponse),
-                    feature.BookAvailable ? "true" : "false",
-                    feature.BookStale ? "true" : "false",
-                    feature.BookTime.HasValue ? FormatTime(feature.BookTime.Value) : string.Empty,
-                    feature.BookAgeMilliseconds.ToString(CultureInfo.InvariantCulture),
-                    FormatDecimal(feature.Spread),
-                    FormatDecimal(feature.BookImbalance),
                     feature.DataQualityCode
                 });
             }
@@ -246,7 +323,7 @@ namespace OsEngine.OsData.OrderFlow
         private static string BuildLabelsCsv(List<OrderFlowMarketPathLabel> labels)
         {
             StringBuilder builder = new StringBuilder();
-            builder.Append("candidate_id,horizon_seconds,candidate_time,horizon_time,is_complete,outcome,signed_return,mfe,mae,time_to_mfe_ms,time_to_mae_ms,time_to_target_ms,time_to_invalidation_ms,future_trade_count\n");
+            builder.Append("candidate_id,horizon_seconds,candidate_time,horizon_time,is_complete,outcome,signed_return,mfe,mae,time_to_mfe_us,time_to_mae_us,time_to_target_us,time_to_invalidation_us,future_trade_count\n");
 
             for (int i = 0; i < labels.Count; i++)
             {
@@ -262,10 +339,10 @@ namespace OsEngine.OsData.OrderFlow
                     FormatDecimal(label.SignedReturn),
                     FormatDecimal(label.MaximumFavorableExcursion),
                     FormatDecimal(label.MaximumAdverseExcursion),
-                    label.TimeToMfeMilliseconds.ToString(CultureInfo.InvariantCulture),
-                    label.TimeToMaeMilliseconds.ToString(CultureInfo.InvariantCulture),
-                    label.TimeToTargetMilliseconds.ToString(CultureInfo.InvariantCulture),
-                    label.TimeToInvalidationMilliseconds.ToString(CultureInfo.InvariantCulture),
+                    label.TimeToMfeMicroseconds.ToString(CultureInfo.InvariantCulture),
+                    label.TimeToMaeMicroseconds.ToString(CultureInfo.InvariantCulture),
+                    label.TimeToTargetMicroseconds.ToString(CultureInfo.InvariantCulture),
+                    label.TimeToInvalidationMicroseconds.ToString(CultureInfo.InvariantCulture),
                     label.FutureTradeCount.ToString(CultureInfo.InvariantCulture)
                 });
             }
@@ -298,7 +375,7 @@ namespace OsEngine.OsData.OrderFlow
             OrderFlowDisplayTimeFrame timeFrame)
         {
             StringBuilder builder = new StringBuilder();
-            builder.Append("time_start,time_end,open,high,low,close,volume,delta,price_response,book_imbalance,book_age_ms,book_available,book_stale\n");
+            builder.Append("time_start,time_end,open,high,low,close,volume,delta,price_response\n");
 
             List<OrderFlowDisplayBar> frameBars;
             if (bars.TryGetValue(timeFrame, out frameBars) == false)
@@ -319,11 +396,7 @@ namespace OsEngine.OsData.OrderFlow
                     FormatDecimal(bar.Close),
                     FormatDecimal(bar.Volume),
                     FormatDecimal(bar.Delta),
-                    FormatDecimal(bar.PriceResponse),
-                    FormatDecimal(bar.BookImbalance),
-                    bar.BookAgeMilliseconds.ToString(CultureInfo.InvariantCulture),
-                    bar.BookAvailable ? "true" : "false",
-                    bar.BookStale ? "true" : "false"
+                    FormatDecimal(bar.PriceResponse)
                 });
             }
 
@@ -336,6 +409,12 @@ namespace OsEngine.OsData.OrderFlow
                 "observations.csv contains only information available at or before each closed timestamp bucket.\n" +
                 "market-path-labels.csv contains future market outcomes and must never be joined into live features.\n" +
                 "candidates.csv contains broad research hypotheses, not confirmed signals or trades.\n" +
+                "cloud-pairs.csv and cloud2-pairs.csv retain all diagonal pairs for post-calculation filters. Display filters never rewrite this bundle.\n" +
+                "clouds.csv and clouds2.csv keep each layer separate, with first qualification snapshots separate from final chain fields. Never use final values at qualification time.\n" +
+                "Imbalance fields are frozen at the last included source row. Context uses all selected-period ticks, including below the Cloud size filter.\n" +
+                "Ratios compare Buy at lower_price + manual PriceStep to Sell at lower_price. Missing/zero opponents are unavailable. 300% means 3:1.\n" +
+                "Imbalance FAIL rows remain in CSV; display filtering never changes chains. Both mode requires the same passing side in both profiles.\n" +
+                "Chain markers anchor at the last included tick, while CompletedAt may be later; OpenAtEnd is unconfirmed at EOF. SingleTick is complete at its own time/sequence.\n" +
                 "No file in this bundle contains an order, fill, execution simulation, net PnL or profitability qualification.\n";
         }
 
@@ -371,7 +450,7 @@ namespace OsEngine.OsData.OrderFlow
 
         private static string FormatTime(DateTime time)
         {
-            return time.ToString("yyyy-MM-ddTHH:mm:ss.fff", CultureInfo.InvariantCulture);
+            return time.ToString("yyyy-MM-ddTHH:mm:ss.ffffff", CultureInfo.InvariantCulture);
         }
 
         private static string FormatDecimal(decimal value)
@@ -426,6 +505,19 @@ namespace OsEngine.OsData.OrderFlow
 
     internal sealed class OrderFlowArtifactManifest
     {
+        public string CloudVersion { get; set; }
+        public bool CalculateDelta { get; set; }
+        public bool CalculateCloud { get; set; }
+        public bool CalculateCloud2 { get; set; }
+        public OrderFlowCloudSettings Cloud2 { get; set; }
+        public int Cloud2Count { get; set; }
+        public int Cloud2PassedCount { get; set; }
+        public int CloudPassedCount { get; set; }
+        public string Cloud2Hash { get; set; }
+        public OrderFlowCloudSettings Cloud { get; set; }
+        public int CloudCount { get; set; }
+        public string CloudHash { get; set; }
+
         public string ArtifactSchemaVersion { get; set; }
 
         public string ParserVersion { get; set; }
@@ -448,19 +540,19 @@ namespace OsEngine.OsData.OrderFlow
 
         public string CandidateHash { get; set; }
 
-        public OrderFlowQshHeader Deals { get; set; }
+        public OrderFlowTickInput Input { get; set; }
 
-        public OrderFlowQshHeader Quotes { get; set; }
+        public decimal PriceStep { get; set; }
+
+        public DateTime? FromDate { get; set; }
+
+        public DateTime? ToDate { get; set; }
 
         public int FeatureWindowSeconds { get; set; }
 
         public decimal MinimumAbsoluteDelta { get; set; }
 
         public int MinimumPriceChangeTicks { get; set; }
-
-        public int TopBookLevels { get; set; }
-
-        public int MaximumBookAgeMilliseconds { get; set; }
 
         public int CandidateCooldownMilliseconds { get; set; }
 

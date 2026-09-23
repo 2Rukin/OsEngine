@@ -7,16 +7,107 @@
 
 Компиляция или один прибыльный backtest не являются экономическим допуском.
 
-В `Tests/OrderFlowResearch` добавлен offline console stand, который сам создаёт
-временные raw/GZip/Deflate QSH пары и проверяет causal association,
-same-timestamp invariants, future isolation, deterministic artifacts и rejection
-повреждённых данных. Регрессии также проверяют reason-coded bundles при missing,
-locked и malformed-header input, metadata обеих ролей, semantic manifest/quality,
-удержание одного file handle для hash/replay, identity при смене ResearchSpec,
-точные формулы/границы feature window и book age, независимость Short от
-неблагоприятного future label Long. Наличие stand не означает, что он прошёл на конкретном
-commit: факт запуска всегда фиксируется отдельным build/test evidence. Golden
-real-day, performance, execution, historical и live levels ещё не реализованы.
+В `Tests/OrderFlowResearch` offline stand создаёт временные текстовые тики.
+Он проверяет строгий формат/UTF-8, time/side/decimal, игнорирование технического Id,
+микросекундные barriers, ручной шаг цены, inclusive даты без outside warmup/labels,
+полную валидацию источника, Long/Short, formulas/causality, deterministic artifacts,
+missing/locked input, отмену и pinned handle. WPF component tests проверяют сводку,
+21 TF, OHLC/response, шкалу времени и навигацию без Application/Window.
+Проверяются синхронные XAML-привязки выбора интервала/размера, радиус Cloud
+и область наведения при разных коэффициентах без изменения результата/экспорта.
+Отдельно проверяются медиана/контраст, отсутствие прежнего потолка объёмов,
+decimal extremes, читаемые подписи и синхронизация контраста после переноса панели.
+Рисунки проверяются на координаты source-time/decimal, лучи/отрезки/clipping,
+выбор/изменение/удаление, смену TF и сброс нового результата. Transfer test переносит
+одну панель между двумя ContentControl с разными namescope и проверяет bindings/cleanup;
+он не запускает Window и не доказывает реальный фокус, mouse capture или окно ОС.
+Фактическая геометрия свечей/баров/High-Low и обычного серого вида проверяется на Min1, Cloud-путь —
+на всех 21 TF, включая соседей вне viewport и одинаковые timestamps; данные/экспорт
+неизменны. Совместное состояние незавершённой линии и drag шкалы проверяется через
+общий обработчик движения с заданным состоянием capture, без запуска окна ОС.
+Визуальный tick replay проверяется fake-clock тестом скорости/паузы/шага/gap policy,
+снимками каждого тика (в том числе внутри общего timestamp), prefix OHLC/Cloud,
+отсутствием будущих кандидатов/labels и неизменностью уже опубликованных кадров.
+Финальный результат observer-run сравнивается с обычным engine-run целиком.
+Синтетический background worker проверяет шаг, отмену, освобождение файла,
+финальный кадр, identity guard, Delta-only запуск с Cloud=null и отсутствие экспорта.
+Barrier между разрешением тика и его обработкой проверяет, что новый одиночный шаг
+недоступен до подтверждённой worker-паузы и публикации предыдущего кадра.
+Возврат диапазона после смены M1/Sec15/H1/M5 проверяется по исходному времени,
+включая округление границ старшего TF. Prefix chart рендерится на
+21 TF; смена M5/M15 внутри реплея проверяет агрегацию доступных свечей.
+Это component evidence без полной WPF Window, не owner-file performance или
+проверка реального управления отдельным окном ОС.
+Наличие стенда не является PASS конкретного checkpoint. Ранее выполненные
+проверки другого формата не являются evidence новой реализации.
+Golden real-data, performance и owner visual evidence фиксируются отдельно;
+execution, historical profitability и live qualification не реализованы.
+
+Дополнительные workspace fixtures проверяют независимость всех семи комбинаций
+Delta/Cloud 1/Cloud 2, SingleTicks с одинаковыми временем/Id, inclusive threshold,
+собственную completion sequence, неактивные chain settings, второй chain mode,
+раздельные immutable CSV/manifest и rejected prefix. Проверяются независимые
+circles/hits/paths и размеры, верхний hit второго слоя, prefix snapshots и
+Cloud 2-only reference без первого слоя. Все 21 TF рендерят второй слой в реплее.
+Геометрические тесты проверяют поле 0/5/50/90% без фиктивных свечей, рисунок
+в свободной зоне, перенос тела и изменение конца, сохранение инструмента,
+сохранение наклона при переходе через сжатые пропуски, decimal-уровни сетки
+и фактические горизонтальные линии через всю панель. Это по-прежнему component
+evidence, а не проверка физической мыши/окна или скорости на многомесячном файле.
+
+Imbalance fixtures отдельно проверяют объёмную Δ% против count Δ%, диагональ
+при ручных шагах 1/5/0.00001, inclusive ratio/volume/difference/delta thresholds,
+обработку отсутствующей пары без пропуска цен/деления на ноль, выбор другой
+подходящей пары при отсечении максимального отношения по объёму. Проверяются
+точные произведения при underflow/overflow decimal, отказ публикации snapshot
+с переполненным суммарным объёмом, совпадение инкрементального индекса с прямым
+пересчётом после добавления/удаления сделок. Контекстные fixtures покрывают левую
+границу окна, микросекунду за ней, отсутствие warm-up до даты, мелкие сделки,
+равные timestamps, истечение окна перед разрывающим тиком, отсутствие перезаписи
+старого Cloud на EOF. Проверяются SingleTick context против unavailable inside,
+неизменность кадров, цепочек/Qualified/дельты и другого слоя, spec/CSV/manifest,
+скрытие/возврат отсечённых меток и линий на всех 21 TF. Новый UI проверяется
+по разметке/control names; полный Window-конструктор и физические клики не запускаются.
+
+Дополнительные precision fixtures проверяют пороги без округления разности/суммы,
+отклонение непредставимых decimal-агрегатов в обычном расчёте и observer replay,
+а также сохранение дробного тика после expiry большого при представимой сумме.
+
+Cloud offline fixtures проверяют цепочки, равенство/превышение порогов,
+Tick Limit, смешанные стороны, single/accumulated, выбранный период, independent modes,
+Qualified snapshot без будущего суффикса,
+completion/EOF, immutable artifacts и render layers. D1/W1 включают полночь,
+понедельник, переход года и високосный день. Месячные свечи проверяются на
+разную длину месяцев, февраль високосного года, пропуски и частичные интервалы.
+Это не сверка с закрытым SBProX;
+его точные marks/Smart и owner visual parity остаются NOT_PROVEN.
+
+Postfilter fixtures дополнительно проверяют произвольные новые пороги по полной
+сохранённой карте пар и неизменность старого корня после добавления/expiry,
+фильтр итогового TradeCount против Qualified, применение без существующего файла,
+независимость слоя и неизменность raw DTO/экспорта. Проверяются полные pair CSV,
+сохранённый replay prefix, квадратные углы hit test, круглые накопленные Cloud,
+временный показ отсечённого точного ID на всех 21 TF. Проверка разметки сопоставляет
+каждое поле управления и binding колонки с содержательной RU/EN подсказкой,
+проверяет themed header, отделение фильтров от панели формирования и многострочный
+summary статистики. Фактическое открытие контекстного меню мышью — owner visual check.
+
+Statistics fixtures проверяют completed-minute ATR20/21-bar warm-up, gap true range,
+неиспользование будущего экстремума текущей свечи, completion price против anchor,
+равные timestamps с physical row order, включительную границу горизонта и EOF на
+микросекунду раньше, отсутствие будущих сделок и общий полный cohort всех горизонтов.
+Покрыты neutral/OpenAtEnd, фиксированное прореживание до фильтров, разделение слоёв,
+purge label/feature span, неизменность выбранного небазового правила и fit ATR
+квантилей при изменении только held-out исходов, точные границы третей на четырёх
+различных fit ATR, малые выборки и исключённые даты. Проверяется отказ обоих
+ATR-барьеров при округлении положительной дистанции до нуля: стационарные тики
+не дают ложного первого касания и worker не публикует результат.
+Проверяются копия/валидация настроек, SHA mismatch и освобождение handle, отсутствие
+мутации raw result, отдельный детерминированный bundle, отказ при другом содержимом,
+cleanup staging, отмена до публикации и worker lifetime без UI join/позднего результата.
+Применение группы рекомендации на chart проверяется через сохранённый ID-mask без IO.
+Это синтетическое/component evidence; реальные доходность, costs, скорость на файле
+владельца и полный Window не проверяются этим стендом.
 
 ## 1. Уровни доказательства
 
@@ -33,7 +124,7 @@ real-day, performance, execution, historical и live levels ещё не реал
 
 1. **Synthetic:** минимальные вручную проверяемые потоки для каждого перехода
    state machine и ошибки данных.
-2. **Golden:** небольшие неизменяемые пары Deals/Quotes с manifest, ожидаемым
+2. **Golden:** небольшие неизменяемые локальные файлы тиков с manifest, ожидаемым
    event hash, snapshots, observations, markers и intents.
 3. **Full-day performance:** полные реальные сессии для памяти, скорости и
    отсутствия потерь.
@@ -50,15 +141,15 @@ Raw market data не коммитятся автоматически в Git. Fix
 Для [ORDER-FLOW-DATA-001](DATA_REPLAY_CONTRACT.md) обязательны:
 
 - unit tests parser/normalizer и граничных значений;
-- rejection неполной пары, неверного инструмента/даты и неоднозначной metadata;
+- rejection malformed строки, неизвестной side, регрессии времени, неверных дат/шага;
 - property tests: время buckets не убывает, цены/объёмы валидны, один source
   record не теряется и не дублируется;
 - одинаковые manifest + файлы дают одинаковый event hash;
 - последний bucket дня не теряется;
-- перестановка межпоточного порядка одинакового timestamp не меняет решения до
+- перестановка сделок одинакового timestamp не меняет решения до
   закрытия bucket;
 - изменение будущего suffix не меняет snapshots/decisions прошлого prefix;
-- stale/gap/session flags воспроизводимы;
+- микросекунды, повторяющиеся Id, inclusive даты и EOF labels воспроизводимы;
 - full-day прогон имеет ограниченную память и фиксированный count событий.
 
 Переход дальше запрещён, если точность timestamp/side либо контрактная metadata
@@ -71,7 +162,6 @@ Raw market data не коммитятся автоматически в Git. Fix
 - каждая формула на synthetic sequence с ручным ожидаемым результатом;
 - временные, объёмные и trade-count windows на границах add/evict;
 - отсутствие чтения незакрытого будущего bucket;
-- недоступность quote-derived features при stale/invalid book;
 - неизменность уже опубликованного snapshot после добавления будущих событий;
 - одинаковые snapshot IDs/values в research replay и frozen strategy replay;
 - уникальность observation key и идемпотентный экспорт;
@@ -80,7 +170,7 @@ Raw market data не коммитятся автоматически в Git. Fix
 - отсутствие нормировки по validation/OOS либо будущим сессиям;
 - соответствие event journal, экспортированной строки и визуального marker.
 
-Тест leakage должен намеренно изменить только будущие цены/стаканы: features и
+Тест leakage должен намеренно изменить только будущие цены/объёмы/side: features и
 candidate transitions до точки изменения обязаны остаться теми же, labels после
 неё могут измениться.
 
@@ -108,12 +198,12 @@ State/property tests дополнительно проверяют невозм�
 Для [ORDER-FLOW-EXECUTION-001](EXECUTION_MODEL.md) обязательны:
 
 - запрет fill до activation time и на signal bucket;
-- проход нескольких уровней стакана с точным VWAP и price boundary;
+- обоснованность выбранной fill-модели для доступных данных и price boundary;
 - partial fill, остаток, expiry и cancel;
-- один snapshot volume не расходуется дважды;
+- объём записи trade не приравнивается к доступному для заявки объёму;
 - комиссия и adverse slippage применяются только к исполненному объёму;
-- stop создаёт intent, но fill происходит по будущему доступному стакану;
-- stale/empty/crossed book отклоняет исполнение;
+- stop создаёт intent, но его цена не гарантирует fill;
+- недостаточное execution evidence даёт no-fill/rejection;
 - late fill после cancel корректирует позицию и защиту;
 - повтор command/event не дублирует заявку или fill;
 - риск считается по фактически открытому объёму;
@@ -127,11 +217,12 @@ Baseline, adverse и severe profiles проходят одинаковые те�
 
 ## 7. Интеграционный golden flow
 
-Один deterministic test доказывает цепочку:
+Будущий интеграционный deterministic test должен доказать цепочку; текущий
+research stand заканчивается snapshots/candidates/labels и не доказывает fills:
 
 ```mermaid
 flowchart TD
-    A["QSH pair and manifest"] --> B["Normalized buckets"]
+    A["Tick file and manifest"] --> B["Normalized buckets"]
     B --> C["Snapshots and candidates"]
     C --> D["Frozen policy and intents"]
     D --> E["Risk, fills and journal"]
@@ -150,12 +241,10 @@ PnL. При изменении принятого контракта golden resu
 | A | Price/session context без order flow |
 | B | A + агрессивная дельта |
 | C | B + измеренная реакция цены на поток |
-| D | C + причинно свежий стакан |
-| E, если применимо | Лучший простой baseline + frozen ML ranker |
+| D, если применимо | Лучший простой baseline + frozen ML ranker |
 
 Если C не превосходит A/B после одинаковых расходов, реакция потока не даёт
-доказанного прироста. Если D не превосходит C, стакан не включается в production
-policy. Если E не превосходит простой baseline устойчиво, ML исключается.
+доказанного прироста. Если D не превосходит простой baseline устойчиво, ML исключается.
 
 ### 8.1. Основные метрики
 
@@ -169,7 +258,7 @@ policy. Если E не превосходит простой baseline усто�
 - концентрация результата по дням, контрактам, времени и regimes;
 - чувствительность к соседним параметрам и execution profiles;
 - incremental value относительно price-only и rule-based controls;
-- turnover и оценка доступной видимой ликвидности.
+- turnover и чувствительность к допущениям доступности исполнения.
 
 Accuracy/AUC модели сами по себе не являются торговой метрикой.
 
@@ -190,7 +279,7 @@ Accuracy/AUC модели сами по себе не являются торг�
 
 - правильность candidate/confirmation/invalidation уровней;
 - совпадение M1 и `Sec15/Sec30` markers с event journal;
-- причинный возраст стакана;
+- точное время и window/bar delta без смешения с future label;
 - причины no-trade;
 - различие signal/intent/order/fill;
 - representative wins, losses, no-fills и data-quality rejections.
@@ -207,7 +296,7 @@ Accuracy/AUC модели сами по себе не являются торг�
 | Replay qualified | Determinism, bucket invariance и no-look-ahead PASS |
 | Features qualified | Formula/golden/visual parity PASS |
 | Research dataset accepted | Schema, market-path labels, split/purge и registry воспроизводимы; execution PnL ещё не используется |
-| Execution qualified | Causal activation/fills, liquidity ledger, costs и baseline/adverse/severe profiles прошли synthetic/invariant tests; simulation results хранятся отдельно от raw labels |
+| Execution qualified | Совместимая с доступными данными модель, causal activation/fills, assumptions/costs и baseline/adverse/severe profiles прошли synthetic/invariant tests; simulation results хранятся отдельно от raw labels |
 | Strategy frozen | Только после `Execution qualified`: одна policy, StrategySpec, model artifact при наличии и execution profiles закрыты до OOS |
 | Historical go | Инженерные тесты PASS и устойчивое net advantage на OOS/walk-forward |
 | Robot qualified | Order/risk/recovery tests PASS; нет unresolved critical findings |
@@ -217,7 +306,7 @@ Accuracy/AUC модели сами по себе не являются торг�
 ## 11. Основания для `no-go`
 
 - эффект исчезает после комиссии, spread, latency или ограниченной ликвидности;
-- прибыль возникает из будущего quote, неизвестного same-timestamp order или
+- прибыль возникает из будущих данных, неизвестного same-timestamp order или
   исполнения на signal event;
 - результат зависит от недоказуемого пассивного fill;
 - Order Flow вариант не превосходит сопоставимый price-only control;

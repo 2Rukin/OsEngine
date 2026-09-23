@@ -1,7 +1,7 @@
 # ORDER-FLOW-INDEX-001: документация Order Flow
 
-Комплект документации внутридневного робота, использующего парные потоки сделок
-и стакана.
+Комплект документации исследования дельты и реакции цены по локальной ленте
+сделок, визуализации Cloud и будущего внутридневного робота.
 
 Текущий статус: **изолированный offline Research MVP реализован в OsData;
 торговый робот, Tester execution и экономическое преимущество не реализованы и
@@ -9,20 +9,35 @@
 [runbook первичной проверки](RESEARCH_MVP_RUNBOOK.md); остальные документы
 сохраняют полный target contract.
 
-Roadmap и baseline-аудит зафиксированы относительно ветки `master` форка
-`2Rukin/OsEngine`, commit
-`f54de33961d45f73319ae1c7313f2854bcb27398`. Внешний upstream не является
-источником требований или готовых решений для проекта.
+Источник загружается владельцем самостоятельно; workbench читает один локальный
+файл с выбором дат и обязательным ручным шагом цены. Стаканные признаки исключены. Дельта/Cloud 1/Cloud 2 включаются независимо, настройки
+разделены на вкладки; над общим графиком доступны выбор из 21 таймфрейма
+(до календарного месяца), размер/контраст и подписи объёмов Cloud. График переносится
+в отдельное окно, поддерживает перенос пользовательских линий с сохранением наклона,
+свободное поле справа и сетку цен, свечи/бары/High-Low,
+приглушённые серые High/Low и отдельные Cloud-ломаные. Второй Cloud поддерживает
+одиночные крупные тики и цепочки; оба слоя независимо скрываются без пересчёта.
+Для каждого слоя доступны статистика объёмной дельты и диагонального перевеса
+внутри Cloud/в окружающем потоке, фильтры перевеса и итогового числа тиков без
+пересчёта, показ отсечённых записей и переход из строки таблицы к точной метке.
+Одиночные тики рисуются квадратами. Отдельная [вкладка статистики](RESEARCH_MVP_RUNBOOK.md#47-статистика-реакций-cloud)
+сравнивает реакции после завершения Cloud относительно ATR, подбирает условия
+на раннем участке и проверяет на более позднем; рекомендацию можно показать
+на графике. Это исследовательские показатели без моделирования исполнения/издержек.
+Шаг цены по-прежнему вводится вручную. Доступен реплей исходных тиков
+с формированием свечей на выбранном TF, паузой, шагом и регулировкой скорости. Управление описано в [runbook](RESEARCH_MVP_RUNBOOK.md#44-график-и-сводка).
+Правила и ограничения
+Cloud находятся в [runbook](RESEARCH_MVP_RUNBOOK.md#45-cloud-цепочки-сделок).
 
 ## Комплект и источник истины
 
 | ID | Документ | Каноническая ответственность |
 |---|---|---|
 | `ORDER-FLOW-ROADMAP-001` | [Production roadmap](PRODUCTION_ROADMAP.md) | Цель, границы, архитектура верхнего уровня, последовательность этапов и rollout |
-| `ORDER-FLOW-DATA-001` | [Data and replay contract](DATA_REPLAY_CONTRACT.md) | QSH pair, manifest, normalizer, timestamp buckets, deterministic causal replay |
+| `ORDER-FLOW-DATA-001` | [Data and replay contract](DATA_REPLAY_CONTRACT.md) | Tick text, manual decimal step, inclusive dates, provenance и causal replay |
 | `ORDER-FLOW-RESEARCH-001` | [Research protocol](RESEARCH_PROTOCOL.md) | Observation dataset, labels, исследование, rule/ML boundary и temporal splits |
 | `ORDER-FLOW-STRATEGY-001` | [Strategy lifecycle](STRATEGY_LIFECYCLE.md) | Candidate, confirmation, no-trade, intent, exit и содержание StrategySpec |
-| `ORDER-FLOW-EXECUTION-001` | [Execution model](EXECUTION_MODEL.md) | Latency, стакан, partial fills, costs, order/risk lifecycle и parity boundary |
+| `ORDER-FLOW-EXECUTION-001` | [Execution model](EXECUTION_MODEL.md) | Ограничения тиков для fills, будущая квалификация модели, costs/risk и parity boundary |
 | `ORDER-FLOW-QUALIFICATION-001` | [Testing and qualification](TESTING_AND_QUALIFICATION.md) | Техническое evidence, historical validation, ворота и `go/no-go` |
 | `ORDER-FLOW-MVP-RUNBOOK-001` | [Research MVP runbook](RESEARCH_MVP_RUNBOOK.md) | Текущий OsData workbench, входы, artifacts, reason codes и честная граница evidence |
 

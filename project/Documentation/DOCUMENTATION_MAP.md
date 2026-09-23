@@ -49,13 +49,13 @@ authoritative level документа. Он не превращает roadmap �
 
 | ID | Путь | Статус | Назначение |
 |---|---|---|---|
-| `ORDER-FLOW-ROADMAP-001` | `project/Documentation/OrderFlow/PRODUCTION_ROADMAP.md` | TARGET ROADMAP — RESEARCH MVP SLICE | Production-ready roadmap tick/depth strategy, causal Tester, visualization, risk и rollout |
+| `ORDER-FLOW-ROADMAP-001` | `project/Documentation/OrderFlow/PRODUCTION_ROADMAP.md` | TARGET ROADMAP — RESEARCH MVP SLICE | Production-ready roadmap tick/delta strategy, causal Tester, visualization, risk и rollout |
 | `ORDER-FLOW-INDEX-001` | `project/Documentation/OrderFlow/README.md` | INDEX | Entry point: research-only workbench доступен, robot/edge не реализованы |
-| `ORDER-FLOW-MVP-RUNBOOK-001` | `project/Documentation/OrderFlow/RESEARCH_MVP_RUNBOOK.md` | CURRENT IMPLEMENTATION GUIDE — RESEARCH ONLY | Входы OsData workbench, artifacts, reason codes, запуск и evidence boundary |
-| `ORDER-FLOW-DATA-001` | `project/Documentation/OrderFlow/DATA_REPLAY_CONTRACT.md` | TARGET CONTRACT — PARTIAL RESEARCH MVP | QSH pair, manifest, normalized events, timestamp buckets и deterministic causal replay |
+| `ORDER-FLOW-MVP-RUNBOOK-001` | `project/Documentation/OrderFlow/RESEARCH_MVP_RUNBOOK.md` | CURRENT IMPLEMENTATION GUIDE — RESEARCH ONLY | Входы OsData workbench, независимые Delta/Cloud, общий график и его настройки, artifacts и evidence boundary |
+| `ORDER-FLOW-DATA-001` | `project/Documentation/OrderFlow/DATA_REPLAY_CONTRACT.md` | TARGET CONTRACT — PARTIAL RESEARCH MVP | Локальный tick text, ручной decimal step, inclusive dates, provenance и causal replay |
 | `ORDER-FLOW-RESEARCH-001` | `project/Documentation/OrderFlow/RESEARCH_PROTOCOL.md` | TARGET RESEARCH CONTRACT — PARTIAL MVP | Observation dataset, labels, experiment registry, rule/ML boundary и temporal validation |
 | `ORDER-FLOW-STRATEGY-001` | `project/Documentation/OrderFlow/STRATEGY_LIFECYCLE.md` | TARGET CONTRACT — BROAD CANDIDATE ONLY | Candidate/confirmation/no-trade/intent lifecycle и обязательное содержание StrategySpec |
-| `ORDER-FLOW-EXECUTION-001` | `project/Documentation/OrderFlow/EXECUTION_MODEL.md` | TARGET EXECUTION CONTRACT — NOT IMPLEMENTED | Latency, liquidity, partial fills, costs, order/risk lifecycle и Tester/live boundary |
+| `ORDER-FLOW-EXECUTION-001` | `project/Documentation/OrderFlow/EXECUTION_MODEL.md` | TARGET EXECUTION CONTRACT — NOT IMPLEMENTED | Ограничения tick input, будущая квалификация fill-модели, costs/risk и Tester/live boundary |
 | `ORDER-FLOW-QUALIFICATION-001` | `project/Documentation/OrderFlow/TESTING_AND_QUALIFICATION.md` | TARGET CONTRACT — SYNTHETIC STAND ADDED | Technical evidence, historical validation, transition gates и go/no-go |
 
 Отсутствие target components roadmap не является code-review defect. Claim о
