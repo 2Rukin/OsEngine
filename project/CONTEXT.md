@@ -41,6 +41,7 @@
 | Синтетические облигации | `CONTEXT_SYNTHETIC_BOND.md` |
 | Ребалансировщик | `CONTEXT_REBALANCER.md` |
 | Темы / цвета / оформление | `CONTEXT_THEMES.md` |
+| Компоновка таблиц и доступность команд (целевая постановка) | `Documentation/UI/DETACHED_TABLES_SPEC.md` |
 | Удалённые серверы (VPS/VDS) | `CONTEXT_VPS_VDS.md` |
 | Промпты | `CONTEXT_PROMPTS_ROBOTS.md`, `CONTEXT_PROMPTS_INDICATORS.md` |
 | Реестр документации | `Documentation/DOCUMENTATION_MAP.md` |
