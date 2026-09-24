@@ -51,7 +51,7 @@ authoritative level документа. Он не превращает roadmap �
 |---|---|---|---|
 | `ORDER-FLOW-ROADMAP-001` | `project/Documentation/OrderFlow/PRODUCTION_ROADMAP.md` | TARGET ROADMAP — RESEARCH MVP SLICE | Production-ready roadmap tick/delta strategy, causal Tester, visualization, risk и rollout |
 | `ORDER-FLOW-INDEX-001` | `project/Documentation/OrderFlow/README.md` | INDEX | Entry point: research-only workbench доступен, robot/edge не реализованы |
-| `ORDER-FLOW-TECH-DEBT-001` | `project/Documentation/OrderFlow/TECHNICAL_DEBT.md` | CURRENT BACKLOG | Отложенные дефекты Order Flow, наблюдения владельца и критерии их закрытия; не evidence исправления |
+| `ORDER-FLOW-TECH-DEBT-001` | `project/Documentation/OrderFlow/TECHNICAL_DEBT.md` | CURRENT ISSUE HISTORY — NO OPEN ITEMS | История оконной проблемы: исходная жалоба, повторная ручная проверка владельца и граница подтверждения |
 | `ORDER-FLOW-MVP-RUNBOOK-001` | `project/Documentation/OrderFlow/RESEARCH_MVP_RUNBOOK.md` | CURRENT IMPLEMENTATION GUIDE — RESEARCH ONLY | Входы OsData workbench, независимые Delta/Cloud, общий график и его настройки, artifacts и evidence boundary |
 | `ORDER-FLOW-CLOUD-EXPLORER-V2-001` | `project/Documentation/OrderFlow/CLOUD_EXPLORER_V2_SPEC.md` | CURRENT IMPLEMENTATION CONTRACT — OFFLINE RESEARCH ONLY | Opt-in полный каталог Cloud, адаптация, эпизоды, anchored VWAP, swing/structure research и приёмка без изменения legacy |
 | `ORDER-FLOW-CLOUD-EXPLORER-GUIDE-001` | `project/Documentation/OrderFlow/CLOUD_EXPLORER_USER_GUIDE.md` | CURRENT OPERATOR GUIDE — OFFLINE RESEARCH ONLY | Русский пошаговый сценарий отдельного окна Cloud Explorer, результатов, графика, реплея, файлов и типичных ошибок |
