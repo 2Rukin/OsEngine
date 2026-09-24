@@ -1,105 +1,395 @@
 <UserControl x:Class="OsEngine.OsData.OrderFlow.Explorer.CloudExplorerControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Grid Margin="5">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{DynamicResource WindowBackgroundGradientBrush}"
+             Foreground="{DynamicResource ControlForegroundWhite}"
+             ToolTipService.InitialShowDelay="350"
+             ToolTipService.ShowDuration="30000">
+    <UserControl.Resources>
+        <Style TargetType="{x:Type TextBlock}">
+            <Setter Property="Foreground" Value="{DynamicResource ControlForegroundWhite}"/>
+        </Style>
+        <Style TargetType="{x:Type ToolTip}">
+            <Setter Property="Background" Value="{DynamicResource BackgroundToolTip}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ControlForegroundWhite}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushToolTip}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="MaxWidth" Value="520"/>
+            <Setter Property="HasDropShadow" Value="True"/>
+        </Style>
+        <Style x:Key="ExplorerStepCardStyle" TargetType="{x:Type Border}">
+            <Setter Property="Background" Value="{DynamicResource PanelAltBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PanelAltBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="3"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="Padding" Value="7,5"/>
+        </Style>
+        <Style x:Key="ExplorerSectionStyle" TargetType="{x:Type Border}">
+            <Setter Property="Background" Value="{DynamicResource ControlBackgroundNormalLight}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ControlBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="3"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="Padding" Value="6,4"/>
+        </Style>
+        <Style x:Key="ExplorerSectionHeaderStyle" TargetType="{x:Type TextBlock}">
+            <Setter Property="Foreground" Value="{DynamicResource ControlForeground}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Margin" Value="3,1,8,4"/>
+        </Style>
+        <Style x:Key="ExplorerOptionRowStyle" TargetType="{x:Type DataGridRow}">
+            <Setter Property="Background" Value="{DynamicResource ControlBackgroundNormalLight}"/>
+            <Setter Property="Foreground" Value="{DynamicResource DataGridWpfRowTextBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource DataGridWpfHeaderBrush}"/>
+            <Setter Property="ToolTip" Value="{Binding Help}"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource DataGridWpfHoverBrush}"/>
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource DataGridWpfSelectionBrush}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource ControlForegroundWhite}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="6">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="220"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <TextBlock Name="TextBlockIdentity" Text="Новый режим выключен. Выберите настройки и нажмите «Рассчитать каталог». Источник, даты и ручной шаг цены — в верхней части окна." TextWrapping="Wrap" Margin="3"/>
-        <TabControl Name="TabControlOptions" Grid.Row="1">
-            <TabItem Header="Формирование — новый расчёт">
+
+        <Grid Name="GridWorkflow" ToolTip="Работайте слева направо. Сначала проверьте входные данные, затем настройте расчёт, запустите его и изучите результат.">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Style="{StaticResource ExplorerStepCardStyle}"
+                    ToolTip="Файл тиков, папка результата, шаг цены и даты задаются в основном окне Order Flow.">
+                <StackPanel>
+                    <TextBlock Name="TextBlockStep1" Text="1. ДАННЫЕ" Style="{StaticResource ExplorerSectionHeaderStyle}"/>
+                    <TextBlock Text="Проверьте источник в основном окне" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="1" Style="{StaticResource ExplorerStepCardStyle}"
+                    ToolTip="Выберите слои, масштабы и параметры. Изменения вычислительных параметров требуют нового расчёта.">
+                <StackPanel>
+                    <TextBlock Name="TextBlockStep2" Text="2. НАСТРОЙКИ" Style="{StaticResource ExplorerSectionHeaderStyle}"/>
+                    <TextBlock Text="Выберите профили и правила" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Style="{StaticResource ExplorerStepCardStyle}"
+                    ToolTip="Создайте новый каталог либо откройте ранее сохранённый результат.">
+                <StackPanel>
+                    <TextBlock Name="TextBlockStep3" Text="3. ЗАПУСК" Style="{StaticResource ExplorerSectionHeaderStyle}"/>
+                    <TextBlock Text="Рассчитайте или откройте результат" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="3" Style="{StaticResource ExplorerStepCardStyle}"
+                    ToolTip="Просматривайте каталог, сводку, исследовательские таблицы и причинный реплей.">
+                <StackPanel>
+                    <TextBlock Name="TextBlockStep4" Text="4. РЕЗУЛЬТАТ" Style="{StaticResource ExplorerSectionHeaderStyle}"/>
+                    <TextBlock Text="Фильтруйте, сравнивайте и изучайте" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="1" Style="{StaticResource ExplorerSectionStyle}"
+                ToolTip="До расчёта здесь показана инструкция. После расчёта — версия, хэш, даты и применённые профили результата.">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="1. Вход и идентичность" Style="{StaticResource ExplorerSectionHeaderStyle}" VerticalAlignment="Center"/>
+                <TextBlock Name="TextBlockIdentity" Grid.Column="1"
+                           Text="Входные данные наследуются из основного окна Order Flow. Проверьте там файл тиков, папку результата, шаг цены и даты, затем переходите к шагу 2."
+                           TextWrapping="Wrap" Margin="3" VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <TabControl Name="TabControlOptions" Grid.Row="2"
+                    ToolTip="Шаг 2. Настройте новый расчёт или фильтры отображения. У каждой строки есть видимое пояснение и подсказка при наведении.">
+            <TabItem Header="2.1 Формирование"
+                     ToolTip="Определяет, какие Cloud будут сформированы. Изменения на этой вкладке применяются только новым расчётом.">
                 <Grid>
-                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
                     <WrapPanel>
-                        <CheckBox Name="CheckBoxLayer1" Content="Cloud 1" IsChecked="True" Margin="6"/>
-                        <CheckBox Name="CheckBoxLayer2" Content="Cloud 2" IsChecked="True" Margin="6"/>
-                        <CheckBox Name="CheckBoxScales" Content="Узкий / базовый / широкий" Margin="6"/>
-                        <TextBlock Text="Профиль" VerticalAlignment="Center"/>
-                        <ComboBox Name="ComboBoxProfile" Width="140" Margin="5"/>
-                        <TextBlock Text="Кэш записей" VerticalAlignment="Center"/><TextBox Name="TextBoxBufferLimit" Text="250000" Width="75" Margin="4"/>
-                        <TextBlock Text="Память MiB" VerticalAlignment="Center"/><TextBox Name="TextBoxMemoryLimit" Text="1024" Width="55" Margin="4"/>
+                        <CheckBox Name="CheckBoxLayer1" Content="Cloud 1" IsChecked="True" Margin="6"
+                                  ToolTip="Включить расчёт слоя Cloud 1. Снятый флажок исключает слой из нового каталога."/>
+                        <CheckBox Name="CheckBoxLayer2" Content="Cloud 2" IsChecked="True" Margin="6"
+                                  ToolTip="Включить расчёт слоя Cloud 2 для одиночных крупных сделок."/>
+                        <CheckBox Name="CheckBoxScales" Content="Узкий / базовый / широкий" Margin="6"
+                                  ToolTip="Дополнительно рассчитать узкий и широкий масштабы обоих включённых слоёв. Без флажка рассчитывается только базовый масштаб."/>
+                        <TextBlock Text="Профиль" VerticalAlignment="Center"
+                                   ToolTip="Профиль, параметры которого редактируются в таблицах шага 2."/>
+                        <ComboBox Name="ComboBoxProfile" Width="140" Margin="5"
+                                  ToolTip="Выберите слой и масштаб для редактирования. Выбор профиля сам по себе не запускает расчёт."/>
+                        <TextBlock Text="Кэш записей" VerticalAlignment="Center"
+                                   ToolTip="Защитный предел числа записей во внутренних ограничиваемых кэшах."/>
+                        <TextBox Name="TextBoxBufferLimit" Text="250000" Width="75" Margin="4"
+                                 ToolTip="Максимальное число записей в ограничиваемых кэшах. Это защитный предел нового расчёта."/>
+                        <TextBlock Text="Память MiB" VerticalAlignment="Center"
+                                   ToolTip="Защитный предел управляемой памяти процесса для операции Explorer."/>
+                        <TextBox Name="TextBoxMemoryLimit" Text="1024" Width="55" Margin="4"
+                                 ToolTip="Максимальный объём управляемой памяти в MiB. Превышение завершает операцию ошибкой без публикации неполного результата."/>
                     </WrapPanel>
-                    <DataGrid Name="DataGridFormation" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" EnableRowVirtualization="True">
-                        <DataGrid.Columns><DataGridTextColumn Header="Параметр" Binding="{Binding Name}" IsReadOnly="True" Width="280"/><DataGridTextColumn Header="Значение" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Width="130"/><DataGridTextColumn Header="Пояснение" Binding="{Binding Help}" IsReadOnly="True" Width="*"/></DataGrid.Columns>
+                    <DataGrid Name="DataGridFormation" Grid.Row="1"
+                              Style="{DynamicResource DataGridStyle}"
+                              RowStyle="{StaticResource ExplorerOptionRowStyle}"
+                              AutoGenerateColumns="False" CanUserAddRows="False" EnableRowVirtualization="True"
+                              ToolTip="Параметры формирования выбранного профиля. Наведите на строку, чтобы увидеть её пояснение.">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Параметр" Binding="{Binding Name}" IsReadOnly="True" Width="280"/>
+                            <DataGridTextColumn Header="Значение" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Width="130"/>
+                            <DataGridTextColumn Header="Пояснение — также доступно при наведении" Binding="{Binding Help}" IsReadOnly="True" Width="*"/>
+                        </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
             </TabItem>
-            <TabItem Header="Видимость — применить сразу">
-                <DataGrid Name="DataGridView" AutoGenerateColumns="False" CanUserAddRows="False" EnableRowVirtualization="True">
-                    <DataGrid.Columns><DataGridTextColumn Header="Фильтр выбранного профиля" Binding="{Binding Name}" IsReadOnly="True" Width="280"/><DataGridTextColumn Header="Значение" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Width="130"/><DataGridTextColumn Header="Пояснение" Binding="{Binding Help}" IsReadOnly="True" Width="*"/></DataGrid.Columns>
+            <TabItem Header="2.2 Видимость"
+                     ToolTip="Фильтры уже рассчитанного профиля. Они меняют только показ и применяются кнопкой шага 3 без нового чтения тиков.">
+                <DataGrid Name="DataGridView"
+                          Style="{DynamicResource DataGridStyle}"
+                          RowStyle="{StaticResource ExplorerOptionRowStyle}"
+                          AutoGenerateColumns="False" CanUserAddRows="False" EnableRowVirtualization="True"
+                          ToolTip="Фильтры видимости выбранного профиля. Наведите на строку, чтобы увидеть её пояснение.">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Фильтр выбранного профиля" Binding="{Binding Name}" IsReadOnly="True" Width="280"/>
+                        <DataGridTextColumn Header="Значение" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Width="130"/>
+                        <DataGridTextColumn Header="Пояснение — также доступно при наведении" Binding="{Binding Help}" IsReadOnly="True" Width="*"/>
+                    </DataGrid.Columns>
                 </DataGrid>
             </TabItem>
-            <TabItem Header="Адаптация и активность">
-                <DataGrid Name="DataGridAdaptation" AutoGenerateColumns="False" CanUserAddRows="False" EnableRowVirtualization="True">
-                    <DataGrid.Columns><DataGridTextColumn Header="Параметр выбранного профиля" Binding="{Binding Name}" IsReadOnly="True" Width="280"/><DataGridTextColumn Header="Значение" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Width="130"/><DataGridTextColumn Header="Пояснение" Binding="{Binding Help}" IsReadOnly="True" Width="*"/></DataGrid.Columns>
+            <TabItem Header="2.3 Адаптация"
+                     ToolTip="Настройки адаптивного отбора, диапазона, паузы и активности выбранного профиля. Требуют нового расчёта.">
+                <DataGrid Name="DataGridAdaptation"
+                          Style="{DynamicResource DataGridStyle}"
+                          RowStyle="{StaticResource ExplorerOptionRowStyle}"
+                          AutoGenerateColumns="False" CanUserAddRows="False" EnableRowVirtualization="True"
+                          ToolTip="Параметры адаптации выбранного профиля. Наведите на строку, чтобы увидеть её пояснение.">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Параметр выбранного профиля" Binding="{Binding Name}" IsReadOnly="True" Width="280"/>
+                        <DataGridTextColumn Header="Значение" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Width="130"/>
+                        <DataGridTextColumn Header="Пояснение — также доступно при наведении" Binding="{Binding Help}" IsReadOnly="True" Width="*"/>
+                    </DataGrid.Columns>
                 </DataGrid>
             </TabItem>
-            <TabItem Header="Эпизоды / VWAP / экстремумы">
-                <DataGrid Name="DataGridModules" AutoGenerateColumns="False" CanUserAddRows="False" EnableRowVirtualization="True">
-                    <DataGrid.Columns><DataGridTextColumn Header="Параметр" Binding="{Binding Name}" IsReadOnly="True" Width="280"/><DataGridTextColumn Header="Значение" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Width="130"/><DataGridTextColumn Header="Пояснение" Binding="{Binding Help}" IsReadOnly="True" Width="*"/></DataGrid.Columns>
+            <TabItem Header="2.4 Эпизоды и экстремумы"
+                     ToolTip="Настройки объединения Cloud в эпизоды, anchored VWAP и подтверждённых экстремумов. Требуют нового расчёта.">
+                <DataGrid Name="DataGridModules"
+                          Style="{DynamicResource DataGridStyle}"
+                          RowStyle="{StaticResource ExplorerOptionRowStyle}"
+                          AutoGenerateColumns="False" CanUserAddRows="False" EnableRowVirtualization="True"
+                          ToolTip="Параметры эпизодов и экстремумов. Наведите на строку, чтобы увидеть её пояснение.">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Параметр" Binding="{Binding Name}" IsReadOnly="True" Width="280"/>
+                        <DataGridTextColumn Header="Значение" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Width="130"/>
+                        <DataGridTextColumn Header="Пояснение — также доступно при наведении" Binding="{Binding Help}" IsReadOnly="True" Width="*"/>
+                    </DataGrid.Columns>
                 </DataGrid>
             </TabItem>
-            <TabItem Header="Исследование">
-                <DataGrid Name="DataGridStudy" AutoGenerateColumns="False" CanUserAddRows="False" EnableRowVirtualization="True">
-                    <DataGrid.Columns><DataGridTextColumn Header="Гипотеза" Binding="{Binding Name}" IsReadOnly="True" Width="280"/><DataGridTextColumn Header="Значение" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Width="130"/><DataGridTextColumn Header="Пояснение" Binding="{Binding Help}" IsReadOnly="True" Width="*"/></DataGrid.Columns>
+            <TabItem Header="2.5 Исследование"
+                     ToolTip="Настройки исследовательских триггеров, наблюдений и будущих меток. Не являются торговым сигналом и требуют нового расчёта.">
+                <DataGrid Name="DataGridStudy"
+                          Style="{DynamicResource DataGridStyle}"
+                          RowStyle="{StaticResource ExplorerOptionRowStyle}"
+                          AutoGenerateColumns="False" CanUserAddRows="False" EnableRowVirtualization="True"
+                          ToolTip="Параметры исследовательской гипотезы. Наведите на строку, чтобы увидеть её пояснение.">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Гипотеза" Binding="{Binding Name}" IsReadOnly="True" Width="280"/>
+                        <DataGridTextColumn Header="Значение" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Width="130"/>
+                        <DataGridTextColumn Header="Пояснение — также доступно при наведении" Binding="{Binding Help}" IsReadOnly="True" Width="*"/>
+                    </DataGrid.Columns>
                 </DataGrid>
             </TabItem>
         </TabControl>
-        <WrapPanel Grid.Row="2" Margin="2">
-            <Button Name="ButtonCalculate" Content="Рассчитать каталог / исследование" Padding="8,4" Margin="2"/>
-            <Button Name="ButtonReopen" Content="Открыть результат" Padding="8,4" Margin="2"/>
-            <Button Name="ButtonCancel" Content="Отмена" Padding="8,4" Margin="2"/>
-            <Button Name="ButtonFilter" Content="Применить видимость" Padding="8,4" Margin="2"/>
-            <Button Name="ButtonFirst" Content="Первая страница" Padding="8,4" Margin="2"/>
-            <Button Name="ButtonNext" Content="Следующие 250" Padding="8,4" Margin="2"/>
-            <TextBox Name="TextBoxFind" Width="180" ToolTip="Точный ID или его часть" Margin="2"/>
-            <Button Name="ButtonFind" Content="Найти ID" Padding="8,4" Margin="2"/>
-            <Button Name="ButtonArtifacts" Content="Файлы" Padding="8,4" Margin="2"/>
-        </WrapPanel>
-        <TabControl Name="TabControlResult" Grid.Row="3">
-            <TabItem Header="Каталог">
-                <Grid><Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="90"/></Grid.RowDefinitions>
-                    <DataGrid Name="DataGridCatalog" IsReadOnly="True" AutoGenerateColumns="True" CanUserAddRows="False" EnableRowVirtualization="True" EnableColumnVirtualization="True" SelectionMode="Single"/>
-                    <TextBox Name="TextBoxDetails" Grid.Row="1" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
-                </Grid>
-            </TabItem>
-            <TabItem Header="Сводка"><TextBox Name="TextBoxSummary" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/></TabItem>
-            <TabItem Header="Эпизоды"><DataGrid Name="DataGridEpisodes" IsReadOnly="True" AutoGenerateColumns="True" EnableRowVirtualization="True" EnableColumnVirtualization="True" CanUserAddRows="False"/></TabItem>
-            <TabItem Header="Наблюдения"><DataGrid Name="DataGridObservations" IsReadOnly="True" AutoGenerateColumns="True" EnableRowVirtualization="True" EnableColumnVirtualization="True" CanUserAddRows="False"/></TabItem>
-            <TabItem Header="Будущие исходы"><DataGrid Name="DataGridLabels" IsReadOnly="True" AutoGenerateColumns="True" EnableRowVirtualization="True" EnableColumnVirtualization="True" CanUserAddRows="False"/></TabItem>
-            <TabItem Header="Триггеры"><DataGrid Name="DataGridTriggers" IsReadOnly="True" AutoGenerateColumns="True" EnableRowVirtualization="True" EnableColumnVirtualization="True" CanUserAddRows="False"/></TabItem>
-            <TabItem Header="Экстремумы"><DataGrid Name="DataGridPivots" IsReadOnly="True" AutoGenerateColumns="True" EnableRowVirtualization="True" EnableColumnVirtualization="True" CanUserAddRows="False"/></TabItem>
-            <TabItem Header="Причины / активные наблюдения"><DataGrid Name="DataGridDiagnostics" IsReadOnly="True" AutoGenerateColumns="True" EnableRowVirtualization="True" EnableColumnVirtualization="True" CanUserAddRows="False"/></TabItem>
-            <TabItem Header="Сравнение групп"><TextBox Name="TextBoxComparison" IsReadOnly="True" TextWrapping="NoWrap" FontFamily="Consolas" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"/></TabItem>
-            <TabItem Name="TabItemChart" Header="График / реплей">
-                <ContentControl Name="ContentControlChart">
-                    <Grid Name="GridChartSurface">
-                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-                        <WrapPanel>
-                            <ComboBox Name="ComboBoxTimeFrame" Width="85" Margin="2" ToolTip="Таймфрейм только отображения"/>
-                            <ComboBox Name="ComboBoxPriceStyle" Width="80" Margin="2" ToolTip="Свечи / бары / High-Low"/>
-                            <CheckBox Name="CheckBoxDraw" Content="Линия" VerticalAlignment="Center" Margin="3"/>
-                            <Button Name="ButtonClearLines" Content="Очистить линии" Padding="5" Margin="2"/>
-                            <Button Name="ButtonAnchor" Content="VWAP выбранного Cloud / эпизода" Padding="5" Margin="2"/>
-                            <CheckBox Name="CheckBoxTriggerAnchor" Content="От первого trigger" VerticalAlignment="Center" Margin="3"/>
-                            <CheckBox Name="CheckBoxBands" Content="Полосы σ" IsChecked="True" VerticalAlignment="Center" Margin="3"/>
-                            <Button Name="ButtonSeparate" Content="Отдельное окно" Padding="5" Margin="2"/>
-                            <Button Name="ButtonReplay" Content="Реплей" Padding="5" Margin="2"/>
-                            <Button Name="ButtonPause" Content="Пауза" Padding="5" Margin="2"/>
-                            <Button Name="ButtonStep" Content="Один тик" Padding="5" Margin="2"/>
-                            <Button Name="ButtonHistory" Content="История" Padding="5" Margin="2"/>
-                            <TextBlock Text="Тиков / кадр" VerticalAlignment="Center"/>
-                            <TextBox Name="TextBoxSpeed" Width="55" Text="1" Margin="2"/>
-                        </WrapPanel>
-                        <ContentControl Name="ContentControlPlot" Grid.Row="1"/>
+
+        <Border Grid.Row="3" Style="{StaticResource ExplorerSectionStyle}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <TextBlock Text="3. Запуск и управление" Style="{StaticResource ExplorerSectionHeaderStyle}"/>
+                <WrapPanel Grid.Row="1">
+                    <Button Name="ButtonCalculate" Content="3.1 Рассчитать каталог / исследование" Padding="8,4" Margin="2"
+                            ToolTip="Запустить новый расчёт по входным данным из основного окна и вычислительным настройкам шага 2. Ранее опубликованные результаты не перезаписываются."/>
+                    <Button Name="ButtonReopen" Content="3.2 Открыть сохранённый результат" Padding="8,4" Margin="2"
+                            ToolTip="Выбрать manifest ранее сохранённого каталога или исследования, проверить схему и контрольные суммы и открыть его без нового расчёта."/>
+                    <Button Name="ButtonCancel" Content="Остановить операцию" Padding="8,4" Margin="2"
+                            ToolTip="Запросить отмену текущего расчёта, открытия, фильтрации, VWAP или реплея. Неполный новый результат не публикуется."/>
+                    <Button Name="ButtonFilter" Content="3.3 Применить видимость" Padding="8,4" Margin="2"
+                            ToolTip="Применить фильтры вкладки «2.2 Видимость» к уже открытому результату без изменения исходных файлов и без чтения raw тиков."/>
+                </WrapPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="4">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <TextBlock Text="4. Результаты и причинный просмотр" Style="{StaticResource ExplorerSectionHeaderStyle}"/>
+            <WrapPanel Grid.Row="1" Margin="2">
+                <Button Name="ButtonFirst" Content="Первая страница" Padding="8,4" Margin="2"
+                        ToolTip="Вернуться к первой странице текущей таблицы или графика и загрузить до 250 записей."/>
+                <Button Name="ButtonNext" Content="Следующие 250" Padding="8,4" Margin="2"
+                        ToolTip="Загрузить следующую страницу до 250 записей в текущем разделе результата."/>
+                <TextBox Name="TextBoxFind" Width="190" Margin="2"
+                         ToolTip="Введите точный ID Cloud или его часть. Для связи с эпизодом или наблюдением используйте поле ID эпизода / наблюдения на вкладке 2.2 Видимость. Пустое поле снимает поиск."/>
+                <Button Name="ButtonFind" Content="Найти ID" Padding="8,4" Margin="2"
+                        ToolTip="Найти введённый ID Cloud или его часть и загрузить соответствующую страницу каталога."/>
+                <Button Name="ButtonArtifacts" Content="Открыть папку файлов" Padding="8,4" Margin="2"
+                        ToolTip="Открыть в Проводнике папку файлов текущего исследования или каталога. Файлы при этом не изменяются."/>
+            </WrapPanel>
+
+            <TabControl Name="TabControlResult" Grid.Row="2"
+                        ToolTip="Шаг 4. Выберите представление уже рассчитанного или открытого результата.">
+                <TabItem Header="Каталог"
+                         ToolTip="Постраничный каталог Cloud. Выберите строку для подробностей и графика; двойной щелчок открывает вкладку графика.">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="90"/>
+                        </Grid.RowDefinitions>
+                        <DataGrid Name="DataGridCatalog"
+                                  Style="{DynamicResource DataGridStyle}"
+                                  IsReadOnly="True" AutoGenerateColumns="True" CanUserAddRows="False"
+                                  EnableRowVirtualization="True" EnableColumnVirtualization="True" SelectionMode="Single"
+                                  ToolTip="Каталог Cloud текущей страницы. Выберите строку, чтобы увидеть её идентичность и параметры ниже."/>
+                        <TextBox Name="TextBoxDetails" Grid.Row="1" IsReadOnly="True" TextWrapping="Wrap"
+                                 VerticalScrollBarVisibility="Auto"
+                                 ToolTip="Подробности выбранного Cloud, эпизода или наблюдения. Поле доступно только для чтения."/>
                     </Grid>
-                </ContentControl>
-            </TabItem>
-        </TabControl>
-        <TextBlock Name="TextBlockStatus" Grid.Row="4" Text="Только исследование. Без заявок, исполнения и PnL." TextWrapping="Wrap" Margin="3"/>
+                </TabItem>
+                <TabItem Header="Сводка"
+                         ToolTip="Описательная сводка по всему периоду и профилям. Она не является причинным признаком или торговой рекомендацией.">
+                    <TextBox Name="TextBoxSummary" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                             ToolTip="Количество событий, квантили и доли по профилям открытого результата."/>
+                </TabItem>
+                <TabItem Header="Эпизоды"
+                         ToolTip="Сгруппированные по времени и цене эпизоды Cloud. Выбор эпизода делает его доступным для anchored VWAP.">
+                    <DataGrid Name="DataGridEpisodes" Style="{DynamicResource DataGridStyle}"
+                              IsReadOnly="True" AutoGenerateColumns="True" EnableRowVirtualization="True"
+                              EnableColumnVirtualization="True" CanUserAddRows="False"
+                              ToolTip="Эпизоды текущей страницы. Выберите строку, чтобы увидеть состав и использовать её как якорь графика."/>
+                </TabItem>
+                <TabItem Header="Наблюдения"
+                         ToolTip="Причинные исследовательские наблюдения. Выбор строки показывает только доступный на тот момент контекст.">
+                    <DataGrid Name="DataGridObservations" Style="{DynamicResource DataGridStyle}"
+                              IsReadOnly="True" AutoGenerateColumns="True" EnableRowVirtualization="True"
+                              EnableColumnVirtualization="True" CanUserAddRows="False"
+                              ToolTip="Наблюдения исследования. Выберите строку для перехода к соответствующему участку графика."/>
+                </TabItem>
+                <TabItem Header="Будущие исходы"
+                         ToolTip="Отдельные будущие метки по завершённым горизонтам. Они не входят в причинный набор признаков.">
+                    <DataGrid Name="DataGridLabels" Style="{DynamicResource DataGridStyle}"
+                              IsReadOnly="True" AutoGenerateColumns="True" EnableRowVirtualization="True"
+                              EnableColumnVirtualization="True" CanUserAddRows="False"
+                              ToolTip="Будущие исходы для исследовательской оценки. Таблица доступна только для чтения."/>
+                </TabItem>
+                <TabItem Header="Триггеры"
+                         ToolTip="Зафиксированные причинные события, которые запустили наблюдение по выбранным правилам.">
+                    <DataGrid Name="DataGridTriggers" Style="{DynamicResource DataGridStyle}"
+                              IsReadOnly="True" AutoGenerateColumns="True" EnableRowVirtualization="True"
+                              EnableColumnVirtualization="True" CanUserAddRows="False"
+                              ToolTip="Триггеры исследования с временем и известным на тот момент состоянием."/>
+                </TabItem>
+                <TabItem Header="Экстремумы"
+                         ToolTip="Подтверждённые позднее swing-экстремумы. Время подтверждения отделено от времени самой точки.">
+                    <DataGrid Name="DataGridPivots" Style="{DynamicResource DataGridStyle}"
+                              IsReadOnly="True" AutoGenerateColumns="True" EnableRowVirtualization="True"
+                              EnableColumnVirtualization="True" CanUserAddRows="False"
+                              ToolTip="Подтверждённые экстремумы исследования. Таблица доступна только для чтения."/>
+                </TabItem>
+                <TabItem Header="Причины и активные наблюдения"
+                         ToolTip="Диагностика завершения, исключения и текущие незавершённые watch-состояния.">
+                    <DataGrid Name="DataGridDiagnostics" Style="{DynamicResource DataGridStyle}"
+                              IsReadOnly="True" AutoGenerateColumns="True" EnableRowVirtualization="True"
+                              EnableColumnVirtualization="True" CanUserAddRows="False"
+                              ToolTip="Причины статусов и активные наблюдения. Используйте их для объяснения отсутствующих или исключённых строк."/>
+                </TabItem>
+                <TabItem Header="Сравнение групп"
+                         ToolTip="Исследовательское сравнение групп breakout и control с Unknown и Incomplete. Пустая ячейка не считается успехом.">
+                    <TextBox Name="TextBoxComparison" IsReadOnly="True" TextWrapping="NoWrap" FontFamily="Consolas"
+                             HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                             ToolTip="Сводное сравнение исследовательских групп. Поле доступно только для чтения и не доказывает прибыльность."/>
+                </TabItem>
+                <TabItem Name="TabItemChart" Header="График и реплей"
+                         ToolTip="Визуальный просмотр Cloud, эпизодов, VWAP, экстремумов и причинного реплея по raw тикам.">
+                    <ContentControl Name="ContentControlChart">
+                        <Grid Name="GridChartSurface" Background="{DynamicResource ControlBackgroundNormalLight}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <WrapPanel>
+                                <ComboBox Name="ComboBoxTimeFrame" Width="90" Margin="2"
+                                          ToolTip="Таймфрейм только для отображения. Он не меняет каталог, исследование или сохранённые файлы."/>
+                                <ComboBox Name="ComboBoxPriceStyle" Width="90" Margin="2"
+                                          ToolTip="Выберите способ отображения цены — свечи, OHLC-бары или диапазон High-Low."/>
+                                <CheckBox Name="CheckBoxDraw" Content="Линия" VerticalAlignment="Center" Margin="3"
+                                          ToolTip="Включить инструмент пользовательской линии. Задайте две точки на графике; линия не сохраняется в результат исследования."/>
+                                <Button Name="ButtonClearLines" Content="Очистить линии" Padding="5" Margin="2"
+                                        ToolTip="Удалить все временные пользовательские линии с графика Explorer."/>
+                                <Button Name="ButtonAnchor" Content="VWAP выбранного Cloud / эпизода" Padding="5" Margin="2"
+                                        ToolTip="Рассчитать anchored VWAP по всем raw сделкам даты для выбранного Cloud или эпизода."/>
+                                <CheckBox Name="CheckBoxTriggerAnchor" Content="От первого trigger" VerticalAlignment="Center" Margin="3"
+                                          ToolTip="Начать anchored VWAP от первого причинного trigger выбранного события, а не от его первой сделки."/>
+                                <CheckBox Name="CheckBoxBands" Content="Полосы σ" IsChecked="True" VerticalAlignment="Center" Margin="3"
+                                          ToolTip="Показывать вместе с anchored VWAP полосы стандартного отклонения."/>
+                                <Button Name="ButtonSeparate" Content="Отдельное окно графика" Padding="5" Margin="2"
+                                        ToolTip="Перенести текущую поверхность графика во второе отдельное окно. Расчёт и состояние остаются теми же."/>
+                                <Button Name="ButtonReplay" Content="Запустить реплей" Padding="5" Margin="2"
+                                        ToolTip="Начать причинный реплей сохранённого run spec. Используются применённые настройки, а не неприменённые изменения полей."/>
+                                <Button Name="ButtonPause" Content="Пауза" Padding="5" Margin="2"
+                                        ToolTip="Приостановить или продолжить реплей после обработки текущего тика."/>
+                                <Button Name="ButtonStep" Content="Один тик" Padding="5" Margin="2"
+                                        ToolTip="Обработать ровно один следующий raw тик. После последнего тика отдельный шаг завершает EOF."/>
+                                <Button Name="ButtonHistory" Content="Вернуться к истории" Padding="5" Margin="2"
+                                        ToolTip="Завершить режим причинного реплея и вернуть полные исторические таблицы открытого результата."/>
+                                <TextBlock Text="Тиков / кадр" VerticalAlignment="Center"
+                                           ToolTip="Число raw тиков, обрабатываемых между обновлениями экрана реплея."/>
+                                <TextBox Name="TextBoxSpeed" Width="55" Text="1" Margin="2"
+                                         ToolTip="Сколько raw тиков обрабатывать за один визуальный кадр реплея. Значение не меняет причинный порядок."/>
+                            </WrapPanel>
+                            <ContentControl Name="ContentControlPlot" Grid.Row="1"
+                                            ToolTip="График результата. Колесо мыши меняет масштаб, Shift с колесом сдвигает видимую область; выбор маркера синхронизируется с таблицей."/>
+                        </Grid>
+                    </ContentControl>
+                </TabItem>
+            </TabControl>
+        </Grid>
+
+        <Border Grid.Row="5" Style="{StaticResource ExplorerSectionStyle}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Name="TextBlockStatus" Grid.Column="0"
+                           Text="Готово к работе. Начните с шага 1; расчёт запускается только кнопкой шага 3."
+                           TextWrapping="Wrap" Margin="3"
+                           ToolTip="Текущий этап, прогресс, результат операции или понятное сообщение об ошибке."/>
+                <TextBlock Grid.Column="1" Text="Только исследование · без заявок, исполнения и PnL"
+                           FontWeight="SemiBold" Margin="10,3,3,3" VerticalAlignment="Center"
+                           ToolTip="Explorer работает только с локальными историческими данными и не отправляет торговые заявки."/>
+            </Grid>
+        </Border>
     </Grid>
 </UserControl>

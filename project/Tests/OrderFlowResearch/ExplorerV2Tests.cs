@@ -18,6 +18,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Xml.Linq;
 
 namespace OsEngine.OrderFlowResearch.Tests
 {
@@ -46,6 +47,7 @@ namespace OsEngine.OrderFlowResearch.Tests
             Run("V2CancellationAndMemoryLimit", root, TestV2Cancellation);
             Run("V2CorruptBundleRejected", root, TestV2Corrupt);
             Run("V2LegacyExportIsolation", root, TestV2Legacy);
+            Run("V2GuidedThemeAndHelpMarkup", root, TestV2GuidedThemeAndHelpMarkup);
             Run("V2UiComponentAndChartRendering", root, TestV2Ui);
             RegisterExplorerAcceptance(root);
         }
@@ -282,6 +284,45 @@ namespace OsEngine.OrderFlowResearch.Tests
             OrderFlowResearchResult after = Export(request); AssertEqual(before.CloudHash, after.CloudHash, "Legacy cloud golden identity"); AssertEqual(before.FeatureHash, after.FeatureHash, "Legacy features");
             AssertEqual(before.Cloud2Hash, after.Cloud2Hash, "Second legacy layer unchanged");
         }
+        private static void TestV2GuidedThemeAndHelpMarkup(string root)
+        {
+            XDocument ui;
+            using (Stream stream = typeof(Program).Assembly.GetManifestResourceStream("Research.Explorer.Ui.xaml")) { ui = XDocument.Load(stream); }
+            XElement userControl = ui.Root;
+            AssertEqual("{DynamicResource WindowBackgroundGradientBrush}", (string)userControl.Attribute("Background"), "Explorer surface follows active Window background");
+            foreach (string step in new[] { "TextBlockStep1", "TextBlockStep2", "TextBlockStep3", "TextBlockStep4" })
+            {
+                XElement marker = ui.Descendants().Single(element => (string)element.Attribute("Name") == step);
+                AssertTrue(((string)marker.Attribute("Text")).StartsWith(step[^1] + ".", StringComparison.Ordinal), "Visible numbered workflow " + step);
+            }
+            string[] describedTypes = { "TextBox", "ComboBox", "CheckBox", "Button", "TabItem", "DataGrid" };
+            foreach (XElement element in ui.Descendants().Where(element => describedTypes.Contains(element.Name.LocalName) &&
+                (element.Name.LocalName == "TabItem" || element.Attribute("Name") != null)))
+            {
+                string help = (string)element.Attribute("ToolTip");
+                AssertTrue(help != null && help.Length >= 25 && help.Any(character => character >= '\u0410' && character <= '\u044f'),
+                    "Russian hover help " + element.Name.LocalName + " " + ((string)element.Attribute("Name") ?? (string)element.Attribute("Header")));
+            }
+            XElement[] grids = ui.Descendants().Where(element => element.Name.LocalName == "DataGrid").ToArray();
+            AssertTrue(grids.Length >= 11, "All Explorer option and result grids inspected");
+            foreach (XElement grid in grids)
+            { AssertEqual("{DynamicResource DataGridStyle}", (string)grid.Attribute("Style"), "Shared themed DataGrid style " + (string)grid.Attribute("Name")); }
+            foreach (string name in new[] { "DataGridFormation", "DataGridView", "DataGridAdaptation", "DataGridModules", "DataGridStudy" })
+            {
+                XElement grid = grids.Single(element => (string)element.Attribute("Name") == name);
+                AssertEqual("{StaticResource ExplorerOptionRowStyle}", (string)grid.Attribute("RowStyle"), "Editable option row hover help " + name);
+                AssertTrue(grid.Descendants().Any(element => ((string)element.Attribute("Header"))?.Contains("наведении", StringComparison.Ordinal) == true), "Visible help column " + name);
+            }
+            foreach (string resource in new[] { "Research.Explorer.Window.xaml", "Research.Explorer.ChartWindow.xaml" })
+            {
+                XDocument window;
+                using (Stream stream = typeof(Program).Assembly.GetManifestResourceStream(resource)) { window = XDocument.Load(stream); }
+                AssertEqual("{DynamicResource WindowStyleCanResize}", (string)window.Root.Attribute("Style"), "Explorer Window uses application chrome " + resource);
+                XElement content = window.Descendants().Single(element => element.Name.LocalName == "ContentControl");
+                AssertEqual("{DynamicResource WindowBackgroundGradientBrush}", (string)content.Attribute("Background"), "Explorer Window content follows theme " + resource);
+            }
+        }
+
         private static void TestV2Ui(string root)
         {
             using CloudExplorerControl control = new CloudExplorerControl(); control.Measure(new Size(1280, 720)); control.Arrange(new Rect(0, 0, 1280, 720)); control.UpdateLayout();

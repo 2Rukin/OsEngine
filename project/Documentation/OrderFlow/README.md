@@ -5,9 +5,11 @@
 
 Текущий статус: **изолированный offline Research MVP реализован в OsData;
 торговый робот, Tester execution и экономическое преимущество не реализованы и
-не доказаны**. Точная инструкция и граница доступной функции находятся в
-[runbook первичной проверки](RESEARCH_MVP_RUNBOOK.md). Cloud Explorer V2 имеет
-отдельный current contract; остальные архитектурные документы сохраняют полный target scope.
+не доказаны**. Пошаговая работа с отдельным окном описана в
+[руководстве Cloud Explorer](CLOUD_EXPLORER_USER_GUIDE.md), а полная граница
+доступной функции — в [runbook первичной проверки](RESEARCH_MVP_RUNBOOK.md).
+Cloud Explorer V2 имеет отдельный current contract; остальные архитектурные
+документы сохраняют полный target scope.
 
 Источник загружается владельцем самостоятельно; workbench читает один локальный
 файл с выбором дат и обязательным ручным шагом цены. Стаканные признаки исключены. Дельта/Cloud 1/Cloud 2 включаются независимо, настройки
@@ -41,12 +43,13 @@ Cloud находятся в [runbook](RESEARCH_MVP_RUNBOOK.md#45-cloud-цепо�
 | `ORDER-FLOW-QUALIFICATION-001` | [Testing and qualification](TESTING_AND_QUALIFICATION.md) | Техническое evidence, historical validation, ворота и `go/no-go` |
 | `ORDER-FLOW-MVP-RUNBOOK-001` | [Research MVP runbook](RESEARCH_MVP_RUNBOOK.md) | Текущий OsData workbench, входы, artifacts, reason codes и честная граница evidence |
 | `ORDER-FLOW-CLOUD-EXPLORER-V2-001` | [Cloud Explorer v2 contract](CLOUD_EXPLORER_V2_SPEC.md) | Отдельный реализованный offline-режим, формулы и критерии приёмки |
+| `ORDER-FLOW-CLOUD-EXPLORER-GUIDE-001` | [Cloud Explorer user guide](CLOUD_EXPLORER_USER_GUIDE.md) | Пошаговая русская инструкция по отдельному окну, настройкам, результатам, графику и реплею |
 
 Если краткое описание roadmap конфликтует с подробным контрактом, применяется
 специализированный документ из таблицы. Статус реализации всегда определяется
 current code и исполняемыми tests, а не target-документацией.
 
-Новая opt-in вкладка-запуск [«Исследование Cloud»](RESEARCH_MVP_RUNBOOK.md#48-исследование-cloud--отдельный-explorer-v2)
+Новая opt-in вкладка-запуск [«Исследование Cloud»](CLOUD_EXPLORER_USER_GUIDE.md#1-быстрый-старт)
 открывает отдельное окно с полным disk-backed каталогом, независимыми фильтрами
 и масштабами, причинной адаптацией, эпизодами, выбранным anchored VWAP,
 swing/structure markers и отдельными future labels. Старые вкладки, настройки,
@@ -55,13 +58,14 @@ bundles и `cloud-reaction-study-1`
 
 ## Рекомендуемый порядок чтения
 
-1. Research MVP runbook — запустить и проверить уже доступный offline slice.
-2. Roadmap — понять цель и последовательность полного проекта.
-3. Data/replay — понять, какие данные причинно доступны роботу.
-4. Research — понять, почему нужны одновременно датасет наблюдений и Tester.
-5. Strategy lifecycle — отделить candidate от реальной сделки.
-6. Execution model — понять, как signal превращается или не превращается в fill.
-7. Qualification — увидеть доказательства, необходимые перед следующим этапом.
+1. Cloud Explorer user guide — пройти отдельное окно по четырём шагам.
+2. Research MVP runbook — проверить доступный offline slice и его границы.
+3. Roadmap — понять цель и последовательность полного проекта.
+4. Data/replay — понять, какие данные причинно доступны роботу.
+5. Research — понять, почему нужны одновременно датасет наблюдений и Tester.
+6. Strategy lifecycle — отделить candidate от реальной сделки.
+7. Execution model — понять, как signal превращается или не превращается в fill.
+8. Qualification — увидеть доказательства, необходимые перед следующим этапом.
 
 Workbench уже хеширует параметры одного research run, но его UI defaults не
 являются выбранной политикой. Числовые окна, thresholds, holding horizon и

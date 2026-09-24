@@ -1,93 +1,93 @@
 # Authoritative active task state
 
-**ID:** `TASK-ORDER-FLOW-CLOUD-EXPLORER-WINDOW-001`
+**ID:** `TASK-ORDER-FLOW-CLOUD-EXPLORER-GUIDED-UI-001`
 **Статус:** `COMPLETED`
 **Фаза:** `TERMINAL — CLEAN`
 **Ветка:** `docs/order-flow-production-roadmap`
-**Baseline HEAD:** `a6cca6bccd65d624bde5c4ae0bad957ef01dff31`
-**Dirty entry:** completed Cloud Explorer V2 implementation remains uncommitted.
-The immediately preceding scale-dialog change is also present and is explicitly
-superseded by the owner's clarification in this task. No unrelated owner edits
-were detected.
-**Completed transition IDs:** `SCOPE_ENTRY`, `IMPLEMENTATION`, `VERIFICATION`, `PRIMARY`, `TERMINAL`
+**Baseline HEAD:** `7942bdc527e3c4f2d3d79def002c44a7df5e850c`
+**Dirty entry:** clean worktree; local branch matched
+`origin/docs/order-flow-production-roadmap`.
+**Completed transition IDs:** `SCOPE_ENTRY`, `IMPLEMENT_GUIDED_THEME_UI`, `VERIFICATION`, `PRIMARY`, `FIX`, `VALIDATION_1`, `TERMINAL`
 **Next transition ID:** `AWAIT_OWNER`
 
 ## Frozen scope
 
-Restore the original inline Cloud Explorer multi-scale checkbox and remove the
-separate scale-settings dialog. Change only the entry behavior of the existing
-`Исследование Cloud` result tab: selecting it opens the complete Cloud Explorer
-workbench in a separate modeless owned Window instead of embedding the workbench
-inside the tab. Existing Cloud Explorer V2 calculation, storage, replay,
-filtering and chart behavior remains unchanged.
+Bring the separate Cloud Explorer workbench and its chart Window into the
+current OsEngine theme, add Russian hover help for every operator-facing
+control, and make the intended workflow understandable without external
+instruction through compact numbered steps.
 
-In scope: `OrderFlowResearchUi` Explorer routing, one dedicated Explorer host
-Window, exact reversion of the scale-dialog UI/code/tests/docs, targeted
-`Tests/OrderFlowResearch/**`, applicable Cloud Explorer runbook/spec/
-qualification wording, this live state and resulting build outputs.
+In scope: `CloudExplorerControl` layout/help/theme bindings, both Explorer
+Window XAML hosts, targeted OrderFlowResearch UI assertions, a standalone
+Russian Cloud Explorer operator guide plus its documentation-map/index links,
+applicable runbook/qualification wording, this live state and resulting build
+outputs.
 
-No commit/push authorization. Do not start OsEngine, MCP/test stands, brokers,
-connectors, live sessions or orders. Physical window/mouse/focus evidence is
-owner-run; deterministic tests may construct an unshown Window object.
+Preserve all calculation, filtering, replay, artifact, identity, persistence,
+threading and disposal semantics. Do not alter theme dictionaries or the
+DarkOrange palette. Do not start OsEngine, MCP/test stands, connectors, live
+sessions or orders. Physical hover/window appearance remains an owner-run
+check. The owner authorized one ordinary commit of this verified boundary on
+24.09.2026; push remains unauthorized.
 
 ## Acceptance
 
-- The inline `Узкий / базовый / широкий` checkbox and prior profile workflow are restored.
-- The scale-settings button/dialog and their files are removed.
-- Selecting `Исследование Cloud` immediately returns the main workbench to its
-  previous result tab and opens the entire Explorer in a separate modeless Window.
-- Only one Explorer Window exists per parent; another selection activates it.
-- Closing either Explorer or its parent cancels/disposes Explorer-owned work and
-  detaches handlers; selecting the launcher later creates a fresh Window.
-- Existing Cloud V2 calculations, bundles, replay, filters and legacy UI are unchanged.
-- Targeted offline tests, final solution build, validators and bounded independent
-  production/documentation reviews complete on one exact checkpoint.
+- The Explorer and detached chart use the same resizable Window chrome and
+  dynamic theme resources as the main application.
+- Editable and result DataGrids use the shared themed DataGrid style; text,
+  panels and status areas remain readable in every built-in theme.
+- The workbench presents an unambiguous numbered flow: verify inherited input,
+  configure, run/manage, inspect results.
+- Every operator-facing input, selector, toggle, button and result tab exposes
+  a meaningful Russian hover description; editable option rows retain their
+  visible explanation and expose it on hover.
+- Existing element names and event ownership remain compatible; no calculation
+  starts merely by opening the Window.
+- A registered Russian Markdown guide leads a new operator through the complete
+  workflow, result interpretation, replay, artifacts and common errors.
+- Targeted offline tests, final solution build, validators and bounded
+  independent production/documentation reviews finish on one exact checkpoint.
 
 ## Impact
 
-WPF UI entry and lifecycle only. No market-data, persistence format, trading,
-Tester/live, hash formula or computation semantics change.
-`OBSERVABILITY: NO CHANGE`; existing status/log error paths remain.
+WPF presentation and operator guidance only. Public API, market data, artifact
+formats, calculations, trading, Tester/live behavior and security do not
+change. `OBSERVABILITY: NO CHANGE`; existing progress/status/error paths remain.
 `MODE PARITY: NO CHANGE` (offline OsData research UI only).
 
 ## Verification status
 
-Entry branch/HEAD/status inspected. The superseded scale dialog and button are
-removed; the original inline checkbox/profile workflow is restored. The result
-tab now delegates to a bounded launcher that returns the prior selection, owns
-one modeless Explorer Window, activates/reuses it and releases it on close or
-parent disposal. The Window hosts the complete existing Explorer control.
+Entry branch, exact HEAD, upstream and clean worktree verified. Both Explorer
+Windows now use the application resizable chrome and dynamic theme background;
+all option/result DataGrids use the shared style. The workbench exposes four
+visible steps, Russian help for interactive controls/result tabs and row-level
+option help. The registered Russian operator guide covers setup, calculation,
+results, chart/replay, artifacts and common errors.
 
-Release OrderFlowResearch project build: PASS, 0 errors / 21 existing warnings.
-Offline OrderFlowResearch suite after the final runtime change: 143 passed /
-0 failed. The new component path constructs unshown Window objects and proves
-return-to-prior-tab, singleton reuse, release/reopen and hosted-control disposal.
-The first test run exposed only an unavailable app icon in the no-Application
-fixture (142/143); removing that optional Window icon produced the clean rerun.
-Full Release solution build: PASS, 0 errors / 31 existing warnings. The initial
-normal Debug attempt respected the owner-running OsEngine process and did not
-terminate it. After the owner process exited, the canonical Debug solution build
-passed with 0 errors / 21 existing warnings and rebuilt the normal application
-and OrderFlowResearch outputs. Final Debug offline rerun: 143 passed / 0 failed.
+Final Debug `dotnet build OsEngine.sln --nologo`: PASS, 0 errors / 21 existing
+warnings. Final offline OrderFlowResearch suite after that build: 144 passed /
+0 failed. The new markup fixture checks numbered flow, Russian hover help,
+DataGrid/window style bindings and both Window hosts. Three XAML files parse;
+all referenced palette keys exist in DarkOrange, Midnight, Tiffany and Gray;
+no hard-coded Explorer color attribute was introduced. Changed-document local
+links and guide Mermaid fences pass; `git diff --check` passes. Agent validator:
+109/109.
 
-Agent validator: 109/109. Four XAML files, nine relevant XML-doc blocks and
-34 local Markdown links parse; `git diff --check` passes. Frozen 12-file PRIMARY
-boundary: `.tmp/cloud-explorer-window-primary-checkpoint.json`; both superseded
-scale Window paths are recorded absent. Production PRIMARY: TERMINAL CLEAN,
-12/12 hashes and both removals verified; lifecycle, scale semantics,
-observability and mode parity have no findings. Documentation/XML PRIMARY:
-TERMINAL CLEAN, 12/12 hashes, operator flow, Mermaid, XML Tier and evidence
-boundary verified; no drift finding. No FIX/VALIDATION round was required.
+Production PRIMARY: TERMINAL CLEAN, no findings. Documentation PRIMARY found
+`CE2-GUIDED-DOC-001` (search help exceeded Cloud-ID behavior) and
+`CE2-GUIDED-DOC-002` (two stale tab labels). Both wording defects were fixed
+without runtime expansion; bounded documentation `VALIDATION_1`: CLEAN. Public
+or protected C# contracts did not change, so XML-doc changes are not required.
 
 ## Blockers
 
-No implementation blocker. Physical window display, mouse, focus, activation
-and owned-window behavior remain `REQUIRES OWNER-RUN`; deterministic component
-evidence constructs unshown Window objects. OsEngine, MCP/test stands,
-connectors, live sessions and orders were NOT_RUN.
+No implementation blocker. Physical theme pixels, native hover timing, focus,
+window chrome and the minimum-size layout remain `REQUIRES OWNER-RUN` visual
+smoke. OsEngine, MCP/test stands, connectors, live sessions and orders were
+NOT_RUN.
 
 ## Next action
 
-The owner authorized an ordinary commit and fast-forward publication of this
-verified terminal boundary on 24.09.2026. After that repository operation,
-wait for the next explicit action.
+Create the authorized ordinary commit of this verified terminal boundary, then
+handoff the rebuilt application and operator guide for the owner's visual
+click/hover check. Do not push without a separate explicit request.
