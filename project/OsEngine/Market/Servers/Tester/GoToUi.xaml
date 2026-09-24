@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:OsEngine.Market.Servers.Tester"
         mc:Ignorable="d"
-         Title="Быстрый переход" Height="130" Width="322" WindowStartupLocation="CenterScreen"  Style="{StaticResource WindowStyleNoResize}" ResizeMode="NoResize" Icon="/Images/OsLogo.ico" Topmost="True"  Tag="АВП" >
+         Title="Быстрый переход" Height="130" Width="322" WindowStartupLocation="CenterScreen"  Style="{StaticResource WindowStyleNoResize}" ResizeMode="NoResize" Icon="/Images/OsLogo.ico"  Tag="АВП" >
     <Grid>
         <Rectangle Margin="5,5,5,40"/>
         <Button Name ="ButtonAccept"  Content="Accept" Margin="41,0,42,10" Click="ButtonAccept_Click" VerticalAlignment="Bottom"/>

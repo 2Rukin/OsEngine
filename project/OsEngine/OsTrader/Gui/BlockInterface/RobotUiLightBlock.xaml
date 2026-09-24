@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:OsEngine.OsTrader.Gui"
         mc:Ignorable="d"
-        Title="Block interface UI" Height="206" Width="482" Topmost="True" Style="{StaticResource WindowStyleNoResize}" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Icon="/Images/OsLogo.ico">
+        Title="Block interface UI" Height="206" Width="482" Style="{StaticResource WindowStyleNoResize}" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Icon="/Images/OsLogo.ico">
     <Grid>
         <Rectangle Margin="5,5,5,40"/>
         <Button Name="ButtonAccept" Content="Block interface" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,0,5,10" VerticalAlignment="Bottom" Width="235" Click="ButtonAccept_Click"/>

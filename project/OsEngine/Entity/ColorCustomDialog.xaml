@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:OsEngine.Entity"
         mc:Ignorable="d"
-          Title="Color dialog" Height="354" Width="267" Topmost="True" Style="{StaticResource WindowStyleNoResize}" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Icon="/Images/OsLogo.ico">
+          Title="Color dialog" Height="354" Width="267" Style="{StaticResource WindowStyleNoResize}" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Icon="/Images/OsLogo.ico">
     <Grid>
         <Button Name="ButtonAccept" Content="Accept" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,0,5,10" VerticalAlignment="Bottom" Width="123" Click="ButtonAccept_Click" />
         <Button Name="ButtonCancel" Content="Cancel"  FontWeight="Bold" Margin="5,0,133,10" VerticalAlignment="Bottom" Click="ButtonCancel_Click" />

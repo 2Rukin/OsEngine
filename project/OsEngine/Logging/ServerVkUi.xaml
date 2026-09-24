@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="VK Messenger server" Height="210" Width="500" 
         Style="{StaticResource WindowStyleNoResize}" ResizeMode="NoResize" 
-        WindowStartupLocation="CenterScreen" Icon="/Images/OsLogo.ico" Topmost="True">
+        WindowStartupLocation="CenterScreen" Icon="/Images/OsLogo.ico">
     <Grid Margin="0,0,-2,0">
         <Button Name="ButtonAccept" Content="Accept" Margin="0,0,5,10" Click="buttonAccept_Click" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="101"/>
         <Button Name="ButtonDisconnect" Content="Disconnect" Margin="0,0,111,10" Click="buttonDisconnect_Click" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="101"/>

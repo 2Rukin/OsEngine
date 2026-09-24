@@ -9,7 +9,8 @@ using System;
 namespace OsEngine.OsData.OrderFlow.Explorer
 {
     /// <summary>
-    /// Hosts one complete Cloud Explorer workbench without starting a calculation on construction.
+    /// Hosts one complete modeless Cloud Explorer workbench without starting a calculation on construction.
+    /// The launcher explicitly manages its lifetime without assigning a WPF owner.
     /// Closing or disposing the Window cancels and releases the hosted workbench.
     /// </summary>
     public partial class CloudExplorerWindow : IDisposable

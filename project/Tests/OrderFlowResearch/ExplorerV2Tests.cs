@@ -344,6 +344,11 @@ namespace OsEngine.OrderFlowResearch.Tests
                 AssertTrue(ReferenceEquals(summary, results.SelectedItem), "Launcher returns to the previous result tab");
                 AssertEqual(1, windows.Count, "First selection creates one separate Explorer Window");
                 AssertTrue(ReferenceEquals(windows[0].Explorer, windows[0].ContentControlExplorer.Content), "Window hosts the complete Explorer control");
+                ExplorerRunSpec firstInput = windows[0].Explorer.RequestProvider();
+                ownerSpec = ownerSpec with { InputPath = Path.Combine(root, "changed-input.txt"), PriceStep = 5 };
+                AssertEqual(ownerSpec.InputPath, windows[0].Explorer.RequestProvider().InputPath, "Open Explorer reads edited main-window input on the next request");
+                AssertEqual(5m, windows[0].Explorer.RequestProvider().PriceStep, "Open Explorer reads edited price step");
+                AssertTrue(firstInput.InputPath != ownerSpec.InputPath, "Captured previous input remains unchanged");
                 results.SelectedItem = journal; results.SelectedItem = explorerTab;
                 AssertTrue(ReferenceEquals(journal, results.SelectedItem), "Repeated selection retains the new previous tab");
                 AssertEqual(1, windows.Count, "Repeated selection reuses the existing Window");
@@ -352,6 +357,19 @@ namespace OsEngine.OrderFlowResearch.Tests
                 AssertEqual(2, windows.Count, "Selection after close creates a fresh Explorer Window");
             }
             AssertTrue(windows.All(window => window.ContentControlExplorer.Content == null), "Launcher disposal releases every hosted Explorer control");
+            results.SelectedItem = summary; results.SelectedItem = explorerTab;
+            AssertEqual(2, windows.Count, "Disposed launcher cannot open an orphan Window");
+
+            CloudExplorerWindow failedWindow = null;
+            Exception reportedError = null;
+            void FailShow(CloudExplorerWindow window) { failedWindow = window; throw new InvalidOperationException("Synthetic show failure"); }
+            using (CloudExplorerTabLauncher failingLauncher = new CloudExplorerTabLauncher(results, explorerTab, summary, CreateWindow, FailShow,
+                error => reportedError = error))
+            {
+                results.SelectedItem = summary; results.SelectedItem = explorerTab;
+                AssertTrue(reportedError != null, "Failed opening reaches existing error reporting");
+                AssertTrue(failedWindow.Explorer == null && failedWindow.ContentControlExplorer.Content == null, "Failed opening releases the unowned workbench");
+            }
             ExplorerChart chart = new ExplorerChart(); ExplorerCloud cloud = BaselineCloud(1, 400, Start) with { Profile = "Cloud1/Base", Low = 100, High = 100, Price = 100 };
             chart.Set(new[] { cloud }, new ExplorerView { MinimumVolume = 900, ShowFiltered = true }, 1, Array.Empty<ExplorerVwapSample>());
             chart.Measure(new Size(1000, 500)); chart.Arrange(new Rect(0, 0, 1000, 500)); bitmap.Render(chart);

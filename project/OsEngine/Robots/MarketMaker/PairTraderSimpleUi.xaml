@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:OsEngine.Robots.MarketMaker"
         mc:Ignorable="d"
-         Title="Settings" Height="290" Width="621" Icon="/Images/OsLogo.ico" Style="{StaticResource WindowStyleNoResize}" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Topmost="True">
+         Title="Settings" Height="290" Width="621" Icon="/Images/OsLogo.ico" Style="{StaticResource WindowStyleNoResize}" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
     <Grid>
         <Rectangle Margin="5,5,5,37"/>
         <Label Name="LabelSlippage1" Content="Slippage1" HorizontalAlignment="Left" Margin="23,157,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.673,0.041" />

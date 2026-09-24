@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:OsEngine.OsTrader.Gui.BlockInterface"
         mc:Ignorable="d"
-       Title="Unblock interface UI" Height="206" Width="482" Topmost="True" Style="{StaticResource WindowStyleNoResize}" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Icon="/Images/OsLogo.ico">
+       Title="Unblock interface UI" Height="206" Width="482" Style="{StaticResource WindowStyleNoResize}" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Icon="/Images/OsLogo.ico">
     <Grid>
         <Rectangle Margin="5,5,5,40"/>
         <Button Name="ButtonAccept" Content="Unblock interface" FontWeight="Bold" Margin="5,0,5,10" VerticalAlignment="Bottom" Click="ButtonAccept_Click"/>

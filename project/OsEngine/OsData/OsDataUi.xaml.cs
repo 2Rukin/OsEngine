@@ -17,6 +17,7 @@ namespace OsEngine.OsData
     public partial class OsDataUi
     {
         private OsDataMasterPainter _osDataMaster;
+        private OrderFlowResearchUi _orderFlowResearchUi;
 
         /// <summary>
         /// Underlying OsData master for MCP API integration.
@@ -93,6 +94,8 @@ namespace OsEngine.OsData
                         return;
                     }
                 }
+
+                CloseOrderFlowResearch();
 
                 if (_osDataMaster != null)
                 {
@@ -200,13 +203,62 @@ namespace OsEngine.OsData
         {
             try
             {
+                if (_orderFlowResearchUi != null)
+                {
+                    if (_orderFlowResearchUi.WindowState == WindowState.Minimized)
+                    {
+                        _orderFlowResearchUi.WindowState = WindowState.Normal;
+                    }
+                    _orderFlowResearchUi.Activate();
+                    return;
+                }
+
                 OrderFlowResearchUi ui = new OrderFlowResearchUi();
-                ui.ShowDialog();
+                _orderFlowResearchUi = ui;
+                ui.Closed += OrderFlowResearchUi_Closed;
+                try
+                {
+                    ui.Show();
+                }
+                catch
+                {
+                    CloseOrderFlowResearch();
+                    throw;
+                }
             }
             catch (Exception error)
             {
                 ServerMaster.SendNewLogMessage(error.ToString(), Logging.LogMessageType.Error);
             }
+        }
+
+        private void OrderFlowResearchUi_Closed(object sender, EventArgs e)
+        {
+            try
+            {
+                OrderFlowResearchUi ui = (OrderFlowResearchUi)sender;
+                ui.Closed -= OrderFlowResearchUi_Closed;
+                if (ReferenceEquals(_orderFlowResearchUi, ui))
+                {
+                    _orderFlowResearchUi = null;
+                }
+            }
+            catch (Exception error)
+            {
+                ServerMaster.SendNewLogMessage(error.ToString(), Logging.LogMessageType.Error);
+            }
+        }
+
+        private void CloseOrderFlowResearch()
+        {
+            OrderFlowResearchUi ui = _orderFlowResearchUi;
+            _orderFlowResearchUi = null;
+            if (ui == null)
+            {
+                return;
+            }
+            ui.Closed -= OrderFlowResearchUi_Closed;
+            ui.Close();
         }
 
         #region Posts collection

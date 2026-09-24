@@ -1,93 +1,68 @@
 # Authoritative active task state
 
-**ID:** `TASK-ORDER-FLOW-CLOUD-EXPLORER-GUIDED-UI-001`
-**Статус:** `COMPLETED`
-**Фаза:** `TERMINAL — CLEAN`
+**ID:** `TASK-WINDOW-MODELESS-001`
+**Статус:** `DEFERRED`
+**Фаза:** `TERMINAL — OWNER-ACCEPTED DEFERRAL`
 **Ветка:** `docs/order-flow-production-roadmap`
-**Baseline HEAD:** `7942bdc527e3c4f2d3d79def002c44a7df5e850c`
-**Dirty entry:** clean worktree; local branch matched
-`origin/docs/order-flow-production-roadmap`.
-**Completed transition IDs:** `SCOPE_ENTRY`, `IMPLEMENT_GUIDED_THEME_UI`, `VERIFICATION`, `PRIMARY`, `FIX`, `VALIDATION_1`, `TERMINAL`
-**Next transition ID:** `AWAIT_OWNER`
+**Baseline HEAD:** `67b0dc904980b4193c5e53fef92cb454f0dfd937`
+**Dirty entry:** original implementation began clean; current boundary retains
+the preceding window changes and build outputs plus owner-deferral docs.
+**Completed transition IDs:** `SCOPE_ENTRY`, `IMPLEMENT_WINDOWS`, `VERIFICATION`, `PRIMARY`, `INSTALL_DEBUG_OUTPUT`, `OWNER_DEFERRAL`, `REVIEW_DEFERRAL_DOCS`, `HANDOFF_VERIFICATION`
+**Next transition ID:** `COMMIT_PUSH`
 
 ## Frozen scope
 
-Bring the separate Cloud Explorer workbench and its chart Window into the
-current OsEngine theme, add Russian hover help for every operator-facing
-control, and make the intended workflow understandable without external
-instruction through compact numbered steps.
+Owner reported on 24.09.2026 that Cloud still stays above Order Flow and blocks
+input. Previous completion/desktop behavior claims are withdrawn. The owner
+explicitly deferred further diagnosis/fixing and requested commit plus push
+of the current changes. Preserve the existing implementation; do not attempt
+another runtime fix. Record the unresolved defect, correct documentation and
+publish through an ordinary commit and fast-forward push to origin.
 
-In scope: `CloudExplorerControl` layout/help/theme bindings, both Explorer
-Window XAML hosts, targeted OrderFlowResearch UI assertions, a standalone
-Russian Cloud Explorer operator guide plus its documentation-map/index links,
-applicable runbook/qualification wording, this live state and resulting build
-outputs.
+Canonical debt: [ORDER-FLOW-TECH-DEBT-001](../OrderFlow/TECHNICAL_DEBT.md),
+entry TD-CLOUD-WINDOW-001, OPEN / DEFERRED BY OWNER. This is not a fixed issue.
+No application/connector/test-stand launch, credentials or live orders.
 
-Preserve all calculation, filtering, replay, artifact, identity, persistence,
-threading and disposal semantics. Do not alter theme dictionaries or the
-DarkOrange palette. Do not start OsEngine, MCP/test stands, connectors, live
-sessions or orders. Physical hover/window appearance remains an owner-run
-check. The owner authorized one ordinary commit of this verified boundary on
-24.09.2026; push remains unauthorized.
+## Decisions and impact
 
-## Acceptance
+Prior code changes retained: singleton OrderFlow Show with explicit shutdown;
+Cloud and chart factories no longer set WPF Owner; 92 unconditional Topmost
+XAML attributes removed. Static source facts do not establish the reason for
+the owner's remaining observed blocking. Actual cause is still undetermined.
 
-- The Explorer and detached chart use the same resizable Window chrome and
-  dynamic theme resources as the main application.
-- Editable and result DataGrids use the shared themed DataGrid style; text,
-  panels and status areas remain readable in every built-in theme.
-- The workbench presents an unambiguous numbered flow: verify inherited input,
-  configure, run/manage, inspect results.
-- Every operator-facing input, selector, toggle, button and result tab exposes
-  a meaningful Russian hover description; editable option rows retain their
-  visible explanation and expose it on hover.
-- Existing element names and event ownership remain compatible; no calculation
-  starts merely by opening the Window.
-- A registered Russian Markdown guide leads a new operator through the complete
-  workflow, result interpretation, replay, artifacts and common errors.
-- Targeted offline tests, final solution build, validators and bounded
-  independent production/documentation reviews finish on one exact checkpoint.
-
-## Impact
-
-WPF presentation and operator guidance only. Public API, market data, artifact
-formats, calculations, trading, Tester/live behavior and security do not
-change. `OBSERVABILITY: NO CHANGE`; existing progress/status/error paths remain.
-`MODE PARITY: NO CHANGE` (offline OsData research UI only).
+Only documentation and two XML comments change in this handoff. No executable
+logic, signatures, tests or build configuration change after final verification.
+Current guide/spec/runbook now link the known defect instead of promising
+working desktop focus/input. New debt document is registered in DOCMAP-001.
+OBSERVABILITY: NO CHANGE. MODE PARITY: NO CHANGE.
 
 ## Verification status
 
-Entry branch, exact HEAD, upstream and clean worktree verified. Both Explorer
-Windows now use the application resizable chrome and dynamic theme background;
-all option/result DataGrids use the shared style. The workbench exposes four
-visible steps, Russian help for interactive controls/result tabs and row-level
-option help. The registered Russian operator guide covers setup, calculation,
-results, chart/replay, artifacts and common errors.
+Existing exact runtime/test boundary:
+- Normal Debug solution build PASS: 0 errors / 4 NU1900 audit-index warnings.
+- Offline OrderFlowResearch suite: 144 passed / 0 failed.
+- Source XAML parse: 174/174; no forced Topmost declarations remain.
+- Prior agent validator: 109/109; local links: 23; diff --check PASS.
+- Production PRIMARY and documentation PRIMARY were statically CLEAN.
 
-Final Debug `dotnet build OsEngine.sln --nologo`: PASS, 0 errors / 21 existing
-warnings. Final offline OrderFlowResearch suite after that build: 144 passed /
-0 failed. The new markup fixture checks numbered flow, Russian hover help,
-DataGrid/window style bindings and both Window hosts. Three XAML files parse;
-all referenced palette keys exist in DarkOrange, Midnight, Tiffany and Gray;
-no hard-coded Explorer color attribute was introduced. Changed-document local
-links and guide Mermaid fences pass; `git diff --check` passes. Agent validator:
-109/109.
+Owner's subsequent manual check FAILED for Cloud stacking/input. Offline tests
+and prior reviews never proved the desktop scenario and do not override this
+new observation. Further runtime diagnosis and fixing are explicitly deferred.
+Documentation handoff review: CLEAN (not a runtime acceptance verdict).
+Local links: 43 PASS; agent validator: 109/109; git diff --check: PASS.
+No application rebuild required for Markdown/XML-comment-only changes.
+Fetched origin: current branch ahead 1 / behind 0 before this handoff commit;
+normal fast-forward push will include the prior guided-UI commit as well.
 
-Production PRIMARY: TERMINAL CLEAN, no findings. Documentation PRIMARY found
-`CE2-GUIDED-DOC-001` (search help exceeded Cloud-ID behavior) and
-`CE2-GUIDED-DOC-002` (two stale tab labels). Both wording defects were fixed
-without runtime expansion; bounded documentation `VALIDATION_1`: CLEAN. Public
-or protected C# contracts did not change, so XML-doc changes are not required.
+## Blockers and residual debt
 
-## Blockers
-
-No implementation blocker. Physical theme pixels, native hover timing, focus,
-window chrome and the minimum-size layout remain `REQUIRES OWNER-RUN` visual
-smoke. OsEngine, MCP/test stands, connectors, live sessions and orders were
-NOT_RUN.
+TD-CLOUD-WINDOW-001 remains open by owner decision. No blocker to the authorized
+documentation/commit/push handoff. No current-turn OsEngine/runtime launch;
+no new claim that normal desktop switching or input works.
 
 ## Next action
 
-Create the authorized ordinary commit of this verified terminal boundary, then
-handoff the rebuilt application and operator guide for the owner's visual
-click/hover check. Do not push without a separate explicit request.
+Commit the current implementation, relevant build outputs and deferred-debt
+documentation, then
+push the current branch to origin without force. Do not resume the deferred fix
+unless the owner separately requests it.

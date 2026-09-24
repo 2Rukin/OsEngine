@@ -1,7 +1,7 @@
 ﻿<Window x:Class="OsEngine.Charts.CandleChart.Indicators.LinearRegressionCurveUi"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Linear Regression Curve" Height="237" Width="330" WindowStartupLocation="CenterScreen" Topmost="True" Style="{StaticResource WindowStyleNoResize}" ResizeMode="NoResize" Icon="/Images/OsLogo.ico">
+        Title="Linear Regression Curve" Height="237" Width="330" WindowStartupLocation="CenterScreen" Style="{StaticResource WindowStyleNoResize}" ResizeMode="NoResize" Icon="/Images/OsLogo.ico">
     <Grid>
         <Rectangle Margin="5,5,5,37"/>
         <Button Name ="ButtonAccept"  Content="Accept" Height="22" FontSize="14" FontFamily="Calibri"  HorizontalAlignment="Right" Margin="0,0,10,10" VerticalAlignment="Bottom" Width="152" Click="ButtonAccept_Click"/>

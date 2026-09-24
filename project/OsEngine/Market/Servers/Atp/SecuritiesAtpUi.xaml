@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:OsEngine.Market.Servers.Atp"
         mc:Ignorable="d"
-         Title="Securities" Height="600" Width="1100" Topmost="True" Style="{StaticResource WindowStyleCanResize}" WindowStartupLocation="CenterScreen" Icon="/Images/OsLogo.ico">
+         Title="Securities" Height="600" Width="1100" Style="{StaticResource WindowStyleCanResize}" WindowStartupLocation="CenterScreen" Icon="/Images/OsLogo.ico">
     <Grid Margin="0,0,0,0">
         <Rectangle Margin="5,5,5,50"/>
         <WindowsFormsHost Name="HostSecurities" Margin="5,5,5,50"/>

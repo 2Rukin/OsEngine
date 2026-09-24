@@ -348,9 +348,13 @@ namespace OsEngine.OsData.OrderFlow.Explorer
         {
             try
             {
-                if (_window != null) { _window.Activate(); return; }
+                if (_window != null)
+                {
+                    if (_window.WindowState == WindowState.Minimized) { _window.WindowState = WindowState.Normal; }
+                    _window.Activate(); return;
+                }
                 ContentControlChart.Content = null;
-                _window = new CloudExplorerChartWindow { Owner = Window.GetWindow(this) }; _window.ContentControlSurface.Content = GridChartSurface;
+                _window = new CloudExplorerChartWindow(); _window.ContentControlSurface.Content = GridChartSurface;
                 _window.Closing += SeparateClosing; _window.Show();
             }
             catch (Exception error) { Error(error); }

@@ -129,7 +129,7 @@ namespace OsEngine.OsData.OrderFlow
         {
             if (_isClosing || _chartWindow != null) { return; }
             _chart.CancelDrawingGesture();
-            OrderFlowChartWindow window = new OrderFlowChartWindow { Owner = this };
+            OrderFlowChartWindow window = new OrderFlowChartWindow();
             _chartWindow = window;
             window.Closed += ChartWindow_Closed;
             try

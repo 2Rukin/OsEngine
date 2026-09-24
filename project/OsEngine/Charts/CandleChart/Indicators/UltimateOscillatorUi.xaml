@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:OsEngine.Charts.CandleChart.Indicators"
         mc:Ignorable="d"
-         Title="Ultimate Oscillator" Height="235.333" Width="322" WindowStartupLocation="CenterScreen" Style="{StaticResource WindowStyleNoResize}" ResizeMode="NoResize" Icon="/Images/OsLogo.ico" Topmost="True">
+         Title="Ultimate Oscillator" Height="235.333" Width="322" WindowStartupLocation="CenterScreen" Style="{StaticResource WindowStyleNoResize}" ResizeMode="NoResize" Icon="/Images/OsLogo.ico">
     <Grid>
         <Rectangle Margin="5,5,5,37"/>
         <Button Name ="ButtonAccept"  Content="Accept" Margin="0,0,10,10" Click="ButtonAccept_Click" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="119"/>

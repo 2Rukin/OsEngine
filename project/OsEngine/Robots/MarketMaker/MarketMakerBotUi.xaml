@@ -1,7 +1,7 @@
 ﻿<Window x:Class="OsEngine.Robots.MarketMaker.MarketMakerBotUi"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Strategy settings" Height="292" Width="330" Icon="/Images/OsLogo.ico" Style="{StaticResource WindowStyleNoResize}" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Topmost="True">
+        Title="Strategy settings" Height="292" Width="330" Icon="/Images/OsLogo.ico" Style="{StaticResource WindowStyleNoResize}" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
     <Grid>
         <Rectangle Margin="5,5,5,37"/>
         <Label Name="LabelVolume" Content="Volume" HorizontalAlignment="Left" Margin="23,116,0,0" VerticalAlignment="Top" />

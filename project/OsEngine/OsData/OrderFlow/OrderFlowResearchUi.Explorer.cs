@@ -4,6 +4,7 @@
 */
 using OsEngine.OsData.OrderFlow.Explorer;
 using System;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace OsEngine.OsData.OrderFlow
@@ -22,7 +23,7 @@ namespace OsEngine.OsData.OrderFlow
         private CloudExplorerWindow CreateCloudExplorerWindow()
         {
             return new CloudExplorerWindow(CreateExplorerInput, ExplorerInputFingerprint)
-            { Owner = this, Title = L("Cloud research", "Исследование Cloud") };
+            { Title = L("Cloud research", "Исследование Cloud") };
         }
 
         private static void ShowCloudExplorerWindow(CloudExplorerWindow window)
@@ -47,7 +48,8 @@ namespace OsEngine.OsData.OrderFlow
 
     /// <summary>
     /// Turns the Cloud Explorer result tab into a single modeless Window launcher while retaining the prior tab selection.
-    /// Disposal detaches the routed selection handler and closes the Window owned by this launcher.
+    /// The production factory leaves WPF Owner unset; desktop input and focus acceptance is tracked separately.
+    /// Disposal detaches the routed selection handler and explicitly closes the Window managed by this launcher.
     /// </summary>
     internal sealed class CloudExplorerTabLauncher : IDisposable
     {
@@ -99,7 +101,11 @@ namespace OsEngine.OsData.OrderFlow
         {
             if (_window != null)
             {
-                if (_window.IsVisible) { _window.Activate(); }
+                if (_window.IsVisible)
+                {
+                    if (_window.WindowState == WindowState.Minimized) { _window.WindowState = WindowState.Normal; }
+                    _window.Activate();
+                }
                 return;
             }
             CloudExplorerWindow window = _windowFactory();

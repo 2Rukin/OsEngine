@@ -1,7 +1,7 @@
 ﻿<Window x:Class="OsEngine.Charts.CandleChart.Indicators.RsiUi"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="RSI" Height="156" Width="308" Topmost="True" WindowStartupLocation="CenterScreen" Style="{StaticResource WindowStyleNoResize}" ResizeMode="NoResize" Icon="/Images/OsLogo.ico">
+        Title="RSI" Height="156" Width="308" WindowStartupLocation="CenterScreen" Style="{StaticResource WindowStyleNoResize}" ResizeMode="NoResize" Icon="/Images/OsLogo.ico">
     <Grid>
         <Rectangle  Margin="5,5,5,37"/>
         <Button Name ="ButtonAccept"  Content="Accept" HorizontalAlignment="Right" Margin="0,0,10,10" VerticalAlignment="Bottom" Width="119" Click="ButtonAccept_Click"/>
