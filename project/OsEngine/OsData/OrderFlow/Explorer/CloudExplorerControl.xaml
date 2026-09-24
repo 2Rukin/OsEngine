@@ -292,14 +292,14 @@
                                   IsReadOnly="True" AutoGenerateColumns="True" CanUserAddRows="False"
                                   EnableRowVirtualization="True" EnableColumnVirtualization="True" SelectionMode="Single"
                                   ToolTip="Каталог Cloud текущей страницы. Выберите строку, чтобы увидеть её идентичность и параметры ниже."/>
-                        <TextBox Name="TextBoxDetails" Grid.Row="1" IsReadOnly="True" TextWrapping="Wrap"
+                        <TextBox Name="TextBoxDetails" Grid.Row="1" IsReadOnly="True" TextWrapping="Wrap" Height="Auto" VerticalContentAlignment="Top"
                                  VerticalScrollBarVisibility="Auto"
                                  ToolTip="Подробности выбранного Cloud, эпизода или наблюдения. Поле доступно только для чтения."/>
                     </Grid>
                 </TabItem>
                 <TabItem Header="Сводка"
                          ToolTip="Описательная сводка по всему периоду и профилям. Она не является причинным признаком или торговой рекомендацией.">
-                    <TextBox Name="TextBoxSummary" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" HorizontalContentAlignment="Left" Padding="12"
+                    <TextBox Name="TextBoxSummary" IsReadOnly="True" TextWrapping="Wrap" Height="Auto" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" HorizontalContentAlignment="Left" Padding="12"
                              ToolTip="Количество событий, квантили и доли по профилям открытого результата."/>
                 </TabItem>
                 <TabItem Header="Эпизоды"
@@ -349,7 +349,7 @@
                 </TabItem>
                 <TabItem Header="Сравнение групп"
                          ToolTip="Исследовательское сравнение групп breakout и control с Unknown и Incomplete. Пустая ячейка не считается успехом.">
-                    <TextBox Name="TextBoxComparison" IsReadOnly="True" TextWrapping="NoWrap" FontFamily="Consolas"
+                    <TextBox Name="TextBoxComparison" IsReadOnly="True" TextWrapping="NoWrap" FontFamily="Consolas" Height="Auto" VerticalContentAlignment="Top"
                              HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
                              ToolTip="Сводное сравнение исследовательских групп. Поле доступно только для чтения и не доказывает прибыльность."/>
                 </TabItem>
@@ -401,7 +401,7 @@
                 <TabItem Name="TabItemPatterns" Header="Предвестники: сценарии" ToolTip="2. Ход и качество → 3. Сценарии → 4. Карточка → 5. График и причинный реплей. Это не торговые сигналы.">
                     <TabControl Name="TabControlPatterns" ToolTip="Следуйте по шагам: качество, сценарии, карточка, затем график.">
                         <TabItem Name="TabItemPatternQuality" Header="2. Ход и качество" ToolTip="План, число дней и недель, причины исключений и воронка поиска, включая пустой результат.">
-                            <TextBox Name="TextBoxPatternQuality" ToolTip="Сводка доступна только для чтения. Полные итоги описательные, не признаки причинного реплея." IsReadOnly="True" TextWrapping="Wrap" VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" Padding="10" Text="Начните в 2.6. Полные итоги и причины пустого поиска появятся здесь. Текущий этап, память и время показываются в строке состояния."/>
+                            <TextBox Name="TextBoxPatternQuality" ToolTip="Сводка доступна только для чтения. Полные итоги описательные, не признаки причинного реплея." IsReadOnly="True" TextWrapping="Wrap" Height="Auto" VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" Padding="10" Text="Начните в 2.6. Полные итоги и причины пустого поиска появятся здесь. Текущий этап, память и время показываются в строке состояния."/>
                         </TabItem>
                         <TabItem Name="TabItemPatternList" Header="3. Найденные сценарии" ToolTip="Ограниченный каталог правил, отобранных только на Fit. Это отдельные сценарии, не строки Cloud.">
                             <DockPanel>
@@ -427,7 +427,7 @@
                                     <Button Name="ButtonPatternChart" Content="5. Пример на графике" Padding="6" Margin="4" ToolTip="Открыть сохранённые свечи дня и метки. Голубая граница — KnownAt; затенённая область — будущее после якоря. Новый расчёт не запускается."/>
                                     <Button Name="ButtonPatternReplay" Content="5. Причинный реплей" Padding="6" Margin="4" ToolTip="Восстановить исходные сделки по порядку. Условия появляются только в KnownAt, будущая метка — после закрытия горизонта. Управление на вкладке графика."/>
                                 </WrapPanel>
-                                <TextBox Name="TextBoxPatternCard" Grid.Row="1" ToolTip="Описание правила, сравнение Fit/Test и причинный контекст выбранного примера. Поле только для чтения." IsReadOnly="True" TextWrapping="Wrap" VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" Padding="8"/>
+                                <TextBox Name="TextBoxPatternCard" Grid.Row="1" ToolTip="Описание правила, сравнение Fit/Test и причинный контекст выбранного примера. Поле только для чтения." IsReadOnly="True" TextWrapping="Wrap" Height="Auto" VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" Padding="8"/>
                                 <DataGrid Name="DataGridPatternWeek" Grid.Row="2" Style="{DynamicResource DataGridStyle}" AutoGenerateColumns="True" IsReadOnly="True" CanUserAddRows="False" ToolTip="Обзор только уже известных дней текущей недели и префикса дня якоря. Не содержит будущие дни или придуманные нулевые сессии."/>
                             </Grid>
                         </TabItem>

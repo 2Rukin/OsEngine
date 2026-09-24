@@ -17,8 +17,10 @@ using System.Text.Json;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Xml.Linq;
 
 namespace OsEngine.OrderFlowResearch.Tests
 {
@@ -32,6 +34,7 @@ namespace OsEngine.OrderFlowResearch.Tests
             Run("FollowupEmptyRangeNeverPublished", root, TestFollowupEmpty);
             Run("FollowupChartIntervalAndIndependentY", root, TestFollowupChart);
             Run("FollowupUiWorkflowAndEpisodeState", root, TestFollowupUi);
+            Run("FollowupMultilineReportsUseThemedHeight", root, TestFollowupReportHeight);
             Run("PatternDayWeekCausalSnapshots", root, TestPatternWeek);
             Run("PatternIncompleteWeekAndMissingDates", root, TestPatternIncompleteWeek);
             Run("PatternOrdinalLabelsAndFirstTouch", root, TestPatternLabels);
@@ -148,6 +151,48 @@ namespace OsEngine.OrderFlowResearch.Tests
             AssertTrue(ui.ButtonPatternOpen.ToolTip.ToString().Contains("без"), "Saved preview documented");
             ui.Measure(new Size(1000, 700)); ui.Arrange(new Rect(0, 0, 1000, 700));
             RenderTargetBitmap bitmap = new RenderTargetBitmap(1000, 700, 120, 120, PixelFormats.Pbgra32); bitmap.Render(ui);
+        }
+        private static void TestFollowupReportHeight(string root)
+        {
+            AssertTrue(Application.Current == null, "Component layout starts no Application or Window");
+            XNamespace ns = "http://schemas.microsoft.com/winfx/2006/xaml/presentation", x = "http://schemas.microsoft.com/winfx/2006/xaml";
+            Assembly assembly = Assembly.GetExecutingAssembly(); XDocument app, explorer;
+            using (Stream stream = assembly.GetManifestResourceStream("Research.App.xaml")) { app = XDocument.Load(stream); }
+            using (Stream stream = assembly.GetManifestResourceStream("Research.Explorer.Ui.xaml")) { explorer = XDocument.Load(stream); }
+            XElement style = app.Descendants(ns + "Style").Single(e => e.Attribute(x + "Key") == null && (string)e.Attribute("TargetType") == "{x:Type TextBox}");
+            XElement dictionary = new XElement(ns + "ResourceDictionary", new XAttribute(XNamespace.Xmlns + "x", x), new XElement(style));
+            string[] reports = { "TextBoxDetails", "TextBoxSummary", "TextBoxComparison", "TextBoxPatternQuality", "TextBoxPatternCard" };
+            foreach (string theme in new[] { "DarkOrange", "Tiffany" })
+            {
+                ResourceDictionary resources = (ResourceDictionary)XamlReader.Parse(dictionary.ToString());
+                resources.MergedDictionaries.Add((ResourceDictionary)Application.LoadComponent(new Uri("/OsEngine;component/Themes/Theme" + theme + ".xaml", UriKind.Relative)));
+                foreach (string name in reports)
+                {
+                    XElement element = explorer.Descendants(ns + "TextBox").Single(e => (string)e.Attribute("Name") == name);
+                    TextBox report = (TextBox)XamlReader.Parse(element.ToString()); Grid host = new Grid { Resources = resources }; host.Children.Add(report);
+                    report.Text = string.Join(Environment.NewLine, Enumerable.Range(1, 200).Select(i => "Строка отчёта " + i)) + "\nREPORT_END";
+                    foreach (double height in new[] { 90d, 180d, 480d })
+                    {
+                        host.Measure(new Size(900, height)); host.Arrange(new Rect(0, 0, 900, height)); host.UpdateLayout();
+                        AssertTrue(ReferenceEquals(resources[typeof(TextBox)], report.Style), name + " exercises real implicit application style");
+                        AssertTrue(double.IsNaN(report.Height), name + " overrides global fixed height with Auto");
+                        AssertEqual(height, report.ActualHeight, name + " fills available height after resize in " + theme);
+                        AssertEqual(VerticalAlignment.Top, report.VerticalContentAlignment, name + " aligns report to top");
+                        ScrollViewer scroll = (ScrollViewer)report.Template.FindName("PART_ContentHost", report);
+                        AssertTrue(scroll.ViewportHeight > 35 && scroll.ScrollableHeight > 0, name + " has multiline scrollable viewport");
+                        report.ScrollToEnd(); host.UpdateLayout();
+                        AssertTrue(scroll.VerticalOffset > 0, name + " can scroll");
+                        AssertEqual(report.LineCount - 1, report.GetLastVisibleLineIndex(), name + " final line reachable");
+                        report.ScrollToHome(); host.UpdateLayout();
+                        AssertEqual(0, report.GetFirstVisibleLineIndex(), name + " first line reachable");
+                    }
+                    host.Children.Clear();
+                }
+                TextBox input = new TextBox(); Grid inputHost = new Grid { Resources = resources }; inputHost.Children.Add(input);
+                inputHost.Measure(new Size(900, 180)); inputHost.Arrange(new Rect(0, 0, 900, 180)); inputHost.UpdateLayout();
+                AssertEqual(23d, input.ActualHeight, "Ordinary inputs retain application style height");
+            }
+            AssertTrue(Application.Current == null, "No application or desktop window started");
         }
         private static void TestPatternWeek(string root)
         {
