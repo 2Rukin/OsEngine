@@ -1,40 +1,57 @@
 # Authoritative active task state
 
-**ID:** `TASK-CLOUD-WINDOW-DEBT-CORRECTION-001`
+**ID:** `TASK-CLOUD-EXPLORER-FOLLOWUP-001`
 **Статус:** `COMPLETE`
 **Фаза:** `TERMINAL`
-**Ветка:** `docs/order-flow-production-roadmap` (публикация из отдельного worktree)
-**Baseline HEAD:** `180e830ea65f1b3b2072236e5575fe38c0ffebba`
-**Dirty entry:** clean; работа ведётся от актуальной удалённой ветки в отдельном worktree.
-**Completed transition IDs:** `SCOPE_ENTRY`, `CORRECT_CLAIMS`, `VALIDATION`, `DOC_REVIEW`, `TERMINAL`
+**Ветка:** локальная `docs/cloud-explorer-followup`, публикация fast-forward в `origin/docs/order-flow-production-roadmap`.
+**Baseline HEAD:** `c4f76079f7bd42fbcc2b8c02ce920821b6cba73f`
+**Dirty entry:** clean; другая локальная ветка содержит эквивалентный уже опубликованному документальный коммит, её историю не переписывать.
+**Completed transition IDs:** `SCOPE_ENTRY`, `SPECIFICATION`, `VALIDATION`, `DOC_PRIMARY`, `FIX`, `VALIDATION_1`, `TERMINAL`
 **Next transition ID:** `AWAIT_NEW_TASK`
 
 ## Frozen scope
 
-Владелец повторно проверил работу окон после последнего коммита и сообщил,
-что всё работает. Закрыть устаревшую запись `TD-CLOUD-WINDOW-001` и исправить
-ссылки на открытый дефект в документации Cloud Explorer и Order Flow.
-Сохранить первоначальное сообщение как историю, не выдавая повторную ручную
-проверку владельца за автоматизированный тест всех оконных сценариев.
-Код, тесты, бинарники и торговое поведение не менять. Разрешены commit и
-обычный fast-forward push в ту же удалённую ветку.
+После команды владельца `++` оформить постановку по наблюдениям Cloud Explorer:
+русская адресная валидация входов, читабельная «Сводка», вертикальный масштаб и
+согласованный период графика, объяснение пустых «Эпизодов», руководство с
+примерами и новый автоматизированный поиск предвестников движения в пределах
+одного дня с контекстом текущей недели. Владелец отвечает за выбор файлов и
+контрактов; автоматический переход между контрактами не добавлять. Старую
+оконную проблему оставить закрытой по повторной ручной проверке владельца.
+
+Документационный scope: `Documentation/OrderFlow/TECHNICAL_DEBT.md`, новый
+target-spec, `CLOUD_EXPLORER_USER_GUIDE.md`, индекс Order Flow, `DOCMAP-001` и
+этот snapshot. Production code, tests, binaries, tick-файл, брокер и Tester/live
+вне scope. Авторизованы commit и обычный fast-forward push в прежнюю удалённую
+ветку; force-update запрещён.
 
 ## Verification status
 
-Первоначальная жалоба сохранена как история; запись TD-CLOUD-WINDOW-001 закрыта
-после повторного сообщения владельца, что всё работает. 43/43 локальные ссылки
-и anchors PASS, agent validator 109/109 PASS, `git diff --check` PASS.
-Независимое documentation review: CLEAN, findings 0. Динамическое чтение
-входных полей при новом расчёте сверено с кодом. Только документация:
-новая сборка/тесты/запуск окон NOT_RUN. OBSERVABILITY: NO CHANGE;
-MODE PARITY: NO CHANGE. Commit и remote identity определяются Git.
+В текущем коде `ExplorerRunSpec.Validate` объединяет ошибки дат/входов в одну
+английскую фразу; `ExplorerEpisodeSpec.Enabled` по умолчанию false; chart берёт
+общий диапазон из загруженных pivot/Cloud, тогда как price bars грузятся для
+страницы Cloud; колесо изменяет только горизонтальный масштаб. Сводка —
+многострочный TextBox с последующим `AppendText`. Все наблюдения экрана
+фиксируются как сообщения владельца, а не как воспроизведённый Windows UI test.
+Target-spec различает current behavior и будущую функцию. Четыре открытые
+записи в реестре имеют ожидаемое поведение и проверки; документальная запись
+`TD-CLOUD-GUIDE-001` закрыта обновлёнными примерами руководства; оконная
+`TD-CLOUD-WINDOW-001` остаётся закрытой по повторной проверке владельца.
+
+Локальные ссылки и anchors: 32/32 PASS; offline agent validator: 109/109 PASS;
+`git diff --check` PASS. Независимое documentation review: PRIMARY выявил
+`DOC-FOLLOWUP-001` (прежний открытый статус уже исправленного руководства),
+после правки VALIDATION_1 CLEAN, 1/1 finding закрыта; других замечаний нет.
+Код и тесты не менялись; build, executable tests и ручной запуск WPF NOT_RUN
+в документационном scope. OBSERVABILITY: NO CHANGE; MODE PARITY: NO CHANGE.
 
 ## Blockers
 
-Нет для исправления документации. Повторную ручную проверку владельца не
-выдавать за проверку всех дополнительных оконных сценариев.
+Нет для документационной постановки. Динамическое выполнение окна Windows не
+заявлять пройденным.
 
 ## Next action
 
-Документация готова к публикации обычным fast-forward push. Дождаться новой
-задачи владельца после публикации.
+Создать разрешённый коммит и отправить обычным fast-forward push в прежнюю
+удалённую ветку. Реализацию и ручную приёмку WPF проводить отдельной задачей;
+ни один описанный новый сценарий не объявлен работающим.

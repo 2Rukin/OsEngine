@@ -11,8 +11,11 @@
 Cloud Explorer V2 имеет отдельный current contract; остальные архитектурные
 документы сохраняют полный target scope.
 
-История ранее сообщённой проблемы переключения окон и её закрытия — в
-[реестре](TECHNICAL_DEBT.md); открытых записей в нём сейчас нет.
+Открытые наблюдения владельца по интерфейсу Cloud Explorer и история
+закрытой проблемы переключения окон — в [реестре](TECHNICAL_DEBT.md).
+План исправлений и нового автоматического поиска — в
+[следующей постановке](CLOUD_EXPLORER_FOLLOWUP_SPEC.md); описанное там ещё
+не реализовано.
 
 Источник загружается владельцем самостоятельно; workbench читает один локальный
 файл с выбором дат и обязательным ручным шагом цены. Стаканные признаки исключены. Дельта/Cloud 1/Cloud 2 включаются независимо, настройки
@@ -47,6 +50,7 @@ Cloud находятся в [runbook](RESEARCH_MVP_RUNBOOK.md#45-cloud-цепо�
 | `ORDER-FLOW-MVP-RUNBOOK-001` | [Research MVP runbook](RESEARCH_MVP_RUNBOOK.md) | Текущий OsData workbench, входы, artifacts, reason codes и честная граница evidence |
 | `ORDER-FLOW-CLOUD-EXPLORER-V2-001` | [Cloud Explorer v2 contract](CLOUD_EXPLORER_V2_SPEC.md) | Отдельный реализованный offline-режим, формулы и критерии приёмки |
 | `ORDER-FLOW-CLOUD-EXPLORER-GUIDE-001` | [Cloud Explorer user guide](CLOUD_EXPLORER_USER_GUIDE.md) | Пошаговая русская инструкция по отдельному окну, настройкам, результатам, графику и реплею |
+| `ORDER-FLOW-CLOUD-EXPLORER-FOLLOWUP-001` | [Cloud Explorer follow-up spec](CLOUD_EXPLORER_FOLLOWUP_SPEC.md) | Следующий этап: русские ошибки, исправления экранов и автоматический поиск сочетаний событий до внутридневного движения |
 
 Если краткое описание roadmap конфликтует с подробным контрактом, применяется
 специализированный документ из таблицы. Статус реализации всегда определяется
