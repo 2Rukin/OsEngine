@@ -96,6 +96,7 @@ namespace OsEngine.OsData.OrderFlow
             InitializeCloudNavigation();
             InitializeStatistics();
             InitializeFieldHelp();
+            InitializeCloudExplorer();
             Chart_ViewChanged(this, EventArgs.Empty);
         }
 
@@ -798,6 +799,7 @@ namespace OsEngine.OsData.OrderFlow
             try
             {
                 _isClosing = true;
+                DisposeCloudExplorer();
                 DisposeCloudImbalanceControls();
                 DisposeCloudNavigation();
                 DisposeStatistics();

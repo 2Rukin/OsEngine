@@ -109,6 +109,79 @@ cleanup staging, отмена до публикации и worker lifetime бе�
 Это синтетическое/component evidence; реальные доходность, costs, скорость на файле
 владельца и полный Window не проверяются этим стендом.
 
+### Cloud Explorer V2
+
+Дополнительные `ExplorerV2Tests.cs` и `ExplorerV2AcceptanceTests.cs` проверяют
+отдельный полный каталог, фильтрацию без source-файла, frozen adaptive tick,
+ATR с предыдущим close и 20 TR, rolling/time-of-day background, episodes/raw
+interval volume, VWAP, причинное подтверждение swings и Long/Short watches.
+Проверяются равные/пониженные lows, TTL, cutoff, Unknown gates, первый trigger,
+same-row breakout, separate hashes, проверки версий/checksums и неизменность
+каталога при добавлении downstream bundle. Golden legacy Cloud1/2 hashes и
+CSV зафиксированы на неизменённом legacy engine базового `a6cca6b`.
+
+Для каждого кадра небольшой многодневной ленты все опубликованные сущности
+сравниваются с новым независимым запуском ядер только на том же префиксе:
+Cloud/episode, provisional/confirmed pivots, watches/triggers, observations,
+labels, выбранный VWAP и bars. Старые кадры проверяются на неизменность.
+Отмена после 8192 строк проверяется отдельно для catalog/episode/study;
+проверяются cleanup staging, освобождение handle, replay cancellation и late
+worker result после Dispose. WPF control/chart рендерятся без запуска
+Application или показанного OS Window; длинный диапазон OHLC остаётся bounded.
+Компонентный UI fixture проверяет реальный launcher вкладки: выбор возвращает
+предыдущую вкладку, создаёт одно отдельное окно со всем Explorer, повторный выбор
+не создаёт дубликат, а освобождение окна позволяет создать новое. Он также
+проверяет возвращённый inline-флажок масштабов и шесть редактируемых профилей.
+Fixture создаёт только непоказанные Window objects; физические клики, фокус,
+активация и owned-window поведение ОС остаются ручной проверкой.
+Regression fixtures отдельно моделируют отказ второго открытия row writer и
+одного/обоих Dispose, проверяют сохранение I/O-причин и освобождение первого
+handle. Проверяются явный отказ несовместимого relative Cloud study и реальный
+trigger при включённом фоне, снятие UI selection, смена run A→B и отклонение
+чужого VWAP-якоря в расчёте и replay до открытия source.
+
+Команды из `project/`:
+
+```text
+dotnet run --project Tests/OrderFlowResearch/OsEngine.OrderFlowResearch.Tests.csproj
+dotnet build OsEngine.sln
+dotnet run --project Tests/OrderFlowResearch/OsEngine.OrderFlowResearch.Tests.csproj --no-build -- --explorer-input <SRU6 tick path> <separate output root> [from yyyy-MM-dd] [to yyyy-MM-dd]
+dotnet run --project Tests/OrderFlowResearch/OsEngine.OrderFlowResearch.Tests.csproj --no-build -- --explorer-input <SRU6 tick path> <empty separate output root> --cancel
+```
+
+Owner-file режим остаётся offline, проверяет reference SHA/count для `SRU6.txt`,
+полностью валидирует источник даже при коротких датах, печатает wall time,
+working-set peak, размер bundles и время чтения/render 250 строк. Снимок
+`component-page.png` сохраняется только в отдельной папке результата.
+Это не запуск терминала/коннектора и не проверка физической мыши, фокуса,
+mouse capture или управления отдельным окном ОС. Такие действия остаются
+`REQUIRES OWNER-RUN`; экономическая/Tester/live квалификация не заявляется.
+
+Зафиксированный полный offline-прогон 24.09.2026 на PRIMARY checkpoint задачи
+`TASK-ORDER-FLOW-CLOUD-EXPLORER-V2-IMPLEMENTATION-001`, база `a6cca6b`:
+SHA reference принят, 3 130 667 строк / 174 наблюдаемые даты / 638 289 Cloud,
+303 849 эпизодов и 87 705 terminal observations. Настройки CLI: шаг 1 как явно
+заданный параметр нагрузочного теста, Cloud1/Base chain с relative background,
+Cloud2/Base single с минимумом 100, episodes и study включены; это не утверждение
+о спецификации инструмента или удачном торговом пороге.
+
+| Прогон | Выбранных строк | Время, с | Peak working set, bytes | Bytes трёх bundles | Page/render 250, мс |
+|---|---:|---:|---:|---:|---:|
+| Полный свежий PRIMARY | 3 130 667 | 176,81 | 116 469 760 | 4 557 319 793 | 210,65 |
+| 16–31 марта | 7 015 | 10,97 | 112 926 720 | 18 149 734 | 174,62 |
+| 1–31 июля | 1 329 413 | 81,54 | 115 744 768 | 1 919 829 467 | 200,84 |
+| Повторное использование полного результата | 3 130 667 | 12,04 | 109 309 952 | 4 557 319 793 | 198,57 |
+
+Март/июль/reuse измерены непосредственно перед PRIMARY; свежий полный прогон
+повторён после финального уточнения time-of-day cutoff. Во всех этих прогонах
+time-of-day option выключена. Три manifests двух независимых полных расчётов
+совпали побайтово и включают одинаковые checksums 34 файлов. Отмена owner-файла
+после 8192 выбранных строк: 0,80 с, ни одного partial bundle, source handle освобождён.
+В peak включён WPF component-render. Время коротких периодов включает полную
+проверку исходного файла; эти числа не являются гарантией скорости на другом ПК
+или исчерпывающим доказательством асимптотики. Защита ресурсного лимита и
+source-order causality дополнительно проверяются синтетическими тестами.
+
 ## 1. Уровни доказательства
 
 | Уровень | Что доказывает | Чего не доказывает |

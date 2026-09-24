@@ -482,6 +482,7 @@
                     </ContentControl>
                 </Grid>
             </TabItem>
+            <TabItem Name="TabItemCloudExplorer" Header="Исследование Cloud"/>
             <TabItem Name="TabItemJournal" Header="Event journal">
                 <DataGrid Name="DataGridJournal" IsReadOnly="True" AutoGenerateColumns="False"
                           EnableRowVirtualization="True">

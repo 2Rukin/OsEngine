@@ -30,8 +30,9 @@ namespace OsEngine.OrderFlowResearch.Tests
         private static readonly DateTime Start = new DateTime(2026, 9, 18, 10, 0, 0);
 
         [STAThread]
-        private static int Main()
+        private static int Main(string[] args)
         {
+            if (args.Length > 0 && args[0] == "--explorer-input") { return RunExplorerOwner(args); }
             string root = Path.Combine(Path.GetTempPath(), "OsEngine-TickResearch-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(root);
             try
@@ -145,6 +146,7 @@ namespace OsEngine.OrderFlowResearch.Tests
                 Run("StudyWorkerLifetime", root, TestStudyWorkerLifetime);
                 Run("StudyExactThirds", root, TestStudyExactThirds);
                 Run("StudyBarrierUnderflow", root, TestStudyBarrierUnderflow);
+                RegisterExplorerV2(root);
             }
             finally { Directory.Delete(root, true); }
             Console.WriteLine("Order Flow Research tests: " + _passed + " passed, " + _failed + " failed.");

@@ -6,8 +6,8 @@
 Текущий статус: **изолированный offline Research MVP реализован в OsData;
 торговый робот, Tester execution и экономическое преимущество не реализованы и
 не доказаны**. Точная инструкция и граница доступной функции находятся в
-[runbook первичной проверки](RESEARCH_MVP_RUNBOOK.md); остальные документы
-сохраняют полный target contract.
+[runbook первичной проверки](RESEARCH_MVP_RUNBOOK.md). Cloud Explorer V2 имеет
+отдельный current contract; остальные архитектурные документы сохраняют полный target scope.
 
 Источник загружается владельцем самостоятельно; workbench читает один локальный
 файл с выбором дат и обязательным ручным шагом цены. Стаканные признаки исключены. Дельта/Cloud 1/Cloud 2 включаются независимо, настройки
@@ -40,17 +40,18 @@ Cloud находятся в [runbook](RESEARCH_MVP_RUNBOOK.md#45-cloud-цепо�
 | `ORDER-FLOW-EXECUTION-001` | [Execution model](EXECUTION_MODEL.md) | Ограничения тиков для fills, будущая квалификация модели, costs/risk и parity boundary |
 | `ORDER-FLOW-QUALIFICATION-001` | [Testing and qualification](TESTING_AND_QUALIFICATION.md) | Техническое evidence, historical validation, ворота и `go/no-go` |
 | `ORDER-FLOW-MVP-RUNBOOK-001` | [Research MVP runbook](RESEARCH_MVP_RUNBOOK.md) | Текущий OsData workbench, входы, artifacts, reason codes и честная граница evidence |
-| `ORDER-FLOW-CLOUD-EXPLORER-V2-001` | [Cloud Explorer v2 spec](CLOUD_EXPLORER_V2_SPEC.md) | Целевой отдельный исследовательский режим; ещё не реализован |
+| `ORDER-FLOW-CLOUD-EXPLORER-V2-001` | [Cloud Explorer v2 contract](CLOUD_EXPLORER_V2_SPEC.md) | Отдельный реализованный offline-режим, формулы и критерии приёмки |
 
 Если краткое описание roadmap конфликтует с подробным контрактом, применяется
 специализированный документ из таблицы. Статус реализации всегда определяется
 current code и исполняемыми tests, а не target-документацией.
 
-Новый [план полного каталога и исследования Cloud](CLOUD_EXPLORER_V2_SPEC.md)
-описывает следующий отдельный режим: фильтры, адаптацию, эпизоды, VWAP,
-экстремумы и исследовательские сигналы. Это **техническая постановка, пока не
-реализованная функция**. Текущий порядок запуска и ограничения Cloud по-прежнему
-определяются runbook.
+Новая opt-in вкладка-запуск [«Исследование Cloud»](RESEARCH_MVP_RUNBOOK.md#48-исследование-cloud--отдельный-explorer-v2)
+открывает отдельное окно с полным disk-backed каталогом, независимыми фильтрами
+и масштабами, причинной адаптацией, эпизодами, выбранным anchored VWAP,
+swing/structure markers и отдельными future labels. Старые вкладки, настройки,
+bundles и `cloud-reaction-study-1`
+сохраняются. Это локальное исследование, не торговые сигналы для отправки заявок.
 
 ## Рекомендуемый порядок чтения
 
