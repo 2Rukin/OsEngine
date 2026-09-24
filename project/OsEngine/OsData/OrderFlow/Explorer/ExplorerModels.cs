@@ -49,15 +49,7 @@ namespace OsEngine.OsData.OrderFlow.Explorer
 
         internal void Validate()
         {
-            if ((Layer != "Cloud1" && Layer != "Cloud2") || string.IsNullOrWhiteSpace(Scale) ||
-                Scale.Any(c => !char.IsLetterOrDigit(c)) || MinimumTickVolume <= 0 || MaximumGapMilliseconds < 0 ||
-                MaximumRangeTicks < 0 || ContextSeconds <= 0 || TickMinimum < 1 || TickWindow < TickMinimum ||
-                TickWindow > 100000 || TickPercentile <= 0 || TickPercentile > 1 || PaceSeconds < 1 || PaceMinimum < 1 ||
-                PaceFactor <= 0 || GapMinimum < 0 || GapMaximum < GapMinimum || AtrFactor <= 0 || RangeMinimum < 1 ||
-                RangeMaximum < RangeMinimum || VolumeMinimum < 1 || VolumeWindow < VolumeMinimum || VolumeWindow > 100000 ||
-                VolumeDates < 1 || VolumePercentile <= 0 || VolumePercentile > 1 || TimeOfDayDates < 1 ||
-                TimeOfDayDates > 100 || TimeOfDayMinutes < 0 || TimeOfDayMinutes > 720)
-            { throw new ArgumentException("Invalid Cloud Explorer formation profile."); }
+            ExplorerValidation.Profile(this);
         }
     }
 
@@ -129,24 +121,7 @@ namespace OsEngine.OsData.OrderFlow.Explorer
 
         internal void Validate()
         {
-            if (string.IsNullOrWhiteSpace(InputPath) || string.IsNullOrWhiteSpace(OutputRootPath) || PriceStep <= 0 ||
-                FromDate.HasValue != ToDate.HasValue || FromDate > ToDate || Profiles.IsDefaultOrEmpty || Profiles.Length > 6 ||
-                Profiles.Select(p => p.Key).Distinct().Count() != Profiles.Length || Profiles.GroupBy(p => p.Layer).Any(g => g.Count() > 3) ||
-                MaximumBufferItems < 1000 || MaximumMemoryMegabytes < 64)
-            { throw new ArgumentException("Invalid Cloud Explorer input, dates, profiles or resource limit."); }
-            foreach (ExplorerProfile profile in Profiles) { profile.Validate(); }
-            if (Episodes == null || Study == null || Episodes.MaximumPauseSeconds < 0 || Episodes.MaximumDurationSeconds < 0 ||
-                Episodes.MaximumZoneTicks < 0 || Episodes.AtrFactor <= 0 || Episodes.ZoneMinimum < 1 || Episodes.ZoneMaximum < Episodes.ZoneMinimum ||
-                (Episodes.Enabled && !Profiles.Any(p => p.Key == Episodes.Profile)) || (Study.Enabled && !Profiles.Any(p => p.Key == Study.Profile)) ||
-                (Study.Enabled && Study.EpisodeTrigger && (!Episodes.Enabled || Study.Profile != Episodes.Profile)) || Study.TriggerVolume <= 0 ||
-                Study.SwingReversalTicks < 1 || Study.SwingAtrFactor <= 0 || Study.WatchMinutes < 1 || Study.WatchMinutes > 1440 ||
-                Study.ActivitySeconds < 1 || Study.ActivityMinimum < 1 || Study.ActivityMaximumPauseSeconds < 0 ||
-                Study.StartHour < 0 || Study.EndHour > 24 || Study.StartHour >= Study.EndHour || Study.HorizonsMinutes.IsDefaultOrEmpty ||
-                Study.HorizonsMinutes.Length > 12 || Study.HorizonsMinutes.Any(h => h < 1 || h > 1440) ||
-                Study.HorizonsMinutes.Distinct().Count() != Study.HorizonsMinutes.Length || Study.TargetAtr <= 0 || Study.AdverseAtr <= 0)
-            { throw new ArgumentException("Invalid Cloud Explorer episode or study hypothesis."); }
-            if (Study.Enabled && Study.RelativeTrigger && !Study.EpisodeTrigger && !StudyProfile.RelativeVolume && !StudyProfile.TimeOfDayVolume)
-            { throw new ArgumentException("Для относительного Cloud-trigger включите «Относительный объём» или «Фон того же времени прежних дат» выбранного профиля и пересчитайте каталог."); }
+            ExplorerValidation.Run(this);
         }
 
         internal static string Hash<T>(T value) => Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(value))).ToLowerInvariant();

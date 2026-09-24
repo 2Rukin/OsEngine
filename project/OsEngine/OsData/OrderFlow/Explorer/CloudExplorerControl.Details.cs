@@ -22,7 +22,12 @@ namespace OsEngine.OsData.OrderFlow.Explorer
 
         private void InstallRun(ExplorerRun run)
         {
+            ClearObservationContext(); _pendingPatternExample = false;
             _run = run; _selectedAnchor = _anchor = null; _vwap = ImmutableArray<ExplorerVwapSample>.Empty;
+            _tableOffsets.Clear(); _chartFrom = _chartTo = null; _chart.SetInterval(null, null);
+            _chartContext = null; _pendingInterval = null; _patternRun = null; _chart.KnownBoundary = null;
+            _patternCard = null; _patternExample = null; DataGridPatternCards.ItemsSource = null; DataGridPatternWeek.ItemsSource = null;
+            _patternCards = Array.Empty<ExplorerPatternCard>();
             DataGridCatalog.SelectedItem = null; DataGridEpisodes.SelectedItem = null; _chart.ResetSelection();
         }
         private string OptionsIdentity() => string.Join("|", _profiles.Values.SelectMany(v => v).Concat(_episodeOptions).Concat(_studyOptions).Select(o => o.Value)) +
@@ -57,7 +62,7 @@ namespace OsEngine.OsData.OrderFlow.Explorer
                 }, result =>
                 {
                     InstallRun((ExplorerRun)result); _view = ExplorerStorage.LoadView(_run); RestoreViews();
-                    _pageStart = _auxStart = 0; _appliedOptions = null; LoadPage(true);
+                    _pageStart = 0; _appliedOptions = null; LoadPage(true);
                 });
             }
             catch (Exception error) { Error(error); }
@@ -69,13 +74,21 @@ namespace OsEngine.OsData.OrderFlow.Explorer
 
         #region Chart choices and causal details
 
+        private string _observationId;
+        private IReadOnlyList<ExplorerVwapSample> _observationVwap;
+        private ExplorerObservation _pendingObservation;
+        private void ClearObservationContext() { _observationId = null; _observationVwap = null; _pendingObservation = null; }
+
         private void TimeFrameChanged(object sender, SelectionChangedEventArgs e)
         { try { if (ComboBoxTimeFrame.SelectedItem is OrderFlowDisplayTimeFrame frame) { _timeFrame = frame; if (_job == null && _playback == null) { LoadPage(false); } else { Paint(); } } } catch (Exception error) { Error(error); } }
         private void BeginPlayback()
         {
             if (_job != null) { throw new InvalidOperationException("Дождитесь завершения текущей операции."); }
             if (_playback != null) { return; }
-            _playback = new ExplorerPlayback(_run, _anchor);
+            ClearObservationContext(); _pendingPatternExample = false;
+            _playback = new ExplorerPlayback(_run, _anchor, _patternRun?.Plan);
+            PatternReplayMode(true);
+            _pendingInterval = null; TextBlockEpisodeState.Text = "Реплей: ожидание первого причинного кадра. Исторические итоги скрыты.";
             _chart.ResetSelection();
             foreach (DataGrid grid in new[] { DataGridCatalog, DataGridEpisodes, DataGridObservations, DataGridLabels, DataGridTriggers, DataGridPivots, DataGridDiagnostics }) { grid.ItemsSource = null; }
             TextBoxSummary.Text = "Ожидание первого причинного кадра."; TextBoxDetails.Clear();
@@ -113,7 +126,10 @@ namespace OsEngine.OsData.OrderFlow.Explorer
                 $"H0 {observation.H0?.Price}; H1 {observation.H1?.Price}; L0 {observation.L0?.Price}; L1 {observation.L1?.Price}; откат {observation.Rebound?.Price}; подтверждённый поворот {observation.Turn?.Price}\n" +
                 $"VWAP на событии {observation.WatchVwap}; ATR {observation.Atr}; ориентир отмены {observation.DiagnosticStop}. Исполнение и риск не рассчитаны.";
             TextBoxDetails.Text = text; _chart.SelectObservation(observation);
-            if (_run == null || observation.Trigger == null || _job != null || _playback != null) { return; }
+            if (_run == null || _playback != null) { return; }
+            _observationId = observation.Id; _observationVwap = Array.Empty<ExplorerVwapSample>(); _pendingInterval = null;
+            if (_job != null) { _pendingObservation = observation; return; }
+            if (observation.Trigger == null) { ShowInterval(observation.WatchStart, observation.Time.AddMinutes(2)); return; }
             ExplorerRun run = _run;
             StartJob(token =>
             {
@@ -123,13 +139,19 @@ namespace OsEngine.OsData.OrderFlow.Explorer
                 { token.ThrowIfCancellationRequested(); if (related.RelatedCloudIds.Contains(cloud.Id)) { selected.Add(cloud); if (selected.Count == 250) { break; } } }
                 ExplorerVwapSample[] samples = ExplorerStorage.ReadRows<ExplorerWatchVwap>(run.StudyPath, "watch-vwap-samples").Where(v => v.WatchId == observation.Id && v.Sequence <= observation.Sequence)
                     .Take(2048).Select(v => new ExplorerVwapSample(v.Time, v.Sequence, v.Vwap, v.Vwap, v.Sigma)).ToArray();
-                return (selected, samples);
+                DateTime from = observation.WatchStart, to = observation.Time.AddMinutes(2);
+                return (selected, samples, ExplorerBars.ReadRange(run.CatalogPath, from, to, _timeFrame, token));
             }, result =>
             {
-                (List<ExplorerCloud> selected, ExplorerVwapSample[] samples) = ((List<ExplorerCloud>, ExplorerVwapSample[]))result;
+                if (_run != run || _observationId != observation.Id) { return; }
+                (List<ExplorerCloud> selected, ExplorerVwapSample[] samples, IReadOnlyList<ExplorerBar> bars) = ((List<ExplorerCloud>, ExplorerVwapSample[], IReadOnlyList<ExplorerBar>))result;
+                _observationVwap = samples;
+                _chartFrom = observation.WatchStart; _chartTo = observation.Time.AddMinutes(2); _bars = bars;
+                _chart.SetInterval(_chartFrom, _chartTo); _chart.SetContext(bars, Array.Empty<ExplorerEpisode>());
                 if (selected.Count > 0) { _chart.Set(selected, _view, run.Spec.PriceStep, samples, new[] { observation.H0, observation.H1, observation.L0, observation.L1, observation.Rebound, observation.Turn }.Where(p => p != null).ToArray(), new[] { observation }); }
                 _chart.SelectObservation(observation); TabControlResult.SelectedItem = TabItemChart;
                 TextBlockStatus.Text = text;
+                ShowInterval(observation.WatchStart, observation.Time.AddMinutes(2));
             });
         }
         private void LoadCloudDetails(ExplorerCloud cloud)

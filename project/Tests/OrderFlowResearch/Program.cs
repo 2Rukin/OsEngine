@@ -33,6 +33,7 @@ namespace OsEngine.OrderFlowResearch.Tests
         private static int Main(string[] args)
         {
             if (args.Length > 0 && args[0] == "--explorer-input") { return RunExplorerOwner(args); }
+            if (args.Length > 0 && args[0] == "--pattern-input") { return RunPatternOwner(args); }
             string root = Path.Combine(Path.GetTempPath(), "OsEngine-TickResearch-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(root);
             try
@@ -147,6 +148,7 @@ namespace OsEngine.OrderFlowResearch.Tests
                 Run("StudyExactThirds", root, TestStudyExactThirds);
                 Run("StudyBarrierUnderflow", root, TestStudyBarrierUnderflow);
                 RegisterExplorerV2(root);
+                RegisterPatternSearch(root);
             }
             finally { Directory.Delete(root, true); }
             Console.WriteLine("Order Flow Research tests: " + _passed + " passed, " + _failed + " failed.");

@@ -27,7 +27,11 @@ namespace OsEngine.OsData.OrderFlow.Explorer
     internal sealed record ExplorerFrame(long Sequence, DateTime Time, bool Complete, ImmutableArray<ExplorerCloud> Clouds,
         ExplorerEpisode Episode, ImmutableArray<ExplorerPivot> Pivots, ExplorerPivot Provisional, ImmutableArray<ExplorerObservation> Observations,
         ImmutableArray<ExplorerLabel> Labels, ImmutableArray<ExplorerVwapSample> Vwap, ImmutableArray<ExplorerWatch> Watches,
-        ImmutableArray<ExplorerTrigger> Triggers, ImmutableArray<ExplorerDiagnostic> Diagnostics, ImmutableArray<ExplorerBar> Bars, ImmutableArray<ExplorerEpisode> Episodes);
+        ImmutableArray<ExplorerTrigger> Triggers, ImmutableArray<ExplorerDiagnostic> Diagnostics, ImmutableArray<ExplorerBar> Bars, ImmutableArray<ExplorerEpisode> Episodes)
+    {
+        public ImmutableArray<ExplorerPatternSnapshot> PatternSnapshots { get; init; } = ImmutableArray<ExplorerPatternSnapshot>.Empty;
+        public ImmutableArray<ExplorerPatternLabel> PatternLabels { get; init; } = ImmutableArray<ExplorerPatternLabel>.Empty;
+    }
 
     /// <summary>Bounded selected-anchor line. Each sample uses all preceding raw volume, even when older drawing points are compacted.</summary>
     internal sealed class ExplorerAnchorSeries
@@ -80,13 +84,16 @@ namespace OsEngine.OsData.OrderFlow.Explorer
         private readonly Queue<ExplorerBar> _bars = new Queue<ExplorerBar>();
         private readonly Queue<ExplorerEpisode> _finishedEpisodes = new Queue<ExplorerEpisode>();
         private readonly ExplorerBars _barBuilder;
+        private readonly ExplorerPatternKernel _pattern;
+        private readonly Queue<ExplorerPatternSnapshot> _patternSnapshots = new Queue<ExplorerPatternSnapshot>();
+        private readonly Queue<ExplorerPatternLabel> _patternLabels = new Queue<ExplorerPatternLabel>();
         private OrderFlowDeal _last;
         private bool _complete;
         private int _dateOrdinal;
         private DateTime _date;
         #region Source processing
 
-        internal ExplorerReplayCursor(ExplorerRun run, ExplorerAnchor anchor, CancellationToken cancellation)
+        internal ExplorerReplayCursor(ExplorerRun run, ExplorerAnchor anchor, CancellationToken cancellation, ExplorerPatternSpec pattern = null)
         {
             anchor?.Validate(run.Spec);
             _run = run; _cancellation = cancellation;
@@ -101,6 +108,7 @@ namespace OsEngine.OsData.OrderFlow.Explorer
             { _episodes = new ExplorerEpisodes(run.Spec, e => { Remember(_finishedEpisodes, e); _episodeBaseline.Add(e.Baseline(), e.StartTime.Date == _date ? _dateOrdinal : _dateOrdinal - 1); }, _study.Episode, c => { }); }
             _catalog = new ExplorerCatalog(run.Spec, CompletedCloud, _study.Prefix);
             _vwap = new ExplorerAnchorSeries(anchor);
+            if (pattern != null) { _pattern = new ExplorerPatternKernel(run.Spec, pattern, s => Remember(_patternSnapshots, s), r => Remember(_patternLabels, r.Label)); }
         }
         internal ExplorerFrame Step()
         {
@@ -117,9 +125,10 @@ namespace OsEngine.OsData.OrderFlow.Explorer
                 _study.Tick(tick, _run.Spec.Study.EpisodeTrigger ? _episodeBaseline.Rolling(tick.SourceSequence).HasValue : known);
                 _vwap.Add(tick); _last = tick;
                 _barBuilder.Add(tick);
+                _pattern?.Tick(tick, _cancellation);
                 return Capture();
             }
-            _catalog.Complete(); _episodes?.Complete(_last?.Time ?? default, _last?.SourceSequence ?? 0); _study.Complete(); _barBuilder.Complete(); _complete = true;
+            _catalog.Complete(); _episodes?.Complete(_last?.Time ?? default, _last?.SourceSequence ?? 0); _study.Complete(); _barBuilder.Complete(); _pattern?.Complete(); _complete = true;
             return Capture();
         }
         private void CompletedCloud(ExplorerCloud cloud)
@@ -137,7 +146,8 @@ namespace OsEngine.OsData.OrderFlow.Explorer
             _clouds.Concat(_catalog.Forming).ToImmutableArray(), _episodes?.Current, _pivots.ToImmutableArray(), _study.Provisional,
             _observations.ToImmutableArray(), _labels.ToImmutableArray(), _vwap.Snapshot(_last?.SourceSequence ?? 0, _complete), _study.Watches.ToImmutableArray(),
             _triggers.ToImmutableArray(), _diagnostics.ToImmutableArray(), _bars.Concat(_barBuilder.Current == null ? Array.Empty<ExplorerBar>() : new[] { _barBuilder.Current }).ToImmutableArray(),
-            _finishedEpisodes.Concat(_episodes?.Current == null ? Array.Empty<ExplorerEpisode>() : new[] { _episodes.Current }).ToImmutableArray());
+            _finishedEpisodes.Concat(_episodes?.Current == null ? Array.Empty<ExplorerEpisode>() : new[] { _episodes.Current }).ToImmutableArray())
+            { PatternSnapshots = _patternSnapshots.ToImmutableArray(), PatternLabels = _patternLabels.ToImmutableArray() };
         private static void Remember<T>(Queue<T> queue, T value) { queue.Enqueue(value); if (queue.Count > 250) { queue.Dequeue(); } }
         public void Dispose() { _reader.Dispose(); }
         #endregion

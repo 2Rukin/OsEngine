@@ -47,14 +47,15 @@ namespace OsEngine.OsData.OrderFlow.Explorer
         private IReadOnlyList<ExplorerEpisode> _episodes = Array.Empty<ExplorerEpisode>();
         private IReadOnlyList<ExplorerBar> _bars = Array.Empty<ExplorerBar>();
         private OrderFlowDisplayTimeFrame _timeFrame = OrderFlowDisplayTimeFrame.Min1;
-        private long _auxStart;
         private string _appliedOptions;
         private CloudExplorerChartWindow _window;
         private bool _disposed;
         private long _pageStart;
         private ExplorerFrame _frame;
+        private string _attemptId = Guid.NewGuid().ToString("N");
         internal Func<ExplorerRunSpec> RequestProvider { get; set; }
         internal Func<string> InputFingerprint { get; set; }
+        internal Action<string> InputFocus { get; set; }
 
         /// <summary>Creates only the editable workbench; no file is opened until an explicit calculation, reopen or replay action.</summary>
         public CloudExplorerControl()
@@ -78,11 +79,13 @@ namespace OsEngine.OsData.OrderFlow.Explorer
             ComboBoxProfile.SelectedItem = "Cloud1/Base";
             _chart = new ExplorerChart(); ContentControlPlot.Content = _chart; _chart.Selected += ChartSelected;
             _chart.ObservationSelected += ChartObservationSelected;
+            _chart.Failed += Error;
             ComboBoxTimeFrame.ItemsSource = OrderFlowChartTimeFrames.GetMenuValues(); ComboBoxTimeFrame.SelectedItem = _timeFrame;
             ComboBoxTimeFrame.SelectionChanged += TimeFrameChanged;
             ComboBoxPriceStyle.ItemsSource = new[] { "Свечи", "Бары", "High-Low" }; ComboBoxPriceStyle.SelectedIndex = 0;
             ComboBoxPriceStyle.SelectionChanged += PriceStyleChanged; CheckBoxDraw.Click += DrawChanged; ButtonClearLines.Click += ClearLines;
             ButtonReopen.Click += Reopen;
+            ButtonFitPrice.Click += FitPrice; ButtonResetAxes.Click += ResetAxes;
             ButtonCalculate.Click += Calculate; ButtonCancel.Click += Cancel; ButtonFilter.Click += ApplyFilter;
             ButtonFirst.Click += FirstPage; ButtonNext.Click += NextPage; ButtonFind.Click += Find;
             ButtonArtifacts.Click += OpenArtifacts; ButtonAnchor.Click += Anchor; ButtonSeparate.Click += Separate;
@@ -90,6 +93,8 @@ namespace OsEngine.OsData.OrderFlow.Explorer
             CheckBoxBands.Click += Bands; DataGridCatalog.SelectionChanged += CatalogSelected; DataGridCatalog.MouseDoubleClick += CatalogDoubleClick;
             DataGridObservations.SelectionChanged += ObservationSelected; DataGridEpisodes.SelectionChanged += EpisodeSelected;
             _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) }; _timer.Tick += Poll; _timer.Start();
+            InitializePatterns();
+            foreach (DataGrid grid in ResultGrids()) { grid.AutoGeneratingColumn += TranslateColumn; }
         }
 
         #region Settings and worker ownership
@@ -116,17 +121,21 @@ namespace OsEngine.OsData.OrderFlow.Explorer
                 string[] key = pair.Key.Split('/');
                 if ((key[0] == "Cloud1" && CheckBoxLayer1.IsChecked != true) || (key[0] == "Cloud2" && CheckBoxLayer2.IsChecked != true) ||
                     (key[1] != "Base" && CheckBoxScales.IsChecked != true)) { continue; }
-                profiles.Add(ExplorerOptions.Read(new ExplorerProfile { Layer = key[0], Scale = key[1] }, pair.Value));
+                try { profiles.Add(ExplorerOptions.Read(new ExplorerProfile { Layer = key[0], Scale = key[1] }, pair.Value)); }
+                catch (ExplorerInputException error) { throw new ExplorerInputException(error.Field, ExplorerValidation.UserMessage(error, ""), pair.Key, error); }
             }
-            ExplorerRunSpec spec = input with { Profiles = profiles.ToImmutableArray(), Episodes = ExplorerOptions.Read(new ExplorerEpisodeSpec(), _episodeOptions), Study = ExplorerOptions.Read(new ExplorerStudySpec(), _studyOptions),
-                MaximumBufferItems = checked((int)TextBoxBufferLimit.Text.ToDecimal()), MaximumMemoryMegabytes = checked((int)TextBoxMemoryLimit.Text.ToDecimal()) };
+            ExplorerRunSpec spec = input with { Profiles = profiles.ToImmutableArray(), Episodes = ExplorerOptions.ReadScoped(new ExplorerEpisodeSpec(), _episodeOptions, "Episodes"), Study = ExplorerOptions.ReadScoped(new ExplorerStudySpec(), _studyOptions, "Study"),
+                MaximumBufferItems = ExplorerValidation.Integer(TextBoxBufferLimit.Text, "MaximumBufferItems"), MaximumMemoryMegabytes = ExplorerValidation.Integer(TextBoxMemoryLimit.Text, "MaximumMemoryMegabytes") };
             spec.Validate(); return spec;
         }
         private ExplorerView ReadView()
         {
             CommitEdits(); ImmutableDictionary<string, ExplorerView>.Builder layers = ImmutableDictionary.CreateBuilder<string, ExplorerView>();
             foreach (KeyValuePair<string, List<ExplorerOption>> pair in _views)
-            { layers.Add(pair.Key, ExplorerOptions.Read(new ExplorerView(), pair.Value)); }
+            {
+                try { ExplorerView view = ExplorerOptions.Read(new ExplorerView(), pair.Value); ExplorerValidation.View(view); layers.Add(pair.Key, view); }
+                catch (ExplorerInputException error) { throw new ExplorerInputException("View." + error.Field, ExplorerValidation.UserMessage(error, ""), pair.Key, error); }
+            }
             return new ExplorerView { Layers = layers.ToImmutable(), ShowControl = layers.Values.Any(v => v.ShowControl) };
         }
         private void CommitEdits()
@@ -137,7 +146,7 @@ namespace OsEngine.OsData.OrderFlow.Explorer
         private void StartJob(Func<CancellationToken, object> action, Action<object> finish)
         {
             if (_job != null) { throw new InvalidOperationException("Дождитесь завершения операции или нажмите Отмена."); }
-            _finish = finish; _job = new ExplorerJob(action); TextBlockStatus.Text = "Выполняется…";
+            _attemptId = Guid.NewGuid().ToString("N"); _finish = finish; _job = new ExplorerJob(action); TextBlockStatus.Text = "Выполняется…";
         }
         private void Progress(ExplorerProgress progress) { lock (_progressLock) { _progress = progress; } }
         private void Poll(object sender, EventArgs e)
@@ -149,7 +158,7 @@ namespace OsEngine.OsData.OrderFlow.Explorer
                 {
                     if (_progress != null)
                     {
-                        TextBlockStatus.Text = $"{_progress.Phase}: {_progress.Rows:N0} строк; {_progress.Clouds:N0} событий; {_progress.Date:yyyy-MM-dd}; {_progress.MemoryBytes / 1048576} MiB; {_progress.Seconds:F1} с";
+                        TextBlockStatus.Text = $"{ExplorerValidation.Status(_progress.Phase)}: {_progress.Rows:N0} строк; {_progress.Clouds:N0} событий; {_progress.Date:yyyy-MM-dd}; {_progress.MemoryBytes / 1048576} МБ; {_progress.Seconds:F1} с";
                         _progress = null;
                     }
                 }
@@ -161,6 +170,9 @@ namespace OsEngine.OsData.OrderFlow.Explorer
                     else if (error != null) { Error(error); }
                     else { finish(result); }
                 }
+                if (_job == null && _pendingObservation != null) { ExplorerObservation observation = _pendingObservation; _pendingObservation = null; ShowObservation(observation); }
+                if (_job == null && _pendingPatternExample) { _pendingPatternExample = false; LoadPatternExample(); }
+                if (_job == null && _pendingInterval.HasValue) { (DateTime from, DateTime to) = _pendingInterval.Value; _pendingInterval = null; ShowInterval(from, to); }
                 if (_playback != null && _playback.Take(out ExplorerFrame frame, out Exception replayError))
                 {
                     if (replayError != null) { Error(replayError); StopPlayback(); }
@@ -172,6 +184,8 @@ namespace OsEngine.OsData.OrderFlow.Explorer
                         DataGridTriggers.ItemsSource = frame.Triggers; DataGridPivots.ItemsSource = frame.Pivots;
                         DataGridDiagnostics.ItemsSource = frame.Watches.Cast<object>().Concat(frame.Diagnostics).ToArray();
                         DataGridEpisodes.ItemsSource = frame.Episodes;
+                        TextBlockEpisodeState.Text = $"Причинный кадр: показано {frame.Episodes.Length} последних эпизодов, {frame.Episodes.Sum(p => p.ChildCount)} дочерних Cloud. Будущие итоги скрыты.";
+                        PaintPatternFrame(frame);
                         ExplorerView frameView = FrameView(frame);
                         DataGridCatalog.ItemsSource = frame.Clouds.Select(c => new CatalogRow(c, frameView.Passes(c, _run.Spec.PriceStep),
                             frame.Triggers.FirstOrDefault(t => t.VolumeId == c.Id), null)).ToArray();
@@ -184,7 +198,22 @@ namespace OsEngine.OsData.OrderFlow.Explorer
             catch (Exception error) { Error(error); }
         }
         private void Error(Exception error)
-        { TextBlockStatus.Text = error.Message; ServerMaster.SendNewLogMessage(error.ToString(), LogMessageType.Error); }
+        {
+            TextBlockStatus.Text = ExplorerValidation.UserMessage(error, _attemptId); FocusInput(error as ExplorerInputException);
+            string diagnostic = "Cloud Explorer attempt=" + _attemptId + " " + error;
+            // ServerMaster.Error opens a raw-stack MessageBox when no log subscriber exists (notably in OsData).
+            // Persist diagnostics independently, then use the existing non-modal System logging route.
+            if (ExplorerValidation.NeedsDiagnosticFile(error))
+            {
+                try
+                {
+                    string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OsEngine", "CloudExplorer", "Diagnostics");
+                    Directory.CreateDirectory(directory); File.AppendAllText(Path.Combine(directory, _attemptId + ".log"), diagnostic + Environment.NewLine);
+                }
+                catch (Exception logError) { ServerMaster.SendNewLogMessage("Cloud Explorer diagnostic write failed: " + logError, LogMessageType.System); }
+            }
+            ServerMaster.SendNewLogMessage(diagnostic, LogMessageType.System);
+        }
 
         #endregion
 
@@ -194,7 +223,7 @@ namespace OsEngine.OsData.OrderFlow.Explorer
         {
             try
             {
-                ExplorerRunSpec spec = ReadSpec(); ExplorerView view = ReadView(); string options = OptionsIdentity(); StopPlayback();
+                ExplorerRunSpec spec = ReadSpec(); ExplorerView view = ReadView(); ExplorerValidation.Preflight(spec); string options = OptionsIdentity(); StopPlayback();
                 StartJob(token =>
                 {
                     return ExplorerAttempt.Run(spec, token, Progress);
@@ -216,20 +245,37 @@ namespace OsEngine.OsData.OrderFlow.Explorer
         {
             if (_run == null) { return; }
             if (_playback != null) { throw new InvalidOperationException("Для просмотра исторических страниц нажмите «История»."); }
-            ExplorerRun run = _run; ExplorerView view = _view; long start = _pageStart, auxiliary = _auxStart; string search = TextBoxFind.Text.Trim();
+            ExplorerRun run = _run; ExplorerView view = _view; long start = _pageStart; string search = TextBoxFind.Text.Trim();
+            Dictionary<string, long> offsets = new Dictionary<string, long>(_tableOffsets);
+            long PageOffset(string name) => offsets.TryGetValue(name, out long value) ? value : 0;
+            DateTime? chartFrom = _chartFrom, chartTo = _chartTo;
+            ExplorerChartContext context = null;
+            Dictionary<string, (long Unknown, long Eligible)> profileQuality = null;
             OrderFlowDisplayTimeFrame timeFrame = _timeFrame;
             StartJob(token =>
             {
                 view = ExplorerStorage.ResolveRelations(run, view, token); ExplorerStorage.SaveView(run, view);
                 ExplorerPage page = ExplorerStorage.Page(run.CatalogPath, view with { IdContains = search }, run.Spec.PriceStep, start, 250, token);
                 IReadOnlyList<ExplorerSummary> totals = summary ? ExplorerStorage.Summarize(run.CatalogPath, run.Spec, view, token) : null;
-                ExplorerEpisode[] episodes = AuxPage<ExplorerEpisode>(run.EpisodePath, "episodes", auxiliary);
-                ExplorerObservation[] observations = AuxPage<ExplorerObservation>(run.StudyPath, "observations", auxiliary);
-                ExplorerLabel[] labels = AuxPage<ExplorerLabel>(run.StudyPath, "future-labels", auxiliary);
-                ExplorerPivot[] pivots = AuxPage<ExplorerPivot>(run.StudyPath, "pivots", auxiliary);
-                ExplorerTrigger[] triggers = AuxPage<ExplorerTrigger>(run.StudyPath, "triggers", auxiliary);
-                ExplorerDiagnostic[] diagnostics = AuxPage<ExplorerDiagnostic>(run.StudyPath, "diagnostics", auxiliary);
-                IReadOnlyList<ExplorerBar> bars = page.Rows.Count == 0 ? Array.Empty<ExplorerBar>() : ExplorerBars.ReadRange(run.CatalogPath, page.Rows.Min(c => c.StartTime), page.Rows.Max(c => c.Time), timeFrame, token);
+                if (summary)
+                {
+                    profileQuality = run.Spec.Profiles.ToDictionary(p => p.Key, p => (0L, 0L));
+                    foreach (ExplorerCloud cloud in ExplorerStorage.ReadRows<ExplorerCloud>(run.CatalogPath, "catalog"))
+                    {
+                        token.ThrowIfCancellationRequested(); (long unknown, long eligible) = profileQuality[cloud.Profile];
+                        profileQuality[cloud.Profile] = (unknown + (cloud.RelativeStatus == "Unknown" ? 1 : 0), eligible + (cloud.Reason != "OpenAtEnd" ? 1 : 0));
+                    }
+                }
+                ExplorerEpisode[] episodes = AuxPage<ExplorerEpisode>(run.EpisodePath, "episodes", PageOffset("episodes"));
+                ExplorerObservation[] observations = AuxPage<ExplorerObservation>(run.StudyPath, "observations", PageOffset("observations"));
+                ExplorerLabel[] labels = AuxPage<ExplorerLabel>(run.StudyPath, "future-labels", PageOffset("future-labels"));
+                ExplorerPivot[] pivots = AuxPage<ExplorerPivot>(run.StudyPath, "pivots", PageOffset("pivots"));
+                ExplorerTrigger[] triggers = AuxPage<ExplorerTrigger>(run.StudyPath, "triggers", PageOffset("triggers"));
+                ExplorerDiagnostic[] diagnostics = AuxPage<ExplorerDiagnostic>(run.StudyPath, "diagnostics", PageOffset("diagnostics"));
+                chartFrom ??= page.Rows.Count == 0 ? null : page.Rows.Min(c => c.StartTime);
+                chartTo ??= page.Rows.Count == 0 ? null : page.Rows.Max(c => c.Time).AddSeconds(1);
+                IReadOnlyList<ExplorerBar> bars = !chartFrom.HasValue ? Array.Empty<ExplorerBar>() : ExplorerBars.ReadRange(run.CatalogPath, chartFrom.Value, chartTo.Value, timeFrame, token);
+                if (chartFrom.HasValue) { context = ExplorerChartContext.Load(run, chartFrom.Value, chartTo.Value, timeFrame, token); }
                 Dictionary<string, (ExplorerTrigger Trigger, ExplorerMembership Membership)> evidence = new Dictionary<string, (ExplorerTrigger, ExplorerMembership)>();
                 foreach (ExplorerCloud cloud in page.Rows)
                 {
@@ -248,12 +294,23 @@ namespace OsEngine.OsData.OrderFlow.Explorer
                     ExplorerTrigger[] triggers, ExplorerDiagnostic[] diagnostics, IReadOnlyList<ExplorerBar> bars, string comparison, Dictionary<string, (ExplorerTrigger Trigger, ExplorerMembership Membership)> evidence) =
                     ((ExplorerPage, IReadOnlyList<ExplorerSummary>, ExplorerEpisode[], ExplorerObservation[], ExplorerLabel[], ExplorerPivot[], ExplorerTrigger[], ExplorerDiagnostic[], IReadOnlyList<ExplorerBar>, string, Dictionary<string, (ExplorerTrigger, ExplorerMembership)>))result;
                 _page = page; _view = view; _observations = observations; _pivots = pivots; _episodes = episodes; _bars = bars;
+                _chartContext = context;
+                if (profileQuality != null) { _profileQuality = profileQuality; }
+                _chart.SetInterval(chartFrom, chartTo); TextBlockEpisodeState.Text = EpisodeState(run, episodes.Length);
                 DataGridCatalog.ItemsSource = page.Rows.Select(c => new CatalogRow(c, _view.Passes(c, run.Spec.PriceStep), evidence[c.Id].Trigger, evidence[c.Id].Membership)).ToArray();
                 DataGridEpisodes.ItemsSource = episodes; DataGridObservations.ItemsSource = observations; DataGridLabels.ItemsSource = labels;
                 DataGridTriggers.ItemsSource = triggers; DataGridPivots.ItemsSource = pivots; DataGridDiagnostics.ItemsSource = diagnostics; TextBoxComparison.Text = comparison;
                 if (totals != null) { TextBoxSummary.Text = string.Join(Environment.NewLine + Environment.NewLine, totals.Select(t => $"{t.Profile}: всего {t.Total:N0} / прошло {t.Passed:N0}; одиночных {t.Single:N0}; EOF {t.OpenAtEnd:N0}\np25 {t.P25}; median {t.Median}; p75 {t.P75}; p90 {t.P90}; p95 {t.P95}; p99 {t.P99}")) + "\n\nОписательная сводка всего периода. Не является причинным признаком. Разбивка по датам/часам в quality.json. Сравнение групп и все исходы — в отдельной папке исследования."; }
                 if (totals != null) { TextBoxSummary.AppendText("\n\n" + string.Join("\n", totals.Select(t => $"{t.Profile}: накопленных {t.Accumulated}; доля ≥ порогу объёма {t.VolumeFraction:P2}; в часовом срезе {t.InTimeSlice}; {(t.Total == 0 ? "нет данных" : "")}"))); }
-                Paint(); TextBlockStatus.Text = $"Страница: {page.Rows.Count} строк, прошло {page.Passed}, Unknown {page.Unknown}. Отсечённые строки сохранены.";
+                if (totals != null)
+                {
+                    TextBoxSummary.AppendText("\n\n" + string.Join("\n", totals.Select(t => t.Profile + $": фон неизвестен {_profileQuality[t.Profile].Unknown:N0}; пригодных завершённых Cloud {_profileQuality[t.Profile].Eligible:N0}.")));
+                    TextBoxSummary.Text = "СВОДКА ОТКРЫТОГО РЕЗУЛЬТАТА\nОписательные показатели всего периода, не признаки для поиска.\n\n" + TextBoxSummary.Text + "\n\n" + TextBlockEpisodeState.Text +
+                        $"\nНаблюдений: {TableCount(run.StudyPath, "observations")}; триггеров: {TableCount(run.StudyPath, "triggers")}; экстремумов: {TableCount(run.StudyPath, "pivots")}. Подробности — на одноимённых вкладках.";
+                    TextBoxSummary.ScrollToHome();
+                }
+                Paint(); TextBlockStatus.Text = $"Страница: {page.Rows.Count} строк, прошло {page.Passed}, фон неизвестен {page.Unknown}. Отсечённые строки сохранены." +
+                    (context?.Limited == true ? " На графике показаны первые 4000 меток каждого слоя; сузьте интервал для остальных." : "");
             });
         }
         private void ApplyFilter(object sender, RoutedEventArgs e)
@@ -275,32 +332,42 @@ namespace OsEngine.OsData.OrderFlow.Explorer
             }
             catch (Exception error) { Error(error); }
         }
-        private void FirstPage(object sender, RoutedEventArgs e) { try { _pageStart = _auxStart = 0; LoadPage(false); } catch (Exception error) { Error(error); } }
-        private void NextPage(object sender, RoutedEventArgs e) { try { if (_page != null) { if (TabControlResult.SelectedIndex == 0 || TabControlResult.SelectedItem == TabItemChart) { _pageStart = _page.NextOffset; } else { _auxStart += 250; } LoadPage(false); } } catch (Exception error) { Error(error); } }
+        private void FirstPage(object sender, RoutedEventArgs e) { try { RequireIdle(); string table = SelectedTable(); if (table == null) { _pageStart = 0; _chartFrom = _chartTo = null; } else { _tableOffsets[table] = 0; } LoadPage(false); } catch (Exception error) { Error(error); } }
+        private void NextPage(object sender, RoutedEventArgs e) { try { RequireIdle(); if (_page != null) { string table = SelectedTable(); if (table == null) { _pageStart = _page.NextOffset; _chartFrom = _chartTo = null; } else { _tableOffsets[table] = Offset(table) + 250; } LoadPage(false); } } catch (Exception error) { Error(error); } }
         private void Find(object sender, RoutedEventArgs e) { try { _pageStart = 0; LoadPage(false); } catch (Exception error) { Error(error); } }
-        private void Cancel(object sender, RoutedEventArgs e) { try { _job?.Cancel(); StopPlayback(); } catch (Exception error) { Error(error); } }
-        private void OpenArtifacts(object sender, RoutedEventArgs e) { try { if (_run != null) { Process.Start(new ProcessStartInfo(_run.StudyPath ?? _run.CatalogPath) { UseShellExecute = true }); } } catch (Exception error) { Error(error); } }
+        private void Cancel(object sender, RoutedEventArgs e) { try { _pendingObservation = null; _pendingPatternExample = false; _pendingInterval = null; _job?.Cancel(); StopPlayback(); } catch (Exception error) { Error(error); } }
+        private void OpenArtifacts(object sender, RoutedEventArgs e) { try { if (_run != null) { Process.Start(new ProcessStartInfo(_patternRun?.Directory ?? _run.StudyPath ?? _run.CatalogPath) { UseShellExecute = true }); } } catch (Exception error) { Error(error); } }
         private void CatalogSelected(object sender, SelectionChangedEventArgs e)
         {
             if (DataGridCatalog.SelectedItem is CatalogRow selected)
-            { _selectedAnchor = new ExplorerAnchor(selected.Id, selected.Cloud.FirstSequence, selected.Cloud.KnownSequence ?? long.MaxValue, selected.Cloud.StartTime.Date); }
+            { ClearObservationContext(); _selectedAnchor = new ExplorerAnchor(selected.Id, selected.Cloud.FirstSequence, selected.Cloud.KnownSequence ?? long.MaxValue, selected.Cloud.StartTime.Date); }
             else if (e.RemovedItems.OfType<CatalogRow>().Any(r => r.Id == _selectedAnchor?.Id)) { _selectedAnchor = null; }
             try { if (DataGridCatalog.SelectedItem is CatalogRow row) { _chart.Select(row.Id); TextBoxDetails.Text = $"{row.Id}\nНачало {row.Cloud.StartTime:O}; ObservedAt {row.Cloud.Time:O}; KnownAt {row.Cloud.KnownAt:O}; ordinal {row.Cloud.LastSequence}; {row.Cloud.Reason}\nВключено {row.Cloud.Count} сделок; Buy {row.Cloud.Buy}; Sell {row.Cloud.Sell}; VWAP включённых {row.Cloud.Vwap}; пауза {row.Cloud.Effective.GapMilliseconds} мс; диапазон {row.Cloud.Effective.RangeTicks}; {row.Cloud.Effective.Status}"; LoadCloudDetails(row.Cloud); } }
             catch (Exception error) { Error(error); }
         }
         private void ChartSelected(ExplorerCloud cloud)
-        { try { CatalogRow row = DataGridCatalog.Items.Cast<CatalogRow>().FirstOrDefault(r => r.Id == cloud.Id); if (row != null) { DataGridCatalog.SelectedItem = row; DataGridCatalog.ScrollIntoView(row); } } catch (Exception error) { Error(error); } }
-        private void CatalogDoubleClick(object sender, MouseButtonEventArgs e) { try { TabControlResult.SelectedItem = TabItemChart; _window?.Activate(); } catch (Exception error) { Error(error); } }
+        {
+            try
+            {
+                CatalogRow row = DataGridCatalog.Items.Cast<CatalogRow>().FirstOrDefault(r => r.Id == cloud.Id);
+                if (row == null) { row = new CatalogRow(cloud, _view.Passes(cloud, _run.Spec.PriceStep), null, null); DataGridCatalog.ItemsSource = new[] { row }; }
+                DataGridCatalog.SelectedItem = row; DataGridCatalog.ScrollIntoView(row);
+                if (_patternRun != null) { TabControlResult.SelectedIndex = 0; }
+            }
+            catch (Exception error) { Error(error); }
+        }
+        private void CatalogDoubleClick(object sender, MouseButtonEventArgs e) { try { if (DataGridCatalog.SelectedItem is CatalogRow row) { ShowInterval(row.Cloud.StartTime.AddMinutes(-2), row.Cloud.Time.AddMinutes(2)); } TabControlResult.SelectedItem = TabItemChart; _window?.Activate(); } catch (Exception error) { Error(error); } }
         private void EpisodeSelected(object sender, SelectionChangedEventArgs e)
         {
             try
             {
                 if (DataGridEpisodes.SelectedItem is not ExplorerEpisode episode)
                 { if (e.RemovedItems.OfType<ExplorerEpisode>().Any(r => r.Id == _selectedAnchor?.Id)) { _selectedAnchor = null; } return; }
-                _selectedAnchor = new ExplorerAnchor(episode.Id, episode.FirstSequence, episode.KnownSequence, episode.StartTime.Date);
+                ClearObservationContext(); _selectedAnchor = new ExplorerAnchor(episode.Id, episode.FirstSequence, episode.KnownSequence, episode.StartTime.Date);
                 TextBoxDetails.Text = episode.Id + "\nДети: " + string.Join("\n", episode.ChildIds) + "\nОбъём Cloud " + episode.Volume + "; весь сырой объём интервала " + episode.RawVolume;
                 TextBlockStatus.Text = $"Эпизод {episode.Id} · {episode.ChildCount} Cloud · {episode.Volume}; сырой объём {episode.RawVolume}; KnownAt {episode.KnownAt:O}";
                 _chart.SelectEpisode(episode);
+                ShowInterval(episode.StartTime.AddMinutes(-2), episode.Time.AddMinutes(2));
             }
             catch (Exception error) { Error(error); }
         }
@@ -320,6 +387,7 @@ namespace OsEngine.OsData.OrderFlow.Explorer
                 ExplorerAnchor anchor = _selectedAnchor ?? throw new InvalidOperationException("Сначала выберите строку Cloud или эпизода.");
                 anchor.Validate(_run.Spec);
                 bool triggerAnchor = CheckBoxTriggerAnchor.IsChecked == true; ExplorerRun run = _run;
+                RequireIdle(); ClearObservationContext();
                 StartJob(token =>
                 {
                     ExplorerTrigger trigger = run.StudyPath == null ? null : ExplorerStorage.ReadRows<ExplorerTrigger>(run.StudyPath, "triggers").FirstOrDefault(t => t.VolumeId == anchor.Id);
@@ -331,19 +399,29 @@ namespace OsEngine.OsData.OrderFlow.Explorer
             catch (Exception error) { Error(error); }
         }
         private void Paint()
-        { if (_frame != null) { PaintFrame(_frame); } else if (_page != null && _run != null) { _chart.Set(_page.Rows, _view, _run.Spec.PriceStep, _vwap, _pivots, _observations, CheckBoxBands.IsChecked == true); _chart.SetContext(_bars, _episodes); } }
+        {
+            if (_frame != null) { PaintFrame(_frame); }
+            else if (_chartContext != null && _run != null)
+            {
+                _chart.SetInterval(_chartContext.From, _chartContext.To);
+                _chart.Set(_chartContext.Clouds, _view, _run.Spec.PriceStep, _observationVwap ?? (IReadOnlyList<ExplorerVwapSample>)_vwap, _chartContext.Pivots, _chartContext.Observations, CheckBoxBands.IsChecked == true);
+                _chart.SetContext(_chartContext.Bars, _chartContext.Episodes);
+            }
+            else if (_page != null && _run != null) { _chart.Set(_page.Rows, _view, _run.Spec.PriceStep, _observationVwap ?? (IReadOnlyList<ExplorerVwapSample>)_vwap, _pivots, _observations, CheckBoxBands.IsChecked == true); _chart.SetContext(_bars, _episodes); }
+        }
         private void PaintFrame(ExplorerFrame frame)
         {
+            _chart.SetInterval(null, null);
             _chart.Set(frame.Clouds, FrameView(frame), _run.Spec.PriceStep, frame.Vwap, frame.Pivots.AddRange(frame.Provisional == null ? Array.Empty<ExplorerPivot>() : new[] { frame.Provisional }), frame.Observations, CheckBoxBands.IsChecked == true);
             _chart.SetContext(ExplorerBars.Aggregate(frame.Bars, _timeFrame, CancellationToken.None), frame.Episodes);
         }
         private void Bands(object sender, RoutedEventArgs e) { try { Paint(); } catch (Exception error) { Error(error); } }
         private void Replay(object sender, RoutedEventArgs e)
-        { try { if (_run == null) { return; } BeginPlayback(); _playback.Play(checked((int)TextBoxSpeed.Text.ToDecimal())); } catch (Exception error) { Error(error); } }
+        { try { if (_run == null) { return; } int speed = ExplorerValidation.Integer(TextBoxSpeed.Text, "ReplaySpeed"); ExplorerValidation.Require(speed >= 1 && speed <= 10000, "ReplaySpeed", "Скорость реплея: целое число от 1 до 10000 тиков за кадр."); BeginPlayback(); _playback.Play(speed); } catch (Exception error) { Error(error); } }
         private void Pause(object sender, RoutedEventArgs e) { try { _playback?.Pause(); } catch (Exception error) { Error(error); } }
         private void Step(object sender, RoutedEventArgs e) { try { if (_run != null) { BeginPlayback(); _playback.Step(); } } catch (Exception error) { Error(error); } }
         private void History(object sender, RoutedEventArgs e) { try { StopPlayback(); LoadPage(true); } catch (Exception error) { Error(error); } }
-        private void StopPlayback() { _playback?.Dispose(); _playback = null; _frame = null; }
+        private void StopPlayback() { _playback?.Dispose(); _playback = null; _frame = null; PatternReplayMode(false); }
         private void Separate(object sender, RoutedEventArgs e)
         {
             try
@@ -367,9 +445,12 @@ namespace OsEngine.OsData.OrderFlow.Explorer
         {
             try
             {
-                if (_disposed) { return; } _disposed = true; _timer.Stop(); _timer.Tick -= Poll; _job?.Dispose(); _job = null; _finish = null;
-                StopPlayback(); _window?.Close(); _chart.Selected -= ChartSelected; ContentControlPlot.Content = null; RequestProvider = null; InputFingerprint = null;
+                if (_disposed) { return; } _disposed = true; _timer.Stop(); _timer.Tick -= Poll; _job?.Dispose(); _job = null; _finish = null; DisposePatterns();
+                StopPlayback(); _window?.Close(); _chart.Selected -= ChartSelected; ContentControlPlot.Content = null; RequestProvider = null; InputFingerprint = null; InputFocus = null;
+                foreach (DataGrid grid in ResultGrids()) { grid.AutoGeneratingColumn -= TranslateColumn; }
                 _chart.ObservationSelected -= ChartObservationSelected; ButtonReopen.Click -= Reopen; ComboBoxTimeFrame.SelectionChanged -= TimeFrameChanged;
+                _chart.Failed -= Error;
+                ButtonFitPrice.Click -= FitPrice; ButtonResetAxes.Click -= ResetAxes;
                 ComboBoxPriceStyle.SelectionChanged -= PriceStyleChanged; CheckBoxDraw.Click -= DrawChanged; ButtonClearLines.Click -= ClearLines;
                 ComboBoxProfile.SelectionChanged -= ProfileChanged; ButtonCalculate.Click -= Calculate; ButtonCancel.Click -= Cancel; ButtonFilter.Click -= ApplyFilter;
                 ButtonFirst.Click -= FirstPage; ButtonNext.Click -= NextPage; ButtonFind.Click -= Find; ButtonArtifacts.Click -= OpenArtifacts; ButtonAnchor.Click -= Anchor;

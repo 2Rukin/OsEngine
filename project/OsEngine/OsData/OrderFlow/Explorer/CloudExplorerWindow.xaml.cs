@@ -20,10 +20,10 @@ namespace OsEngine.OsData.OrderFlow.Explorer
         internal event Action<CloudExplorerWindow> Disposed;
 
         /// <summary>Creates an unstarted workbench bound to the current owner inputs; no file is read until an explicit operator action.</summary>
-        internal CloudExplorerWindow(Func<ExplorerRunSpec> requestProvider, Func<string> inputFingerprint)
+        internal CloudExplorerWindow(Func<ExplorerRunSpec> requestProvider, Func<string> inputFingerprint, Action<string> inputFocus = null)
         {
             InitializeComponent();
-            Explorer = new CloudExplorerControl { RequestProvider = requestProvider, InputFingerprint = inputFingerprint };
+            Explorer = new CloudExplorerControl { RequestProvider = requestProvider, InputFingerprint = inputFingerprint, InputFocus = inputFocus };
             ContentControlExplorer.Content = Explorer;
             Closed += WindowClosed;
         }

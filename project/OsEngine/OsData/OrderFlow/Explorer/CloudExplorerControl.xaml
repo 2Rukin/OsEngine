@@ -216,6 +216,26 @@
                     </DataGrid.Columns>
                 </DataGrid>
             </TabItem>
+            <TabItem Header="2.6 Предвестники движения" ToolTip="Отдельный локальный поиск сценариев. Старые каталоги и исследования сохраняются. Настройки фиксируются до просмотра исходов.">
+                <DockPanel>
+                    <WrapPanel DockPanel.Dock="Top" Margin="4">
+                        <TextBlock Text="1. Цель" VerticalAlignment="Center"/>
+                        <ComboBox Name="ComboBoxPatternDirection" Width="130" Margin="4" ToolTip="Рост, снижение или два независимых направления. Метки описывают путь цены, не сделки."/>
+                        <TextBlock Text="Контекст" VerticalAlignment="Center"/>
+                        <ComboBox Name="ComboBoxPatternContext" Width="160" Margin="4" ToolTip="Дневные признаки, текущая календарная неделя с понедельника либо оба контекста. Будущие дни исключены."/>
+                        <CheckBox Name="CheckBoxPatternExpert" Content="Экспертные профили 2.1–2.4" Margin="8" ToolTip="Выключено: фиксированный набор Narrow/Base/Wide версии three-causal-scales-1. Включено: используются ваши текущие слои, масштабы и эпизоды."/>
+                        <Button Name="ButtonPatternSearch" Content="Найти предвестники движения" Margin="4" Padding="8" ToolTip="Создать отдельное исследование по файлу/датам/шагу цены основного окна. Проверка полей, каталог, причинные якоря, Fit, затем Test и атомарное сохранение."/>
+                        <Button Name="ButtonPatternOpen" Content="Сохранённые исследования" Margin="4" Padding="8" ToolTip="Открыть manifest поиска без нового расчёта. Исходный файл нужен только для реплея."/>
+                    </WrapPanel>
+                    <DataGrid Name="DataGridPatternOptions" Style="{DynamicResource DataGridStyle}" RowStyle="{StaticResource ExplorerOptionRowStyle}" AutoGenerateColumns="False" CanUserAddRows="False" ToolTip="Дополнительные параметры. Цель по умолчанию 1,5 причинного ATR, неблагоприятный барьер 1 ATR. Конец исходного дня добавляется к фиксированным горизонтам автоматически.">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Дополнительно — фиксируется до поиска" Binding="{Binding Name}" IsReadOnly="True" Width="330"/>
+                            <DataGridTextColumn Header="Значение" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Width="140"/>
+                            <DataGridTextColumn Header="Пояснение" Binding="{Binding Help}" IsReadOnly="True" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
         </TabControl>
 
         <Border Grid.Row="3" Style="{StaticResource ExplorerSectionStyle}">
@@ -279,15 +299,18 @@
                 </TabItem>
                 <TabItem Header="Сводка"
                          ToolTip="Описательная сводка по всему периоду и профилям. Она не является причинным признаком или торговой рекомендацией.">
-                    <TextBox Name="TextBoxSummary" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                    <TextBox Name="TextBoxSummary" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" HorizontalContentAlignment="Left" Padding="12"
                              ToolTip="Количество событий, квантили и доли по профилям открытого результата."/>
                 </TabItem>
                 <TabItem Header="Эпизоды"
                          ToolTip="Сгруппированные по времени и цене эпизоды Cloud. Выбор эпизода делает его доступным для anchored VWAP.">
+                    <DockPanel>
+                    <TextBlock Name="TextBlockEpisodeState" DockPanel.Dock="Top" TextWrapping="Wrap" Margin="8" Text="Модуль выключен. Включите его в 2.4 и выполните новый расчёт."/>
                     <DataGrid Name="DataGridEpisodes" Style="{DynamicResource DataGridStyle}"
                               IsReadOnly="True" AutoGenerateColumns="True" EnableRowVirtualization="True"
                               EnableColumnVirtualization="True" CanUserAddRows="False"
                               ToolTip="Эпизоды текущей страницы. Выберите строку, чтобы увидеть состав и использовать её как якорь графика."/>
+                    </DockPanel>
                 </TabItem>
                 <TabItem Header="Наблюдения"
                          ToolTip="Причинные исследовательские наблюдения. Выбор строки показывает только доступный на тот момент контекст.">
@@ -345,6 +368,8 @@
                                           ToolTip="Выберите способ отображения цены — свечи, OHLC-бары или диапазон High-Low."/>
                                 <CheckBox Name="CheckBoxDraw" Content="Линия" VerticalAlignment="Center" Margin="3"
                                           ToolTip="Включить инструмент пользовательской линии. Задайте две точки на графике; линия не сохраняется в результат исследования."/>
+                                <Button Name="ButtonFitPrice" Content="Подогнать цену" Padding="5" Margin="2" ToolTip="Автоматически подобрать только ось цены по видимому интервалу и слоям. Время и линии сохраняются."/>
+                                <Button Name="ButtonResetAxes" Content="Сброс осей" Padding="5" Margin="2" ToolTip="Вернуть исходные масштабы времени и цены. Колесо — время; Shift+колесо — сдвиг времени; Ctrl+колесо — цена; Ctrl+Shift+колесо — сдвиг цены."/>
                                 <Button Name="ButtonClearLines" Content="Очистить линии" Padding="5" Margin="2"
                                         ToolTip="Удалить все временные пользовательские линии с графика Explorer."/>
                                 <Button Name="ButtonAnchor" Content="VWAP выбранного Cloud / эпизода" Padding="5" Margin="2"
@@ -372,6 +397,41 @@
                                             ToolTip="График результата. Колесо мыши меняет масштаб, Shift с колесом сдвигает видимую область; выбор маркера синхронизируется с таблицей."/>
                         </Grid>
                     </ContentControl>
+                </TabItem>
+                <TabItem Name="TabItemPatterns" Header="Предвестники: сценарии" ToolTip="2. Ход и качество → 3. Сценарии → 4. Карточка → 5. График и причинный реплей. Это не торговые сигналы.">
+                    <TabControl Name="TabControlPatterns" ToolTip="Следуйте по шагам: качество, сценарии, карточка, затем график.">
+                        <TabItem Name="TabItemPatternQuality" Header="2. Ход и качество" ToolTip="План, число дней и недель, причины исключений и воронка поиска, включая пустой результат.">
+                            <TextBox Name="TextBoxPatternQuality" ToolTip="Сводка доступна только для чтения. Полные итоги описательные, не признаки причинного реплея." IsReadOnly="True" TextWrapping="Wrap" VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" Padding="10" Text="Начните в 2.6. Полные итоги и причины пустого поиска появятся здесь. Текущий этап, память и время показываются в строке состояния."/>
+                        </TabItem>
+                        <TabItem Name="TabItemPatternList" Header="3. Найденные сценарии" ToolTip="Ограниченный каталог правил, отобранных только на Fit. Это отдельные сценарии, не строки Cloud.">
+                            <DockPanel>
+                            <TextBox Name="TextBoxPatternFilter" DockPanel.Dock="Top" Margin="4" ToolTip="Мгновенный поиск текста в названиях и статусах уже сохранённых сценариев. Не меняет правила, Fit/Test или ID исследования."/>
+                            <DataGrid Name="DataGridPatternCards" Style="{DynamicResource DataGridStyle}" IsReadOnly="True" AutoGenerateColumns="False" CanUserAddRows="False" ToolTip="Правила ранжированы только на Fit. Выбор открывает карточку. Пустая таблица объясняется в разделе 2 — качество.">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Ранг Fit" Binding="{Binding FitRank}"/>
+                                    <DataGridTextColumn Header="Условие" Binding="{Binding Rule.Text}" Width="*"/>
+                                    <DataGridTextColumn Header="Направление" Binding="{Binding Direction}"/>
+                                    <DataGridTextColumn Header="Мин (0=конец дня)" Binding="{Binding Minutes}"/>
+                                    <DataGridTextColumn Header="Fit N" Binding="{Binding Fit.Eligible}"/>
+                                    <DataGridTextColumn Header="Test N" Binding="{Binding Test.Eligible}"/>
+                                    <DataGridTextColumn Header="Результат Test" Binding="{Binding Status}" Width="230"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            </DockPanel>
+                        </TabItem>
+                        <TabItem Name="TabItemPatternCard" Header="4. Карточка и примеры" ToolTip="Числа обеих групп, ограничения и пример успеха, неудачи либо контроля. Недостаточная проверка явно обозначена.">
+                            <Grid>
+                                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="2*"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                                <WrapPanel>
+                                    <ComboBox Name="ComboBoxPatternExample" Width="180" Margin="4" ToolTip="Посмотреть пример успеха, неудачи или сопоставимого контроля. Отсутствие класса объясняется, победители не отбираются отдельно."/>
+                                    <Button Name="ButtonPatternChart" Content="5. Пример на графике" Padding="6" Margin="4" ToolTip="Открыть сохранённые свечи дня и метки. Голубая граница — KnownAt; затенённая область — будущее после якоря. Новый расчёт не запускается."/>
+                                    <Button Name="ButtonPatternReplay" Content="5. Причинный реплей" Padding="6" Margin="4" ToolTip="Восстановить исходные сделки по порядку. Условия появляются только в KnownAt, будущая метка — после закрытия горизонта. Управление на вкладке графика."/>
+                                </WrapPanel>
+                                <TextBox Name="TextBoxPatternCard" Grid.Row="1" ToolTip="Описание правила, сравнение Fit/Test и причинный контекст выбранного примера. Поле только для чтения." IsReadOnly="True" TextWrapping="Wrap" VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" Padding="8"/>
+                                <DataGrid Name="DataGridPatternWeek" Grid.Row="2" Style="{DynamicResource DataGridStyle}" AutoGenerateColumns="True" IsReadOnly="True" CanUserAddRows="False" ToolTip="Обзор только уже известных дней текущей недели и префикса дня якоря. Не содержит будущие дни или придуманные нулевые сессии."/>
+                            </Grid>
+                        </TabItem>
+                    </TabControl>
                 </TabItem>
             </TabControl>
         </Grid>

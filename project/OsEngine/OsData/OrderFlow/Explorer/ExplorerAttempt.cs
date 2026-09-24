@@ -33,7 +33,7 @@ namespace OsEngine.OsData.OrderFlow.Explorer
                     File.WriteAllText(Path.Combine(directory, Guid.NewGuid().ToString("N") + ".json"), JsonSerializer.Serialize(new { Status = status, Reason = reason,
                         Progress = last, Seconds = watch.Elapsed.TotalSeconds, ManagedBytes = GC.GetTotalMemory(false), PeakWorkingSet = Process.GetCurrentProcess().PeakWorkingSet64 }));
                 }
-                catch (Exception error) { OsEngine.Market.ServerMaster.SendNewLogMessage(error.ToString(), OsEngine.Logging.LogMessageType.Error); }
+                catch (Exception error) { OsEngine.Market.ServerMaster.SendNewLogMessage(error.ToString(), OsEngine.Logging.LogMessageType.System); }
             }
         }
     }

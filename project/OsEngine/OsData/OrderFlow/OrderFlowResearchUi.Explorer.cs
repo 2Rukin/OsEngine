@@ -22,7 +22,7 @@ namespace OsEngine.OsData.OrderFlow
 
         private CloudExplorerWindow CreateCloudExplorerWindow()
         {
-            return new CloudExplorerWindow(CreateExplorerInput, ExplorerInputFingerprint)
+            return new CloudExplorerWindow(CreateExplorerInput, ExplorerInputFingerprint, FocusExplorerInput)
             { Title = L("Cloud research", "Исследование Cloud") };
         }
 
@@ -34,7 +34,18 @@ namespace OsEngine.OsData.OrderFlow
         private ExplorerRunSpec CreateExplorerInput()
         {
             return new ExplorerRunSpec { InputPath = TextBoxTicksPath.Text.Trim(), OutputRootPath = TextBoxOutputPath.Text.Trim(),
-                PriceStep = ParsePriceStep(TextBoxPriceStep.Text), FromDate = _fromDateInput.ReadDate(), ToDate = _toDateInput.ReadDate() };
+                PriceStep = ExplorerValidation.Number(TextBoxPriceStep.Text, "PriceStep"), FromDate = ReadExplorerDate(_fromDateInput.ReadDate, "FromDate"), ToDate = ReadExplorerDate(_toDateInput.ReadDate, "ToDate") };
+        }
+        private static DateTime? ReadExplorerDate(Func<DateTime?> read, string field)
+        {
+            try { return read(); }
+            catch (Exception error) when (error is ArgumentException || error is InvalidOperationException || error is FormatException)
+            { throw new ExplorerInputException(field, "Поле «" + ExplorerOptions.NameOf(field) + "»: укажите корректную дату через календарь или очистите обе даты для всего файла.", inner: error); }
+        }
+        private void FocusExplorerInput(string field)
+        {
+            FrameworkElement element = field switch { "InputPath" => TextBoxTicksPath, "OutputRootPath" => TextBoxOutputPath, "PriceStep" => TextBoxPriceStep, "ToDate" => DateTo, _ => DateFrom };
+            Activate(); element.Focus(); if (element is TextBox text) { text.SelectAll(); }
         }
 
         private string ExplorerInputFingerprint() => string.Join("|", TextBoxTicksPath.Text, TextBoxOutputPath.Text, TextBoxPriceStep.Text, DateFrom.Text, DateTo.Text);

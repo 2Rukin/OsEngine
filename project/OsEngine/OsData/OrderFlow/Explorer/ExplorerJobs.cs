@@ -48,9 +48,9 @@ namespace OsEngine.OsData.OrderFlow.Explorer
         private int _speed = 1;
         private ExplorerFrame _frame;
         private Exception _error;
-        internal ExplorerPlayback(ExplorerRun run, ExplorerAnchor anchor)
+        internal ExplorerPlayback(ExplorerRun run, ExplorerAnchor anchor, ExplorerPatternSpec pattern = null)
         {
-            new Thread(() => Run(run, anchor)) { IsBackground = true, Name = "Cloud Explorer replay" }.Start();
+            new Thread(() => Run(run, anchor, pattern)) { IsBackground = true, Name = "Cloud Explorer replay" }.Start();
         }
         #region Dispatcher mailbox
 
@@ -63,11 +63,11 @@ namespace OsEngine.OsData.OrderFlow.Explorer
 
         #region Worker lifetime
 
-        private void Run(ExplorerRun run, ExplorerAnchor anchor)
+        private void Run(ExplorerRun run, ExplorerAnchor anchor, ExplorerPatternSpec pattern)
         {
             try
             {
-                using ExplorerReplayCursor cursor = new ExplorerReplayCursor(run, anchor, _cancel.Token);
+                using ExplorerReplayCursor cursor = new ExplorerReplayCursor(run, anchor, _cancel.Token, pattern);
                 while (true)
                 {
                     _cancel.Token.ThrowIfCancellationRequested(); bool work; int speed;

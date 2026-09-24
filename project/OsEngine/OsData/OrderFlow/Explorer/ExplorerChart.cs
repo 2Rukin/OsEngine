@@ -40,10 +40,25 @@ namespace OsEngine.OsData.OrderFlow.Explorer
         private bool _bands = true;
         private double _zoom = 1;
         private double _pan;
+        private DateTime? _intervalFrom, _intervalTo;
+        private decimal _priceZoom = 1, _pricePan;
+        internal DateTime? KnownBoundary { get; set; }
+        internal (DateTime From, DateTime To, decimal Low, decimal High) Viewport => (_from, _to, _low, _high);
+        internal void SetInterval(DateTime? from, DateTime? to)
+        {
+            if (_intervalFrom != from || _intervalTo != to) { _zoom = 1; _pan = 0; FitPrice(); }
+            _intervalFrom = from; _intervalTo = to; InvalidateVisual();
+        }
+        internal void FitPrice() { _priceZoom = 1; _pricePan = 0; InvalidateVisual(); }
+        internal void ResetAxes() { _zoom = 1; _pan = 0; FitPrice(); }
+        internal void PriceAxis(decimal zoom, decimal pan) { _priceZoom = Math.Clamp(_priceZoom * zoom, .01m, 1000m); _pricePan += pan / _priceZoom; InvalidateVisual(); }
         internal bool Drawing { get; set; }
         internal int PriceStyle { get; set; }
         internal event Action<ExplorerCloud> Selected;
         internal event Action<ExplorerObservation> ObservationSelected;
+        internal event Action<Exception> Failed;
+        private void Report(Exception error)
+        { if (Failed != null) { Failed(error); } else { ServerMaster.SendNewLogMessage(error.ToString(), LogMessageType.System); } }
         #region Presentation
 
         internal ExplorerChart() { Focusable = true; ClipToBounds = true; }
@@ -64,19 +79,31 @@ namespace OsEngine.OsData.OrderFlow.Explorer
             try
             {
                 drawing.DrawRectangle(new SolidColorBrush(Color.FromRgb(24, 28, 36)), null, new Rect(0, 0, ActualWidth, ActualHeight)); _hits.Clear(); _observationHits.Clear();
-                DateTime[] times = _clouds.SelectMany(c => new[] { c.StartTime, c.Time }).Concat(_bars.Select(b => b.Start))
-                    .Concat(_pivots.Select(p => p.ObservedAt)).Concat(_observations.Select(o => o.Time)).Concat(_vwap.Select(v => v.Time)).ToArray();
+                DateTime[] times = _intervalFrom.HasValue && _intervalTo.HasValue ? new[] { _intervalFrom.Value, _intervalTo.Value } :
+                    _bars.Count > 0 ? new[] { _bars.Min(b => b.Start), _bars.Max(b => b.End) } : _clouds.SelectMany(c => new[] { c.StartTime, c.Time }).ToArray();
                 if (ActualWidth < 120 || ActualHeight < 100 || times.Length == 0) { Text(drawing, "Выберите страницу каталога или начните реплей", 12, 12, Brushes.LightGray); return; }
                 _from = times.Min(); _to = times.Max();
                 if (_to <= _from) { _to = _from.AddSeconds(1); }
                 if (_zoom > 1) { long span = (_to - _from).Ticks; _to = _to.AddTicks(-(long)(span * _pan)); _from = _to.AddTicks(-(long)(span / _zoom)); }
-                decimal[] prices = _clouds.SelectMany(c => new[] { c.Low, c.High }).Concat(_bars.SelectMany(b => new[] { b.Low, b.High }))
-                    .Concat(_pivots.Select(p => p.Price)).Concat(_observations.Select(o => o.Price)).Concat(_vwap.Select(v => v.Vwap)).ToArray();
-                _low = prices.Min(); _high = prices.Max();
-                if (_vwap.Count > 0) { _low = Math.Min(_low, _vwap.Min(p => Math.Min(p.Price, p.Vwap - (_bands ? 2 * p.Sigma : 0)))); _high = Math.Max(_high, _vwap.Max(p => Math.Max(p.Price, p.Vwap + (_bands ? 2 * p.Sigma : 0)))); }
                 ExplorerBar[] bars = _bars.Where(b => b.End >= _from && b.Start <= _to).ToArray();
-                if (bars.Length > 0) { _low = Math.Min(_low, bars.Min(b => b.Low)); _high = Math.Max(_high, bars.Max(b => b.High)); }
+                decimal[] prices = _clouds.Where(c => c.Time >= _from && c.Time <= _to && _view.ForProfile(c.Profile).Visible &&
+                        (_view.Passes(c, _step) || _view.ForProfile(c.Profile).ShowFiltered || c.Id == _selected)).SelectMany(c => new[] { c.Low, c.High })
+                    .Concat(bars.SelectMany(b => new[] { b.Low, b.High }))
+                    .Concat(_pivots.Where(p => p.ObservedAt >= _from && p.ObservedAt <= _to).Select(p => p.Price))
+                    .Concat(_observations.Where(o => o.Time >= _from && o.Time <= _to && o.Status == "Breakout" && (_view.ShowControl || o.Group != "Control")).Select(o => o.Price))
+                    .Concat(_vwap.Where(v => v.Time >= _from && v.Time <= _to).SelectMany(v => new[] { v.Price, v.Vwap - (_bands ? 2 * v.Sigma : 0), v.Vwap + (_bands ? 2 * v.Sigma : 0) })).ToArray();
+                if (prices.Length == 0) { Text(drawing, "В выбранном интервале нет сохранённых свечей или видимых событий. Выберите другой интервал.", 12, 30, Brushes.LightGray); return; }
+                _low = prices.Min(); _high = prices.Max();
                 decimal padding = Math.Max(_step, (_high - _low) / 20); _low -= padding; _high += padding;
+                decimal spanY = _high - _low, centerY = (_high + _low) / 2 + spanY * _pricePan;
+                _low = centerY - spanY / _priceZoom / 2; _high = centerY + spanY / _priceZoom / 2;
+                if (KnownBoundary.HasValue && KnownBoundary >= _from && KnownBoundary <= _to)
+                {
+                    double x = Map(KnownBoundary.Value, _high).X;
+                    drawing.DrawRectangle(new SolidColorBrush(Color.FromArgb(35, 150, 150, 150)), null, new Rect(x, 28, Math.Max(0, ActualWidth - 85 - x), Math.Max(0, ActualHeight - 62)));
+                    drawing.DrawLine(new Pen(Brushes.DeepSkyBlue, 1.5), new Point(x, 28), new Point(x, ActualHeight - 34));
+                    Text(drawing, "Известно на якоре | будущее →", Math.Max(12, x - 100), 26, Brushes.DeepSkyBlue);
+                }
                 for (int i = 0; i <= 4; i++)
                 {
                     decimal price = _low + (_high - _low) * i / 4;
@@ -85,7 +112,8 @@ namespace OsEngine.OsData.OrderFlow.Explorer
                 }
                 Text(drawing, _from.ToString("dd.MM HH:mm:ss"), 10, ActualHeight - 24, Brushes.Silver);
                 Text(drawing, _to.ToString("dd.MM HH:mm:ss"), Math.Max(10, ActualWidth - 210), ActualHeight - 24, Brushes.Silver);
-                Text(drawing, "Cloud • квадрат = один тик · серый = отсечён · время источника · колесо = масштаб", 10, 4, Brushes.Silver);
+                Text(drawing, "□ одиночная · ● Cloud · золото: экстремум (заливка = подтверждён) · △ событие · колесо X, Ctrl+колесо Y", 10, 4, Brushes.Silver);
+                if (bars.Length == 0) { Text(drawing, "Свечей в этом интервале нет; показаны только сохранённые события.", 12, 45, Brushes.Silver); }
                 foreach (ExplorerBar bar in bars)
                 {
                     DateTime time = bar.Start < _from ? _from : bar.Start; Point high = Map(time, bar.High), low = Map(time, bar.Low);
@@ -143,7 +171,7 @@ namespace OsEngine.OsData.OrderFlow.Explorer
                 foreach ((DateTime ATime, decimal APrice, DateTime BTime, decimal BPrice) line in _drawings)
                 { drawing.DrawLine(new Pen(Brushes.Gold, 1.5), Map(line.ATime, line.APrice), Map(line.BTime, line.BPrice)); }
             }
-            catch (Exception error) { ServerMaster.SendNewLogMessage(error.ToString(), LogMessageType.Error); }
+            catch (Exception error) { Report(error); }
         }
         private void DrawVwap(DrawingContext drawing)
         {
@@ -193,7 +221,7 @@ namespace OsEngine.OsData.OrderFlow.Explorer
                 (Point Point, ExplorerCloud Cloud) closest = _hits.OrderBy(h => (h.Point - point).LengthSquared).FirstOrDefault();
                 if (closest.Cloud != null && (closest.Point - point).Length <= 16) { Select(closest.Cloud.Id); Selected?.Invoke(closest.Cloud); }
             }
-            catch (Exception error) { ServerMaster.SendNewLogMessage(error.ToString(), LogMessageType.Error); }
+            catch (Exception error) { Report(error); }
         }
         protected override void OnMouseMove(MouseEventArgs e)
         {
@@ -208,12 +236,22 @@ namespace OsEngine.OsData.OrderFlow.Explorer
                 (Point Point, ExplorerCloud Cloud) closest = _hits.OrderBy(h => (h.Point - point).LengthSquared).FirstOrDefault();
                 ToolTip = closest.Cloud != null && (closest.Point - point).Length < 16 ? closest.Cloud.Id + "\n" + closest.Cloud.Volume + " · " + closest.Cloud.Reason + "\nObserved " + closest.Cloud.Time.ToString("O") + "\nKnown " + closest.Cloud.KnownAt?.ToString("O") : null;
             }
-            catch (Exception error) { ServerMaster.SendNewLogMessage(error.ToString(), LogMessageType.Error); }
+            catch (Exception error) { Report(error); }
         }
         protected override void OnMouseWheel(MouseWheelEventArgs e)
-        { try { if ((Keyboard.Modifiers & ModifierKeys.Shift) != 0) { _pan = Math.Clamp(_pan + (e.Delta > 0 ? .1 : -.1) / _zoom, 0, 1 - 1 / _zoom); } else { _zoom = Math.Clamp(_zoom * (e.Delta > 0 ? 1.4 : 1 / 1.4), 1, 1000); _pan = Math.Min(_pan, 1 - 1 / _zoom); } InvalidateVisual(); e.Handled = true; } catch (Exception error) { ServerMaster.SendNewLogMessage(error.ToString(), LogMessageType.Error); } }
+        {
+            try
+            {
+                bool shift = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
+                if ((Keyboard.Modifiers & ModifierKeys.Control) != 0) { PriceAxis(shift ? 1 : e.Delta > 0 ? 1.4m : 1 / 1.4m, shift ? e.Delta > 0 ? .1m : -.1m : 0); }
+                else if (shift) { _pan = Math.Clamp(_pan + (e.Delta > 0 ? .1 : -.1) / _zoom, 0, 1 - 1 / _zoom); }
+                else { _zoom = Math.Clamp(_zoom * (e.Delta > 0 ? 1.4 : 1 / 1.4), 1, 1000); _pan = Math.Min(_pan, 1 - 1 / _zoom); }
+                InvalidateVisual(); e.Handled = true;
+            }
+            catch (Exception error) { Report(error); }
+        }
         protected override void OnMouseUp(MouseButtonEventArgs e)
-        { try { base.OnMouseUp(e); _dragLine = -1; ReleaseMouseCapture(); } catch (Exception error) { ServerMaster.SendNewLogMessage(error.ToString(), LogMessageType.Error); } }
+        { try { base.OnMouseUp(e); _dragLine = -1; ReleaseMouseCapture(); } catch (Exception error) { Report(error); } }
         private (DateTime, decimal) Unmap(Point point) => (_from.AddTicks((long)(Math.Clamp((point.X - 12) / (ActualWidth - 100), 0, 1) * (_to - _from).Ticks)),
             _high - (decimal)Math.Clamp((point.Y - 28) / (ActualHeight - 62), 0, 1) * (_high - _low));
         #endregion

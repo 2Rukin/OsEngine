@@ -224,6 +224,7 @@ namespace OsEngine.OsData.OrderFlow.Explorer
                 ExplorerRunSpec.CatalogVersion => new[] { "catalog.bin", "catalog.idx", "prefix-index.bin", "bars.bin", "bars.idx", "quality.json", "summary.json", "catalog-slices.csv", "catalog-spec.json" },
                 ExplorerRunSpec.EpisodeVersion => new[] { "episodes.bin", "episodes.idx", "episode-prefix.bin", "episode-prefix.idx", "children.bin", "children.idx", "membership.bin", "membership.idx" },
                 ExplorerRunSpec.StudyVersion => new[] { "run-spec.json", "triggers.bin", "triggers.idx", "pivots.bin", "pivots.idx", "observations.bin", "observations.idx", "future-labels.bin", "future-labels.idx", "future-labels.csv", "watch-vwap-samples.bin", "watch-vwap-samples.idx", "diagnostics.bin", "diagnostics.idx", "comparison.csv", "study-summary.json", "README.txt" },
+                ExplorerPatternSpec.Version => new[] { "run-spec.json", "pattern-spec.json", "snapshots.bin", "snapshots.idx", "labels.bin", "labels.idx", "evaluation.bin", "evaluation.idx", "grammar.bin", "grammar.idx", "frozen-fit.json", "fit-rules.bin", "fit-rules.idx", "fit-membership.bin", "fit-membership.idx", "test-membership.bin", "test-membership.idx", "cards.bin", "cards.idx", "examples.bin", "examples.idx", "quality.json" },
                 _ => throw new InvalidDataException("Unknown Explorer bundle version.")
             };
             if (manifest == null || manifest.Version != version || manifest.Hash != hash || manifest.Formulas != FormulaVersion(version) ||
@@ -259,6 +260,7 @@ namespace OsEngine.OsData.OrderFlow.Explorer
             ExplorerRunSpec.CatalogVersion => "raw-atr20-previous-close-1;nearest-rank-1;frozen-profile-1;exact-diagonal-1",
             ExplorerRunSpec.EpisodeVersion => "completed-children-1;raw-interval-1;previous-episode-p95-1",
             ExplorerRunSpec.StudyVersion => "raw-atr20-previous-close-1;directional-change-1;watch-gates-1;raw-weighted-vwap-1;ordinal-labels-1;fit-test-purging-1",
+            ExplorerPatternSpec.Version => "causal-conditions-1;source-day-monday-week-1;ordinal-same-day-path-1;whole-week-fit-freeze-test-1;earliest-known-global-per-horizon-1;first-N-matched-controls-1",
             _ => throw new InvalidDataException("Unknown Explorer formula version.")
         };
         internal static string HashFile(string path, CancellationToken cancellation)
@@ -310,6 +312,7 @@ namespace OsEngine.OsData.OrderFlow.Explorer
                 if (Directory.Exists(destination))
                 {
                     ExplorerManifest reused = ExplorerStorage.Verify(destination, ExplorerRunSpec.CatalogVersion, spec.CatalogSpecHash, cancellation);
+                    if (reused.SelectedRows == 0) { throw new ExplorerInputException("FromDate", "В сохранённом каталоге нет сделок выбранного диапазона. Выберите другие даты; старые файлы сохранены."); }
                     return new ExplorerRun(spec, destination, null, null, reused);
                 }
                 staging = ExplorerStorage.Stage(spec.OutputRootPath, "cloud-catalog");
@@ -339,6 +342,7 @@ namespace OsEngine.OsData.OrderFlow.Explorer
                     }
                     catalog.Complete(); barBuilder.Complete(); cloudCount = catalog.CompletedCount;
                 }
+                if (selected == 0) { throw new ExplorerInputException("FromDate", "В выбранном диапазоне нет сделок. Проверьте даты и исходный файл. Пустой результат не опубликован."); }
                 cancellation.ThrowIfCancellationRequested();
                 ExplorerStorage.WriteCatalogSummary(staging, spec, cancellation);
                 File.WriteAllText(Path.Combine(staging, "quality.json"), JsonSerializer.Serialize(new { metadata.RecordCount, ReadComplete = metadata.ReadComplete,
