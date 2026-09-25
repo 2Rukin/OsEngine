@@ -1,12 +1,13 @@
 # Authoritative active task state
 
 **ID:** `TASK-CLOUD-CALIBRATION-BOUNDED-MEMORY-001`
-**Статус:** `IN_PROGRESS`
-**Фаза:** `VERIFIED — publication pending`
+**Статус:** `COMPLETE`
+**Фаза:** `TERMINAL — implemented, verified, reviewed and published`
 **Ветка:** `docs/order-flow-production-roadmap`
 **Baseline HEAD:** `e3ec754aa1880143a9763b150f67df3f74a3523e`
-**Completed transition IDs:** `SCOPE_ENTRY`, `CONTRACT_READ`, `BOUNDED_STATISTICS_FIX`, `REGRESSION_SUITE`, `SOLUTION_BUILD`, `PRIMARY_REVIEWS`, `OWNER_RUN_TERMINAL`
-**Next transition ID:** `GIT_PUBLICATION`
+**Implementation commit:** `07d32623a9484185766d6161a640802662dbf6ef`
+**Completed transition IDs:** `SCOPE_ENTRY`, `CONTRACT_READ`, `BOUNDED_STATISTICS_FIX`, `REGRESSION_SUITE`, `SOLUTION_BUILD`, `PRIMARY_REVIEWS`, `OWNER_RUN_TERMINAL`, `GIT_PUBLICATION`
+**Next transition ID:** `OWNER_RUN_OPTIONAL`
 
 ## Frozen scope and authority
 
@@ -81,13 +82,18 @@ A first fixed run (before guard anti-repeat refinement) also passed57/57/fullflo
 Logs/artifacts survive under C:/Users/Mi/AppData/Local/Temp/:
 - OsEngine-calibration-memory-final-owner.log and same-name output root;
 - OsEngine-calibration-memory-normal-build.log;
-- OsEngine-calibration-memory-suite-final.log and -normal-suite.log;
+- OsEngine-calibration-memory-suite-final.log;
+- OsEngine-calibration-memory-normal-suite.log;
 - baseline roots/logs OsEngine-calibration-memory-baseline-e3ec754 and
   OsEngine-calibration-server-baseline-e3ec754;
 - first fixed run OsEngine-calibration-memory-fixed-owner-1.
 Final bundle suffix:
 cloud-calibration-9cdb89952a1f095d78fcf03ea9145834d32c2fb9608f325a7dfc2a8169d75b0d.
 These are explicit owner offline outputs, not committed market data.
+
+Implementation commit was pushed normally to the same branch; remote SHA
+07d32623a9484185766d6161a640802662dbf6ef verified via ls-remote.
+This terminal metadata-only checkpoint has its final HEAD/upstream in Git.
 
 ## Blockers
 
@@ -96,6 +102,7 @@ remains OWNER-RUN; no physical UI or actual prior host-state reproduction claime
 
 ## Next action
 
-Stage only eight scoped files, final validator/diff
-checks, commit and normal push. Then terminal metadata checkpoint/push.
-On restart do not repeat implementation, clean reviews or completed owner runs.
+No implementation, review or computation remains. On restart inspect Git and
+this checkpoint; do not repeat implemented fixes, clean reviews or completed
+owner runs. Physical UI checks remain owner-run. Do not launch application,
+connector, test stand or trading session without scenario-specific authority.
