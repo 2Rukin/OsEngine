@@ -1,53 +1,100 @@
 # Authoritative active task state
 
-**ID:** `TASK-SOLUTION-DETACHED-TABLES-SPEC-001`
-**Статус:** `COMPLETE — DOCUMENTATION ONLY`
+**ID:** `TASK-ORDER-FLOW-CLOUD-CALIBRATION-SPEC-001`
+**Статус:** `COMPLETE — DOCUMENTATION TARGET PUBLISHED`
 **Фаза:** `TERMINAL HANDOFF — IMPLEMENTATION NOT_STARTED`
-**Ветка:** `docs/solution-table-layout` → публикация в `docs/order-flow-production-roadmap`
-**Baseline HEAD:** `c5651f71c7dfb718b8a00b33e7fb4b8233ce86d7`
-**Dirty entry:** clean; ветка создана от актуального origin.
-**Completed transition IDs:** `SCOPE_ENTRY`, `CODE_INVENTORY`, `WRITE_SPEC`, `REVIEW_SPEC`, `VALIDATION_1`
-**Next transition ID:** `OWNER_IMPLEMENTATION`
+**Ветка:** `docs/order-flow-production-roadmap`
+**Baseline HEAD:** `8903023f1d12a7c5fdc6c0d4027d58ac67f96a51`
+**Dirty entry:** remote branch was clean at baseline; work performed through GitHub contents API.
+**Completed transition IDs:** `SCOPE_ENTRY`, `CURRENT_CONTRACT_REVIEW`, `WRITE_SPEC`, `SCOPED_REVIEW_MAIN`, `FIX_REVIEW_FINDINGS`, `REGISTER_DOC`, `PUBLISH`
+**Next transition ID:** `IMPLEMENT_CALIBRATION`
 
 ## Frozen scope
 
-По запросу владельца оформить проверяемое задание на рефакторинг *всех*
-пользовательских таблиц desktop-приложения OsEngine: открытие каждой таблицы
-кнопкой в новом окне, все кнопки соответствующего экрана полностью доступны.
-Конкретный воспроизводимый пример — Cloud Explorer, вкладка 2.6: кнопки
-поиска и открытия исследований обрезаются таблицей параметров в строке
-фиксированной высоты 220 px. Нужны единые требования, инвентаризация,
-сохранение поведения, проверка на Windows и этапы реализации.
+По запросу владельца оформить подробное ТЗ следующей итерации Order Flow:
+предварительная статистика тиков и цепочек перед настройкой Cloud, визуальный
+подбор `MinimumTickVolume / MaximumGapMilliseconds / MaximumRangeTicks`,
+учёт времени торгового дня, новая описательная diagonal delta, независимые
+Cloud rules для каждого временного диапазона и Cloud Anatomy.
 
-Разрешённые файлы: новая спецификация `project/Documentation/UI/`,
-`DOCUMENTATION_MAP.md`, `OrderFlow/README.md`, `OrderFlow/TECHNICAL_DEBT.md`,
-этот active snapshot и при необходимости `project/CONTEXT.md`.
-Никаких изменений production-кода, тестов, пользовательских данных и
-торгового поведения. В этой задаче — задание, а не реализация.
-Commit и обычный fast-forward push в origin явно разрешены владельцем;
-force push запрещён. Desktop/live/test-stand запуск не требуется.
+Модуль обязан оставаться внутри `OsData → Order Flow`, а все новые таблицы
+сразу выполнять `UI-DETACHED-TABLES-001`: таблицы открываются кнопками в
+отдельных окнах, основная рабочая область сохраняет видимые команды и
+визуальные графики. Оформление использует действующую theme system Order Flow
+без hardcoded colors.
+
+Разрешены только documentation changes:
+`OrderFlow/CLOUD_CALIBRATION_SPEC.md`, `OrderFlow/README.md`,
+`DOCUMENTATION_MAP.md` и этот active snapshot. Production code, tests,
+binaries, trading behavior и user data не меняются. Commit/push в текущую
+ветку явно разрешены владельцем; force запрещён.
+
+## Decisions
+
+- Preset source-clock ranges: FORTS Morning 07:00–10:30, Main 10:30–19:00,
+  Evening 19:00–23:50; MOEX Morning 06:50–10:30, Main 10:30–19:00,
+  Evening 19:00–23:50. Saturday и Sunday — отдельные source-date profiles.
+  Custom range поддерживается.
+- `US pre-open 60m` не делает молчаливого timezone inference: без явно
+  выбранной source timezone он disabled; conversion учитывает DST.
+- Chain semantics сохраняют current Order Flow: excluded small ticks не
+  разрывают chain, gap считается от последнего included tick, range — общий,
+  equality проходит, eligible breaking tick закрывает старую и начинает новую.
+  `MinChainVolume` — post-formation filter.
+- Diagonal сохраняет current exact-neighbor pair semantics. Новые
+  `PairDiagonalDelta` / cumulative `DiagonalDelta` и strict stack считаются
+  поверх сохранённой pair evidence; diagonal не формирует собственную
+  сегментацию.
+- Модель rule после review разделена на
+  `FormationMode = Single|Chain` и `RuleKind = Standard|Diagonal`, чтобы
+  diagonal rule всегда имел однозначный base event.
+- Программа не выбирает winner. Heatmap, quantiles, pin/compare и
+  NeighborSensitivity дают описательную информацию; конечные параметры
+  выбирает пользователь.
+- Future price reaction, MFE/MAE, PnL и trading execution исключены из этой
+  итерации.
 
 ## Verification status
 
-Current code inspection: Cloud Explorer root `RowDefinition Height="220"`,
-вкладка 2.6 содержит `ButtonPatternSearch`, `ButtonPatternOpen` и
-`DataGridPatternOptions` в одном `DockPanel`; WPF таблицы также встречаются
-в Order Flow/UpdateModule, WinForms `DataGridView` — в других подсистемах.
-Полный UI inventory — первый этап будущей реализации, а не вывод текстового
-поиска. Зарегистрирована глобальная target-спецификация, Cloud-пример
-записан открытым долгом, current руководства не объявляют target реализованным.
-Agent validator PASS 109/109; локальные Markdown ссылки PASS 41/41;
-`git diff --check` PASS. Независимая semantic review: PRIMARY нашла
-`DOC-TABLES-001` (TextBox разделы были ошибочно названы таблицами);
-после исправления VALIDATION_1 — terminal CLEAN. Build/Windows UI:
-NOT_RUN, только документ; observability/mode parity: NO CHANGE.
+Current implementation/contracts inspected:
+`OrderFlowClouds.cs`, `OrderFlowCloudImbalance.cs`,
+`ExplorerCatalog.cs`, `ExplorerModels.cs`, `ExplorerMetrics.cs`,
+`OrderFlowResearchUi.xaml`, `CLOUD_EXPLORER_V2_SPEC.md`,
+`CLOUD_EXPLORER_FOLLOWUP_SPEC.md`, `UI-DETACHED-TABLES-001` и
+`CONTEXT_THEMES.md`.
+
+Scoped semantic review by Main found and fixed before final handoff:
+
+- `OF-CAL-DOC-001`: ambiguous `SourceMode=Diagonal` mixed segmentation and
+  filter kind. Fixed by separate FormationMode/RuleKind.
+- `OF-CAL-DOC-002`: session edge wording did not define a deterministic
+  23:50 boundary. Fixed with half-open intervals and explicit Evening
+  EndExclusive=23:51 while UI displays 23:50 inclusive.
+- Timezone claim checked against current data contract: source clock remains
+  unlabelled unless user explicitly supplies timezone.
+- Table/layout/theme requirements checked against current target contracts;
+  no embedded analytical DataGrid is allowed in the new main calibration
+  workspace.
+
+Independent native `documentation-reviewer` is not exposed in this chat
+runtime, therefore the repository's **independent-review gate is formally
+NOT_RUN/BLOCKED**, not self-certified CLEAN. The implementation task must run
+the mandated independent documentation and production reviews before claiming
+terminal completion.
+
+Build/tests: NOT_RUN — documentation-only change. Agent validator and local
+`git diff --check`: NOT_RUN in connector-only environment. Direct document
+paths and registration were re-read from the remote branch after publication.
 
 ## Blockers
 
-Нет blocker для постановки. Физическая приёмка окон относится к будущей
-реализации. Коммит и FF push выполняются по явному разрешению владельца.
+Нет blocker для публикации target ТЗ. Для будущей реализации обязательны
+independent reviews, offline OrderFlowResearch tests, solution build и
+Windows/DPI owner acceptance по документу.
 
 ## Next action
 
-В отдельной задаче реализовать охват из `UI-DETACHED-TABLES-001`, выполнить
-проверку всех экранов на Windows и закрыть `TD-CLOUD-LAYOUT-001` по факту.
+Реализовать `ORDER-FLOW-CLOUD-CALIBRATION-001` по этапам A–H, сохранив
+legacy Cloud/Explorer semantics. Начать с TimeRange + Tick Distribution,
+затем bounded Parameter Explorer, diagonal metrics, per-range Cloud rules,
+Cloud Anatomy и detached table UI.
