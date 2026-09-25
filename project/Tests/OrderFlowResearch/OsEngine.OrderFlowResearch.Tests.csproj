@@ -17,6 +17,9 @@
     <EmbeddedResource Include="..\..\OsEngine\OsData\OrderFlow\Explorer\CloudExplorerControl.xaml" LogicalName="Research.Explorer.Ui.xaml" />
     <EmbeddedResource Include="..\..\OsEngine\OsData\OrderFlow\Explorer\CloudExplorerWindow.xaml" LogicalName="Research.Explorer.Window.xaml" />
     <EmbeddedResource Include="..\..\OsEngine\OsData\OrderFlow\Explorer\CloudExplorerChartWindow.xaml" LogicalName="Research.Explorer.ChartWindow.xaml" />
+    <EmbeddedResource Include="..\..\OsEngine\OsData\OrderFlow\Calibration\CloudCalibrationWindow.xaml" LogicalName="Research.Calibration.xaml" />
+    <EmbeddedResource Include="..\..\OsEngine\OsData\OrderFlow\Calibration\CalibrationTableWindow.xaml" LogicalName="Research.Calibration.Table.xaml" />
+    <EmbeddedResource Include="..\..\OsEngine\OsData\OrderFlow\Calibration\CloudAnatomyWindow.xaml" LogicalName="Research.Calibration.Anatomy.xaml" />
   </ItemGroup>
 
 </Project>

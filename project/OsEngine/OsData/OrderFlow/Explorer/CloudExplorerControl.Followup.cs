@@ -39,7 +39,7 @@ namespace OsEngine.OsData.OrderFlow.Explorer
             if (error.Field.StartsWith("Pattern.", StringComparison.Ordinal))
             {
                 TabControlOptions.SelectedIndex = 5; ExplorerOption option = _patternOptions.FirstOrDefault(o => o.Property.Name == field);
-                if (option != null) { DataGridPatternOptions.SelectedItem = option; DataGridPatternOptions.ScrollIntoView(option); DataGridPatternOptions.Focus(); } return;
+                if (option != null) { OpenInputTable(DataGridPatternOptions); DataGridPatternOptions.SelectedItem = option; DataGridPatternOptions.ScrollIntoView(option); DataGridPatternOptions.Focus(); } return;
             }
             DataGrid[] grids = view ? new[] { DataGridView } : error.Field.StartsWith("Study.", StringComparison.Ordinal) ? new[] { DataGridStudy, DataGridModules, DataGridAdaptation } :
                 error.Field.StartsWith("Episodes.", StringComparison.Ordinal) ? new[] { DataGridModules } : new[] { DataGridFormation, DataGridAdaptation, DataGridModules, DataGridStudy };
@@ -50,7 +50,7 @@ namespace OsEngine.OsData.OrderFlow.Explorer
                     (!error.Field.StartsWith("Episodes.", StringComparison.Ordinal) || _episodeOptions.Contains(o)));
                 if (option == null) { continue; }
                 TabControlOptions.SelectedIndex = grid == DataGridFormation ? 0 : grid == DataGridView ? 1 : grid == DataGridAdaptation ? 2 : grid == DataGridModules ? 3 : 4;
-                grid.SelectedItem = option; grid.ScrollIntoView(option); grid.Focus(); return;
+                OpenInputTable(grid); grid.SelectedItem = option; grid.ScrollIntoView(option); grid.Focus(); return;
             }
             TextBlockStatus.Text += " Поле находится в основном окне Order Flow.";
         }

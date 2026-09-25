@@ -70,6 +70,7 @@ namespace OsEngine.OsData.OrderFlow
             double left, double right, double top, double bottom)
         {
             Pen grid = new Pen(new SolidColorBrush(Color.FromArgb(70, 128, 128, 128)), 0.5);
+            if (CalibrationTheme) { grid = new Pen(CalibrationBrush("ControlBorderBrush"), .5); }
             foreach (decimal price in PriceGrid(minimum, maximum, bottom - top))
             {
                 double y = Scale(price, minimum, maximum, bottom, top);

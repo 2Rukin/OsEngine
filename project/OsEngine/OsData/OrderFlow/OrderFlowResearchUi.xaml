@@ -2,11 +2,12 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Order Flow Research" Height="860" Width="1420"
-        MinHeight="650" MinWidth="1050"
+        MinHeight="420" MinWidth="800"
         WindowStartupLocation="CenterScreen"
         Style="{StaticResource WindowStyleCanResize}"
         Icon="/Images/OsLogo.ico">
-    <Grid Name="GridPrime" Margin="8">
+    <ScrollViewer Name="ScrollViewerWorkspace" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+    <Grid Name="GridPrime" Margin="8" MinWidth="1020" MinHeight="{Binding ViewportHeight, ElementName=ScrollViewerWorkspace}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -27,16 +28,16 @@
             </Grid.RowDefinitions>
             <Label Name="LabelTicks" Content="Tick file" VerticalAlignment="Center"/>
             <TextBox Name="TextBoxTicksPath" Grid.Column="1" Margin="4" MinHeight="24"/>
-            <Button Name="ButtonBrowseTicks" Grid.Column="2" Margin="4" Content="Browse"/>
+            <Button Height="Auto" MinHeight="30" Name="ButtonBrowseTicks" Grid.Column="2" Margin="4" Content="Browse"/>
             <Label Name="LabelOutput" Grid.Row="1" Content="Output folder" VerticalAlignment="Center"/>
             <TextBox Name="TextBoxOutputPath" Grid.Row="1" Grid.Column="1" Margin="4" MinHeight="24"/>
-            <Button Name="ButtonBrowseOutput" Grid.Row="1" Grid.Column="2" Margin="4" Content="Browse"/>
+            <Button Height="Auto" MinHeight="30" Name="ButtonBrowseOutput" Grid.Row="1" Grid.Column="2" Margin="4" Content="Browse"/>
             <Label Name="LabelPeriod" Grid.Row="2" Content="Period" VerticalAlignment="Center"/>
             <WrapPanel Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Margin="4">
                 <DatePicker Name="DateFrom" Width="145"/>
                 <TextBlock Text=" — " VerticalAlignment="Center" Foreground="{DynamicResource ControlForegroundWhite}"/>
                 <DatePicker Name="DateTo" Width="145"/>
-                <Button Name="ButtonAllDates" Margin="8,0,0,0" MinWidth="90" Content="Full file"/>
+                <Button Height="Auto" MinHeight="30" Name="ButtonAllDates" Margin="8,0,0,0" MinWidth="90" Content="Full file"/>
                 <TextBlock Name="TextBlockPeriodHelp" Foreground="{DynamicResource ControlForegroundWhite}" Margin="10,0" VerticalAlignment="Center" TextWrapping="Wrap"/>
             </WrapPanel>
         </Grid>
@@ -147,7 +148,7 @@
                                         <TextBox Name="TextBoxCloudMinCount" Text="0" Width="65" Margin="3"/>
                                         <Label Name="LabelCloudMaxCount" Content="Max ticks"/>
                                         <TextBox Name="TextBoxCloudMaxCount" Text="0" Width="65" Margin="3"/>
-                                        <Button Name="ButtonCloudFilterApply" Content="Apply filters" Margin="8,3" Padding="8,2"/>
+                                        <Button Height="Auto" MinHeight="30" Name="ButtonCloudFilterApply" Content="Apply filters" Margin="8,3" Padding="8,2"/>
                                     </WrapPanel>
                                     <TextBlock Name="TextBlockCloudFilterStatus" Grid.Row="4" TextWrapping="Wrap" Margin="4" Foreground="{DynamicResource ControlForegroundWhite}"/>
                                     <TextBlock Name="TextBlockCloudImbalanceHelp" Grid.Row="3" TextWrapping="Wrap" Margin="4" Foreground="{DynamicResource ControlForegroundWhite}"/>
@@ -205,7 +206,7 @@
                                         <TextBox Name="TextBoxCloud2MinCount" Text="0" Width="65" Margin="3"/>
                                         <Label Name="LabelCloud2MaxCount" Content="Max ticks"/>
                                         <TextBox Name="TextBoxCloud2MaxCount" Text="0" Width="65" Margin="3"/>
-                                        <Button Name="ButtonCloud2FilterApply" Content="Apply filters" Margin="8,3" Padding="8,2"/>
+                                        <Button Height="Auto" MinHeight="30" Name="ButtonCloud2FilterApply" Content="Apply filters" Margin="8,3" Padding="8,2"/>
                                     </WrapPanel>
                                     <TextBlock Name="TextBlockCloud2FilterStatus" Grid.Row="4" TextWrapping="Wrap" Margin="4" Foreground="{DynamicResource ControlForegroundWhite}"/>
                                     <TextBlock Name="TextBlockCloud2ImbalanceHelp" Grid.Row="3" TextWrapping="Wrap" Margin="4" Foreground="{DynamicResource ControlForegroundWhite}"/>
@@ -242,16 +243,17 @@
                         </WrapPanel>
                     </TabItem>
                 </TabControl>
-                <StackPanel Grid.Row="2" Orientation="Horizontal"
+                <WrapPanel Grid.Row="2" Orientation="Horizontal"
                             HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Name="ButtonRun" Margin="8,2,2,2" MinWidth="105" Height="34" Content="Run research"/>
+                    <Button Name="ButtonCalibration" Margin="4" Height="Auto" MinHeight="34" Padding="8,4" Content="Cloud calibration"/>
                     <Button Name="ButtonCancel" Margin="2" MinWidth="80" Height="34" Content="Cancel" IsEnabled="False"/>
                     <Button Name="ButtonOpenArtifacts" Margin="2" MinWidth="115" Height="34" Content="Open artifacts" IsEnabled="False"/>
-                </StackPanel>
+                </WrapPanel>
             </Grid>
         </Border>
 
-        <TabControl Name="TabControlResults" Grid.Row="2">
+        <TabControl Name="TabControlResults" Grid.Row="2" MinHeight="280" MaxHeight="{Binding ViewportHeight, ElementName=ScrollViewerWorkspace}">
             <TabItem Name="TabItemSummary" Header="Summary">
                 <TextBox Name="TextBoxSummary" IsReadOnly="True" TextWrapping="Wrap"
                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
@@ -332,7 +334,7 @@
             </TabItem>
             <TabItem Name="TabItemStatistics" Header="Statistics / Статистика">
                 <Grid Margin="4">
-                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                     <WrapPanel Name="GridStatisticsSettings">
                         <Label Name="LabelStatsAtrPeriod" Content="ATR, min bars / свечей"/><TextBox Name="TextBoxStatsAtrPeriod" Text="20" Width="55" Margin="3"/>
                         <Label Name="LabelStatsTargetAtr" Content="Target / Цель, ATR"/><TextBox Name="TextBoxStatsTargetAtr" Text="1.5" Width="55" Margin="3"/>
@@ -342,9 +344,9 @@
                         <Label Name="LabelStatsMinimumSamples" Content="Min sample / Мин. случаев"/><TextBox Name="TextBoxStatsMinimumSamples" Text="30" Width="55" Margin="3"/>
                     </WrapPanel>
                     <WrapPanel Grid.Row="1">
-                        <Button Name="ButtonStatsCalculate" Content="Calculate statistics" Padding="8,3" Margin="4" IsEnabled="False"/>
-                        <Button Name="ButtonStatsCancel" Content="Cancel" Padding="8,3" Margin="4" IsEnabled="False"/>
-                        <Button Name="ButtonStatsShow" Content="Show recommended parameters on chart" Padding="8,3" Margin="4" IsEnabled="False"/>
+                        <Button Height="Auto" MinHeight="30" Name="ButtonStatsCalculate" Content="Calculate statistics" Padding="8,3" Margin="4" IsEnabled="False"/>
+                        <Button Height="Auto" MinHeight="30" Name="ButtonStatsCancel" Content="Cancel" Padding="8,3" Margin="4" IsEnabled="False"/>
+                        <Button Height="Auto" MinHeight="30" Name="ButtonStatsShow" Content="Show recommended parameters on chart" Padding="8,3" Margin="4" IsEnabled="False"/>
                     </WrapPanel>
                     <TextBox Name="TextBoxStatisticsSummary" Grid.Row="2" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True"
                              MinHeight="72" MaxHeight="145" VerticalScrollBarVisibility="Auto" Margin="4"/>
@@ -374,7 +376,7 @@
                 <Grid>
                     <StackPanel Name="StackPanelDetachedChart" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <TextBlock Name="TextBlockDetachedChart" Foreground="{DynamicResource ControlForegroundWhite}" Margin="8" Text="Chart is open in another window"/>
-                        <Button Name="ButtonActivateChartWindow" Content="Show chart window" Margin="8"/>
+                        <Button Height="Auto" MinHeight="30" Name="ButtonActivateChartWindow" Content="Show chart window" Margin="8"/>
                     </StackPanel>
                     <ContentControl Name="ContentControlChartHome" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
                 <ScrollViewer Name="ScrollViewerChartSurface" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
@@ -392,7 +394,7 @@
                             <CheckBox Name="CheckBoxChartShowCloud2" Content="Cloud 2" Margin="6" VerticalAlignment="Center"/>
                             <CheckBox Name="CheckBoxCloudRejected" Content="Cloud 1 rejected" Margin="6" VerticalAlignment="Center"/>
                             <CheckBox Name="CheckBoxCloud2Rejected" Content="Cloud 2 rejected" Margin="6" VerticalAlignment="Center"/>
-                            <Button Name="ButtonChartPopOut" Content="Separate window" Margin="3"/>
+                            <Button Height="Auto" MinHeight="30" Name="ButtonChartPopOut" Content="Separate window" Margin="3"/>
                             <Label Name="LabelPriceDisplay" Content="View" VerticalAlignment="Center"/>
                             <ComboBox Name="ComboBoxPriceDisplay" Width="140" Margin="3" DisplayMemberPath="Value" SelectedValuePath="Key"/>
                             <CheckBox Name="CheckBoxCloudPriceMode" Content="Chart by Cloud" Margin="6" VerticalAlignment="Center"/>
@@ -422,12 +424,12 @@
                                     IsSnapToTickEnabled="True" SmallChange="1" LargeChange="5" Width="110" Margin="4" VerticalAlignment="Center"/>
                             <TextBlock Name="TextBlockRightPadding" Text="{Binding ElementName=SliderRightPadding, Path=Value, StringFormat={}{0:F0}%}"
                                        Foreground="{DynamicResource ControlForegroundWhite}" VerticalAlignment="Center" Width="38"/>
-                            <Button Name="ButtonChartFirst" Content="| &lt;" Margin="3" MinWidth="65"/>
-                            <Button Name="ButtonChartLast" Content="&gt; |" Margin="3" MinWidth="65"/>
-                            <Button Name="ButtonChartSelected" Content="Candidate" Margin="3" MinWidth="105"/>
-                            <Button Name="ButtonChartZoomIn" Content="+" Margin="3" Width="35"/>
-                            <Button Name="ButtonChartZoomOut" Content="−" Margin="3" Width="35"/>
-                            <Button Name="ButtonChartAll" Content="All history" Margin="3" MinWidth="110"/>
+                            <Button Height="Auto" MinHeight="30" Name="ButtonChartFirst" Content="| &lt;" Margin="3" MinWidth="65"/>
+                            <Button Height="Auto" MinHeight="30" Name="ButtonChartLast" Content="&gt; |" Margin="3" MinWidth="65"/>
+                            <Button Height="Auto" MinHeight="30" Name="ButtonChartSelected" Content="Candidate" Margin="3" MinWidth="105"/>
+                            <Button Height="Auto" MinHeight="30" Name="ButtonChartZoomIn" Content="+" Margin="3" Width="35"/>
+                            <Button Height="Auto" MinHeight="30" Name="ButtonChartZoomOut" Content="−" Margin="3" Width="35"/>
+                            <Button Height="Auto" MinHeight="30" Name="ButtonChartAll" Content="All history" Margin="3" MinWidth="110"/>
                         </WrapPanel>
                         <StackPanel Grid.Row="1">
                             <WrapPanel Margin="4,0">
@@ -442,9 +444,9 @@
                                 <CheckBox Name="CheckBoxCloud2Volumes" Content="Cloud 2 volumes" IsChecked="True" Margin="6" VerticalAlignment="Center"/>
                             </WrapPanel>
                             <WrapPanel Name="WrapPanelReplay" Margin="4,0">
-                                <Button Name="ButtonReplayPlay" Content="Replay" Margin="3" IsEnabled="False"/>
-                                <Button Name="ButtonReplayStep" Content="One tick" Margin="3" IsEnabled="False"/>
-                                <Button Name="ButtonReplayReturn" Content="Full chart" Margin="3" IsEnabled="False"/>
+                                <Button Height="Auto" MinHeight="30" Name="ButtonReplayPlay" Content="Replay" Margin="3" IsEnabled="False"/>
+                                <Button Height="Auto" MinHeight="30" Name="ButtonReplayStep" Content="One tick" Margin="3" IsEnabled="False"/>
+                                <Button Height="Auto" MinHeight="30" Name="ButtonReplayReturn" Content="Full chart" Margin="3" IsEnabled="False"/>
                                 <Label Name="LabelReplaySpeed" Content="Speed" VerticalAlignment="Center"/>
                                 <ComboBox Name="ComboBoxReplaySpeed" Width="85" Margin="3" DisplayMemberPath="Value" SelectedValuePath="Key"/>
                                 <CheckBox Name="CheckBoxReplaySkipGaps" Content="Skip gaps &gt; 60 s" IsChecked="True" Margin="6" VerticalAlignment="Center"/>
@@ -453,7 +455,7 @@
                             <WrapPanel Margin="4,0">
                                 <Label Name="LabelDrawingTool" Content="Drawing" VerticalAlignment="Center"/>
                                 <ComboBox Name="ComboBoxDrawingTool" Width="150" Margin="3" DisplayMemberPath="Value" SelectedValuePath="Key"/>
-                                <Button Name="ButtonDrawingColor" Margin="3">
+                                <Button Height="Auto" MinHeight="30" Name="ButtonDrawingColor" Margin="3">
                                     <StackPanel Orientation="Horizontal">
                                         <Border Name="BorderDrawingColor" Background="Gold" Width="18" Height="14" Margin="4,0"/>
                                         <TextBlock Name="TextBlockDrawingColor" Text="Color"/>
@@ -463,8 +465,8 @@
                                 <ComboBox Name="ComboBoxDrawingThickness" Width="50" Margin="3"/>
                                 <CheckBox Name="CheckBoxDrawingLeft" Content="Extend left" Margin="6" VerticalAlignment="Center"/>
                                 <CheckBox Name="CheckBoxDrawingRight" Content="Extend right" Margin="6" VerticalAlignment="Center"/>
-                                <Button Name="ButtonDrawingDelete" Content="Delete line" Margin="3"/>
-                                <Button Name="ButtonDrawingClear" Content="Clear lines" Margin="3"/>
+                                <Button Height="Auto" MinHeight="30" Name="ButtonDrawingDelete" Content="Delete line" Margin="3"/>
+                                <Button Height="Auto" MinHeight="30" Name="ButtonDrawingClear" Content="Clear lines" Margin="3"/>
                             </WrapPanel>
                             <TextBlock Name="TextBlockDrawingHelp" Foreground="{DynamicResource ControlForegroundWhite}" Margin="8,2" TextWrapping="Wrap"/>
                             <TextBlock Name="TextBlockChartBoundary" Foreground="{DynamicResource ControlForegroundWhite}" Margin="8,0,8,4" TextWrapping="Wrap"/>
@@ -507,4 +509,5 @@
                        Text="Research only. No trades or PnL." FontWeight="SemiBold"/>
         </Grid>
     </Grid>
+    </ScrollViewer>
 </Window>

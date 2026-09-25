@@ -3,6 +3,8 @@
  * Ваши права на использование кода регулируются данной лицензией http://o-s-a.net/doc/license_simple_engine.pdf
 */
 using OsEngine.Entity;
+using OsEngine.Logging;
+using OsEngine.Market;
 using OsEngine.OsData.OrderFlow;
 using System;
 using System.Collections.Generic;
@@ -36,6 +38,9 @@ namespace OsEngine.OrderFlowResearch.Tests
             if (args.Length > 0 && args[0] == "--pattern-input") { return RunPatternOwner(args); }
             string root = Path.Combine(Path.GetTempPath(), "OsEngine-TickResearch-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(root);
+            // Standalone WPF component tests must not use ServerMaster's no-subscriber MessageBox fallback.
+            // Preserve diagnostics on stderr, including expected negative-path messages; production logging is unchanged.
+            ServerMaster.LogMessageEvent += WriteTestLog;
             try
             {
                 Run("strict schema and fractional microseconds", root, TestReader);
@@ -149,11 +154,14 @@ namespace OsEngine.OrderFlowResearch.Tests
                 Run("StudyBarrierUnderflow", root, TestStudyBarrierUnderflow);
                 RegisterExplorerV2(root);
                 RegisterPatternSearch(root);
+                RegisterCalibration(root);
             }
-            finally { Directory.Delete(root, true); }
+            finally { ServerMaster.LogMessageEvent -= WriteTestLog; Directory.Delete(root, true); }
             Console.WriteLine("Order Flow Research tests: " + _passed + " passed, " + _failed + " failed.");
             return _failed == 0 ? 0 : 1;
         }
+
+        private static void WriteTestLog(string message, LogMessageType type) => Console.Error.WriteLine("TEST LOG " + type + ": " + message);
 
         private static void Run(string name, string root, Action<string> test)
         {

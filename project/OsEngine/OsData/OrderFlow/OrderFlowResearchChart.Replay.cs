@@ -32,6 +32,7 @@ namespace OsEngine.OsData.OrderFlow
             _beforeReplayFrom = bars.Count == 0 ? null : bars[_startIndex].TimeStart;
             _beforeReplayTo = bars.Count == 0 ? null : bars[_startIndex + VisibleCount - 1].TimeEnd;
             IsReplaying = true;
+            SetCalibrationReplay(0, false);
             _cloudReferenceVolume = referenceVolume;
             _cloudReferenceVolume2 = referenceVolume2;
             _visibleCount = 120;

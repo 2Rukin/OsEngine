@@ -43,6 +43,7 @@ namespace OsEngine.OsData.OrderFlow
         private void DrawPriceDisplay(DrawingContext context, List<OrderFlowDisplayBar> bars, double left, double slot,
             double top, double bottom, decimal min, decimal max)
         {
+            if (CalibrationTheme) { DrawCalibrationPrices(context, bars, left, slot, top, bottom, min, max); return; }
             if (_cloudPriceMode || _priceDisplay == OrderFlowPriceDisplay.MutedHighLow)
             {
                 Brush muted = new SolidColorBrush(Color.FromArgb(105, 145, 145, 145));

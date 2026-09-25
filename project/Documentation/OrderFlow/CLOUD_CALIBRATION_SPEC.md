@@ -1,13 +1,14 @@
 # ORDER-FLOW-CLOUD-CALIBRATION-001: предварительная статистика, временные профили и настройка Cloud
 
-**Статус:** TARGET SPECIFICATION — NOT IMPLEMENTED.  
+**Статус:** CURRENT IMPLEMENTATION CONTRACT — OFFLINE RESEARCH ONLY.
+
 **Область:** только `OsData → Order Flow`, локальное offline-исследование тиков.  
 **Ветка постановки:** `docs/order-flow-production-roadmap`.  
 **Связанные current contracts:** `ORDER-FLOW-CLOUD-EXPLORER-V2-001`, `ORDER-FLOW-DATA-001`.  
 **UI contract:** `UI-DETACHED-TABLES-001`.  
 **Темы:** `CONTEXT_THEMES.md`.
 
-Документ задаёт следующую итерацию Order Flow. Это не новый общий модуль
+Документ задаёт реализованную итерацию Order Flow. Это не новый общий модуль
 «Статистика» и не торговая стратегия. Цель — до ручной настройки Cloud показать,
 какими являются объёмы, цепочки, дельта и диагональный поток в разных участках
 торгового дня, помочь человеку выбрать устойчивые параметры, затем сохранить
@@ -17,6 +18,75 @@
 Никакой параметр в этом документе не является торговой рекомендацией. Модуль
 не выбирает «лучший» вариант автоматически, не отправляет заявки, не считает
 PnL и не использует будущую реакцию цены для выбора параметров этой итерации.
+
+### Фактическая граница реализации
+
+Точка входа — **«Подбор Cloud»** в существующем OsData → Order Flow.
+Код расположен в `OsEngine/OsData/OrderFlow/Calibration/`; интеграция графика
+и replay — в partial-файлах `OrderFlowResearchChart.Calibration.cs` и
+`OrderFlowResearchUi.Calibration.cs`. Legacy Cloud 1/2 и Cloud Explorer остаются
+отдельными режимами с прежним алгоритмом. Новое формирование использует
+существующий `ExplorerCatalog`, диагональ — его сохранённые comparable pairs.
+
+Практический порядок: задать input/dates/PriceStep в основном Order Flow →
+открыть «Подбор Cloud» → выбрать profile → **«Сначала анализ тиков»** → выбрать
+порог по histogram/quantile → явно сформировать сетку →
+выбрать ячейку либо Single → применить post-фильтры в Tuner → явно сохранить
+rule → загрузить сохранённые слои. Таблица rules открывает выбранное правило
+для редактирования; копирование в другой range строит его независимый catalog.
+Double-click метки или выбор строки события открывает точную Anatomy.
+
+Один study обрабатывает один profile; несколько studies/rules независимо
+сохраняются в одном output root. Предварительный tick-only study публикует
+Data Quality/compact cache без формирования Single/Chain и без требования
+валидной grid. Ошибка последующей grid не удаляет подготовленную статистику.
+Raw text разбирается один раз при подготовке; grid в той же сессии использует
+подготовленный SHA snapshot при совпадении пути, dates и PriceStep. Для обновления
+изменившегося файла нужно явно повторить анализ тиков. При отсутствии совместимой
+подготовки кнопка grid выполняет собственный один raw pass. Compact cache занимает
+49 bytes на physical row выбранных дат.
+Повторные filters, Anatomy и reopen не требуют исходного raw text. Все новые
+таблицы открываются кнопками в nonmodal resizable windows; сортировка и фильтры
+применяются ко всему источнику, не только текущей странице (250 rows).
+Фильтр направления levels означает знак net delta уровня; у comparable pairs —
+направление, прошедшее текущие diagonal thresholds. В comparison без направления
+этот control отключён. Закрытие workspace закрывает принадлежащие ему таблицы.
+
+Явные пределы: default grid 56 Chain cells + Single, default maximum 128
+Chain cells (настраивается до 256), default buffer 250000 значений
+(до 2000000), managed memory 1024 MB и artifacts 65536 MB. Дополнительно
+один event ограничен 100000 суммарных inside/context pairs. Превышение budget
+завершает study ошибкой без публикации частичного successful bundle.
+На графике отображаются до 32 включённых совместимых rules и до 2000 последних
+passed markers каждого слоя; полная история доступна в tables. Свечи используют
+bounded display aggregation до 4000 bars на каждый поддерживаемый timeframe,
+непосредственно из сохранённых bars, включая перенос в основной график и
+переключение его timeframe. Это пределы представления, не усечение
+formation catalog или статистики. Replay основного Order Flow читает сохранённые
+events поступательно и показывает последние 2000 в достигнутом prefix по
+`KnownSequence`; `OpenAtEnd` появляется только после EOF/Complete. Для replay
+нужен обычный research run по тому же SHA-256, dates и PriceStep; перенос
+сохранённого графика без такого run сам по себе replay не запускает.
+
+Persistence: immutable `cloud-calibration-<hash>/` содержит manifest/formula
+version, input SHA-256, compact ticks, bars, event catalogs/indexes и checksums.
+Новый hash не перезаписывает старый bundle. До 1024 правил сохраняются отдельным
+атомарно заменяемым `cloud-calibration-rules/rules.json`; semantic edit отключает
+старую версию и сохраняет новую в одной транзакции. Custom profiles, pinned
+thresholds/candidates — отдельный `cloud-calibration-workspace.json`, не часть
+calculation identity. Название, enabled и visibility не меняют RuleId;
+численно равные decimal values с разным scale имеют одинаковые semantic IDs.
+
+Автоматическое evidence задают группы `CalibrationTests.cs` и
+`CalibrationPresentationTests.cs` вместе с полным `Tests/OrderFlowResearch`:
+границы, parity, exact arithmetic, persistence, global paging, реальные replay
+prefix snapshots/EOF, смена timeframe, изоляция rule editor при смене диапазона,
+подготовка histogram до grid и grid без raw файла после подготовки,
+unshown-window lifecycle, XAML/theme и synthetic fixture на 1000000 ticks.
+Unshown-window/XAML tests **не подтверждают** физические focus/mouse/DPI:
+1366×768 при 100/125%, 1920×1080 при 150%, обе темы, restored/maximized —
+`REQUIRES OWNER-RUN`. Нет claims profitability, live/Tester execution parity
+или автоматического выбора лучших параметров.
 
 ---
 

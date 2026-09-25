@@ -111,6 +111,7 @@ namespace OsEngine.OsData.OrderFlow
         {
             EndDrag();
             _result = result;
+            SetCalibrationLayers(System.Collections.Immutable.ImmutableArray<Calibration.CalibrationLayer>.Empty);
             ClearImbalanceDisplayCache();
             UpdateCloudReference();
             ClearDrawings();
@@ -295,6 +296,7 @@ namespace OsEngine.OsData.OrderFlow
             try
             {
                 Point point = e.GetPosition(this);
+                if (e.ClickCount == 2 && CalibrationClick(point)) { e.Handled = true; return; }
                 if (TotalBars == 0 || point.X < 92 || point.X > ActualWidth - 12) { return; }
                 Focus();
                 if (DrawingPointerDown(point))
@@ -417,6 +419,7 @@ namespace OsEngine.OsData.OrderFlow
 
         private void DrawChart(DrawingContext drawingContext)
         {
+            _calibrationHits.Clear();
             _drawingPlot = Rect.Empty;
             _lineHits.Clear();
             _cloudHits.Clear();
@@ -503,6 +506,7 @@ namespace OsEngine.OsData.OrderFlow
             {
                 DrawClouds(drawingContext, bars, left, slotWidth, priceTop, priceBottom, minPrice, maxPrice, true);
             }
+            DrawCalibration(drawingContext, bars, left, slotWidth, priceTop, priceBottom, minPrice, maxPrice);
             if (deltaVisible)
             {
                 DrawDeltaBars(drawingContext, bars, left, slotWidth, deltaTop, deltaBottom, maxDelta);
@@ -559,15 +563,16 @@ namespace OsEngine.OsData.OrderFlow
             double slotWidth, double priceTop, double panelBottom)
         {
             Pen grid = new Pen(new SolidColorBrush(Color.FromArgb(55, 128, 128, 128)), 0.5);
+            if (CalibrationTheme) { grid = new Pen(CalibrationBrush("ControlBorderBrush"), .5); }
             double axisTop = ActualHeight - TimeAxisHeight;
-            context.DrawLine(new Pen(Brushes.Gray, 0.5), new Point(left, axisTop), new Point(right, axisTop));
+            context.DrawLine(new Pen(CalibrationTheme ? CalibrationBrush("ControlBorderBrush") : Brushes.Gray, 0.5), new Point(left, axisTop), new Point(right, axisTop));
             DrawText(context, L("Time", "Время"), new Point(8, axisTop + 12), ForegroundBrush, 10);
             List<OrderFlowChartTimeTick> ticks = OrderFlowChartNavigation.TimeTicks(bars, DataWidth);
             for (int i = 0; i < ticks.Count; i++)
             {
                 double x = left + slotWidth * (ticks[i].BarIndex + 0.5);
                 context.DrawLine(grid, new Point(x, priceTop), new Point(x, panelBottom));
-                context.DrawLine(new Pen(Brushes.Gray, 1), new Point(x, axisTop), new Point(x, axisTop + 5));
+                context.DrawLine(new Pen(CalibrationTheme ? CalibrationBrush("ControlBorderBrush") : Brushes.Gray, 1), new Point(x, axisTop), new Point(x, axisTop + 5));
                 FormattedText label = new FormattedText(ticks[i].Text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
                     new Typeface("Segoe UI"), 10, ForegroundBrush, VisualTreeHelper.GetDpi(this).PixelsPerDip);
                 context.DrawText(label, new Point(Math.Clamp(x - label.Width / 2, left, Math.Max(left, right - label.Width)), axisTop + 10));

@@ -18,6 +18,7 @@ namespace OsEngine.OsData.OrderFlow
         internal static Dictionary<string, string> Fields(bool russian)
         {
             Dictionary<string, string> result = new Dictionary<string, string>();
+            Add(result, russian ? "Открыть отдельное окно подбора Cloud по временным диапазонам: распределения, heatmap, независимые правила и Anatomy. Legacy Cloud 1/2 не меняются." : "Open Cloud calibration with time profiles, distributions, heatmap, independent rules and Anatomy. Legacy Cloud 1/2 settings stay independent.", "ButtonCalibration");
             Add(result, russian ? "Локальный UTF-8 файл тиков Date,Time,Price,Volume,Side,MicroSeconds,Id. Выберите файл, затем выполните расчёт." : "Local UTF-8 tick file. Choose Date,Time,Price,Volume,Side,MicroSeconds,Id data, then run the calculation.", "TextBoxTicksPath", "LabelTicks");
             Add(result, russian ? "Выбрать существующий локальный файл тиков. Загрузки из интернета нет." : "Choose an existing local tick file; nothing is downloaded.", "ButtonBrowseTicks");
             Add(result, russian ? "Папка CSV и отчётов расчёта. Фильтры отображения не перезаписывают сохранённые результаты." : "Folder for immutable calculation CSV and audit files. View filters never overwrite these results.", "TextBoxOutputPath", "LabelOutput");

@@ -57,11 +57,12 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid Margin="6">
+    <ScrollViewer Name="ScrollViewerWorkspace" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <Grid Margin="6" MinHeight="{Binding ViewportHeight, ElementName=ScrollViewerWorkspace}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="220"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
@@ -224,8 +225,8 @@
                         <TextBlock Text="Контекст" VerticalAlignment="Center"/>
                         <ComboBox Name="ComboBoxPatternContext" Width="160" Margin="4" ToolTip="Дневные признаки, текущая календарная неделя с понедельника либо оба контекста. Будущие дни исключены."/>
                         <CheckBox Name="CheckBoxPatternExpert" Content="Экспертные профили 2.1–2.4" Margin="8" ToolTip="Выключено: фиксированный набор Narrow/Base/Wide версии three-causal-scales-1. Включено: используются ваши текущие слои, масштабы и эпизоды."/>
-                        <Button Name="ButtonPatternSearch" Content="Найти предвестники движения" Margin="4" Padding="8" ToolTip="Создать отдельное исследование по файлу/датам/шагу цены основного окна. Проверка полей, каталог, причинные якоря, Fit, затем Test и атомарное сохранение."/>
-                        <Button Name="ButtonPatternOpen" Content="Сохранённые исследования" Margin="4" Padding="8" ToolTip="Открыть manifest поиска без нового расчёта. Исходный файл нужен только для реплея."/>
+                        <Button Height="Auto" MinHeight="30" Name="ButtonPatternSearch" Content="Найти предвестники движения" Margin="4" Padding="8" ToolTip="Создать отдельное исследование по файлу/датам/шагу цены основного окна. Проверка полей, каталог, причинные якоря, Fit, затем Test и атомарное сохранение."/>
+                        <Button Height="Auto" MinHeight="30" Name="ButtonPatternOpen" Content="Сохранённые исследования" Margin="4" Padding="8" ToolTip="Открыть manifest поиска без нового расчёта. Исходный файл нужен только для реплея."/>
                     </WrapPanel>
                     <DataGrid Name="DataGridPatternOptions" Style="{DynamicResource DataGridStyle}" RowStyle="{StaticResource ExplorerOptionRowStyle}" AutoGenerateColumns="False" CanUserAddRows="False" ToolTip="Дополнительные параметры. Цель по умолчанию 1,5 причинного ATR, неблагоприятный барьер 1 ATR. Конец исходного дня добавляется к фиксированным горизонтам автоматически.">
                         <DataGrid.Columns>
@@ -246,19 +247,19 @@
                 </Grid.RowDefinitions>
                 <TextBlock Text="3. Запуск и управление" Style="{StaticResource ExplorerSectionHeaderStyle}"/>
                 <WrapPanel Grid.Row="1">
-                    <Button Name="ButtonCalculate" Content="3.1 Рассчитать каталог / исследование" Padding="8,4" Margin="2"
+                    <Button Height="Auto" MinHeight="30" Name="ButtonCalculate" Content="3.1 Рассчитать каталог / исследование" Padding="8,4" Margin="2"
                             ToolTip="Запустить новый расчёт по входным данным из основного окна и вычислительным настройкам шага 2. Ранее опубликованные результаты не перезаписываются."/>
-                    <Button Name="ButtonReopen" Content="3.2 Открыть сохранённый результат" Padding="8,4" Margin="2"
+                    <Button Height="Auto" MinHeight="30" Name="ButtonReopen" Content="3.2 Открыть сохранённый результат" Padding="8,4" Margin="2"
                             ToolTip="Выбрать manifest ранее сохранённого каталога или исследования, проверить схему и контрольные суммы и открыть его без нового расчёта."/>
-                    <Button Name="ButtonCancel" Content="Остановить операцию" Padding="8,4" Margin="2"
+                    <Button Height="Auto" MinHeight="30" Name="ButtonCancel" Content="Остановить операцию" Padding="8,4" Margin="2"
                             ToolTip="Запросить отмену текущего расчёта, открытия, фильтрации, VWAP или реплея. Неполный новый результат не публикуется."/>
-                    <Button Name="ButtonFilter" Content="3.3 Применить видимость" Padding="8,4" Margin="2"
+                    <Button Height="Auto" MinHeight="30" Name="ButtonFilter" Content="3.3 Применить видимость" Padding="8,4" Margin="2"
                             ToolTip="Применить фильтры вкладки «2.2 Видимость» к уже открытому результату без изменения исходных файлов и без чтения raw тиков."/>
                 </WrapPanel>
             </Grid>
         </Border>
 
-        <Grid Grid.Row="4">
+        <Grid Grid.Row="4" MinHeight="260" MaxHeight="{Binding ViewportHeight, ElementName=ScrollViewerWorkspace}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -266,15 +267,15 @@
             </Grid.RowDefinitions>
             <TextBlock Text="4. Результаты и причинный просмотр" Style="{StaticResource ExplorerSectionHeaderStyle}"/>
             <WrapPanel Grid.Row="1" Margin="2">
-                <Button Name="ButtonFirst" Content="Первая страница" Padding="8,4" Margin="2"
+                <Button Height="Auto" MinHeight="30" Name="ButtonFirst" Content="Первая страница" Padding="8,4" Margin="2"
                         ToolTip="Вернуться к первой странице текущей таблицы или графика и загрузить до 250 записей."/>
-                <Button Name="ButtonNext" Content="Следующие 250" Padding="8,4" Margin="2"
+                <Button Height="Auto" MinHeight="30" Name="ButtonNext" Content="Следующие 250" Padding="8,4" Margin="2"
                         ToolTip="Загрузить следующую страницу до 250 записей в текущем разделе результата."/>
                 <TextBox Name="TextBoxFind" Width="190" Margin="2"
                          ToolTip="Введите точный ID Cloud или его часть. Для связи с эпизодом или наблюдением используйте поле ID эпизода / наблюдения на вкладке 2.2 Видимость. Пустое поле снимает поиск."/>
-                <Button Name="ButtonFind" Content="Найти ID" Padding="8,4" Margin="2"
+                <Button Height="Auto" MinHeight="30" Name="ButtonFind" Content="Найти ID" Padding="8,4" Margin="2"
                         ToolTip="Найти введённый ID Cloud или его часть и загрузить соответствующую страницу каталога."/>
-                <Button Name="ButtonArtifacts" Content="Открыть папку файлов" Padding="8,4" Margin="2"
+                <Button Height="Auto" MinHeight="30" Name="ButtonArtifacts" Content="Открыть папку файлов" Padding="8,4" Margin="2"
                         ToolTip="Открыть в Проводнике папку файлов текущего исследования или каталога. Файлы при этом не изменяются."/>
             </WrapPanel>
 
@@ -284,8 +285,8 @@
                          ToolTip="Постраничный каталог Cloud. Выберите строку для подробностей и графика; двойной щелчок открывает вкладку графика.">
                     <Grid>
                         <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
-                            <RowDefinition Height="90"/>
                         </Grid.RowDefinitions>
                         <DataGrid Name="DataGridCatalog"
                                   Style="{DynamicResource DataGridStyle}"
@@ -368,25 +369,25 @@
                                           ToolTip="Выберите способ отображения цены — свечи, OHLC-бары или диапазон High-Low."/>
                                 <CheckBox Name="CheckBoxDraw" Content="Линия" VerticalAlignment="Center" Margin="3"
                                           ToolTip="Включить инструмент пользовательской линии. Задайте две точки на графике; линия не сохраняется в результат исследования."/>
-                                <Button Name="ButtonFitPrice" Content="Подогнать цену" Padding="5" Margin="2" ToolTip="Автоматически подобрать только ось цены по видимому интервалу и слоям. Время и линии сохраняются."/>
-                                <Button Name="ButtonResetAxes" Content="Сброс осей" Padding="5" Margin="2" ToolTip="Вернуть исходные масштабы времени и цены. Колесо — время; Shift+колесо — сдвиг времени; Ctrl+колесо — цена; Ctrl+Shift+колесо — сдвиг цены."/>
-                                <Button Name="ButtonClearLines" Content="Очистить линии" Padding="5" Margin="2"
+                                <Button Height="Auto" MinHeight="30" Name="ButtonFitPrice" Content="Подогнать цену" Padding="5" Margin="2" ToolTip="Автоматически подобрать только ось цены по видимому интервалу и слоям. Время и линии сохраняются."/>
+                                <Button Height="Auto" MinHeight="30" Name="ButtonResetAxes" Content="Сброс осей" Padding="5" Margin="2" ToolTip="Вернуть исходные масштабы времени и цены. Колесо — время; Shift+колесо — сдвиг времени; Ctrl+колесо — цена; Ctrl+Shift+колесо — сдвиг цены."/>
+                                <Button Height="Auto" MinHeight="30" Name="ButtonClearLines" Content="Очистить линии" Padding="5" Margin="2"
                                         ToolTip="Удалить все временные пользовательские линии с графика Explorer."/>
-                                <Button Name="ButtonAnchor" Content="VWAP выбранного Cloud / эпизода" Padding="5" Margin="2"
+                                <Button Height="Auto" MinHeight="30" Name="ButtonAnchor" Content="VWAP выбранного Cloud / эпизода" Padding="5" Margin="2"
                                         ToolTip="Рассчитать anchored VWAP по всем raw сделкам даты для выбранного Cloud или эпизода."/>
                                 <CheckBox Name="CheckBoxTriggerAnchor" Content="От первого trigger" VerticalAlignment="Center" Margin="3"
                                           ToolTip="Начать anchored VWAP от первого причинного trigger выбранного события, а не от его первой сделки."/>
                                 <CheckBox Name="CheckBoxBands" Content="Полосы σ" IsChecked="True" VerticalAlignment="Center" Margin="3"
                                           ToolTip="Показывать вместе с anchored VWAP полосы стандартного отклонения."/>
-                                <Button Name="ButtonSeparate" Content="Отдельное окно графика" Padding="5" Margin="2"
+                                <Button Height="Auto" MinHeight="30" Name="ButtonSeparate" Content="Отдельное окно графика" Padding="5" Margin="2"
                                         ToolTip="Перенести текущую поверхность графика во второе отдельное окно. Расчёт и состояние остаются теми же."/>
-                                <Button Name="ButtonReplay" Content="Запустить реплей" Padding="5" Margin="2"
+                                <Button Height="Auto" MinHeight="30" Name="ButtonReplay" Content="Запустить реплей" Padding="5" Margin="2"
                                         ToolTip="Начать причинный реплей сохранённого run spec. Используются применённые настройки, а не неприменённые изменения полей."/>
-                                <Button Name="ButtonPause" Content="Пауза" Padding="5" Margin="2"
+                                <Button Height="Auto" MinHeight="30" Name="ButtonPause" Content="Пауза" Padding="5" Margin="2"
                                         ToolTip="Приостановить или продолжить реплей после обработки текущего тика."/>
-                                <Button Name="ButtonStep" Content="Один тик" Padding="5" Margin="2"
+                                <Button Height="Auto" MinHeight="30" Name="ButtonStep" Content="Один тик" Padding="5" Margin="2"
                                         ToolTip="Обработать ровно один следующий raw тик. После последнего тика отдельный шаг завершает EOF."/>
-                                <Button Name="ButtonHistory" Content="Вернуться к истории" Padding="5" Margin="2"
+                                <Button Height="Auto" MinHeight="30" Name="ButtonHistory" Content="Вернуться к истории" Padding="5" Margin="2"
                                         ToolTip="Завершить режим причинного реплея и вернуть полные исторические таблицы открытого результата."/>
                                 <TextBlock Text="Тиков / кадр" VerticalAlignment="Center"
                                            ToolTip="Число raw тиков, обрабатываемых между обновлениями экрана реплея."/>
@@ -421,11 +422,11 @@
                         </TabItem>
                         <TabItem Name="TabItemPatternCard" Header="4. Карточка и примеры" ToolTip="Числа обеих групп, ограничения и пример успеха, неудачи либо контроля. Недостаточная проверка явно обозначена.">
                             <Grid>
-                                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="2*"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                                 <WrapPanel>
                                     <ComboBox Name="ComboBoxPatternExample" Width="180" Margin="4" ToolTip="Посмотреть пример успеха, неудачи или сопоставимого контроля. Отсутствие класса объясняется, победители не отбираются отдельно."/>
-                                    <Button Name="ButtonPatternChart" Content="5. Пример на графике" Padding="6" Margin="4" ToolTip="Открыть сохранённые свечи дня и метки. Голубая граница — KnownAt; затенённая область — будущее после якоря. Новый расчёт не запускается."/>
-                                    <Button Name="ButtonPatternReplay" Content="5. Причинный реплей" Padding="6" Margin="4" ToolTip="Восстановить исходные сделки по порядку. Условия появляются только в KnownAt, будущая метка — после закрытия горизонта. Управление на вкладке графика."/>
+                                    <Button Height="Auto" MinHeight="30" Name="ButtonPatternChart" Content="5. Пример на графике" Padding="6" Margin="4" ToolTip="Открыть сохранённые свечи дня и метки. Голубая граница — KnownAt; затенённая область — будущее после якоря. Новый расчёт не запускается."/>
+                                    <Button Height="Auto" MinHeight="30" Name="ButtonPatternReplay" Content="5. Причинный реплей" Padding="6" Margin="4" ToolTip="Восстановить исходные сделки по порядку. Условия появляются только в KnownAt, будущая метка — после закрытия горизонта. Управление на вкладке графика."/>
                                 </WrapPanel>
                                 <TextBox Name="TextBoxPatternCard" Grid.Row="1" ToolTip="Описание правила, сравнение Fit/Test и причинный контекст выбранного примера. Поле только для чтения." IsReadOnly="True" TextWrapping="Wrap" Height="Auto" VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" Padding="8"/>
                                 <DataGrid Name="DataGridPatternWeek" Grid.Row="2" Style="{DynamicResource DataGridStyle}" AutoGenerateColumns="True" IsReadOnly="True" CanUserAddRows="False" ToolTip="Обзор только уже известных дней текущей недели и префикса дня якоря. Не содержит будущие дни или придуманные нулевые сессии."/>
@@ -452,4 +453,5 @@
             </Grid>
         </Border>
     </Grid>
+    </ScrollViewer>
 </UserControl>

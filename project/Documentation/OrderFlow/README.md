@@ -8,7 +8,7 @@
 не доказаны**. Пошаговая работа с отдельным окном описана в
 [руководстве Cloud Explorer](CLOUD_EXPLORER_USER_GUIDE.md), а полная граница
 доступной функции — в [runbook первичной проверки](RESEARCH_MVP_RUNBOOK.md).
-Cloud Explorer V2 и поиск предвестников имеют отдельные current contracts; остальные архитектурные
+Cloud Explorer V2, поиск предвестников и Cloud calibration имеют отдельные current contracts; остальные архитектурные
 документы сохраняют полный target scope.
 
 Открытые наблюдения владельца по интерфейсу Cloud Explorer и история
@@ -16,13 +16,21 @@ Cloud Explorer V2 и поиск предвестников имеют отдел
 Общая постановка будущего переноса **всех пользовательских таблиц приложения**
 в отдельные окна по кнопке и доступности команд — в
 [задании на рефакторинг интерфейса](../UI/DETACHED_TABLES_SPEC.md). Оно ещё
-не реализовано; руководство ниже описывает текущий интерфейс.
+не реализовано во всём приложении; новые таблицы Cloud calibration уже следуют
+этому контракту. В текущем Order Flow/Explorer таблицы также вынесены в окна
+по кнопкам; старые руководства могут показывать прежнее расположение таблиц.
 
-Следующая отдельная target-итерация Order Flow — [«Подбор Cloud»](CLOUD_CALIBRATION_SPEC.md):
+Реализованная opt-in функция Order Flow — [«Подбор Cloud»](CLOUD_CALIBRATION_SPEC.md):
 предварительная статистика тиков и цепочек по времени дня, визуальный подбор
 `MinimumTickVolume / Gap / Range`, описательная diagonal delta, независимые
 Cloud rules для каждого временного диапазона и разбор внутренностей Cloud.
-Она **не реализована** и не меняет current Cloud Explorer/legacy Cloud.
+Она открывается кнопкой в существующем Order Flow, использует его input,
+dates и PriceStep и не меняет семантику Cloud Explorer/legacy Cloud.
+Новые rules сохраняются отдельно; выбор параметров остаётся за пользователем.
+Таблицы открываются отдельными кнопками, основной workspace содержит
+histogram, heatmap, distributions, time map, summary cards и controls.
+Ограничения отображения, persistence/replay и ручная Windows/DPI-проверка
+описаны в [границе реализации](CLOUD_CALIBRATION_SPEC.md#фактическая-граница-реализации).
 Исправления и отдельный ограниченный автоматический поиск доступны в
 разделе 2.6. Алгоритм, исходные критерии и граница проверки — в
 [контракте доработки](CLOUD_EXPLORER_FOLLOWUP_SPEC.md#6-фактический-алгоритм-версии-1).
@@ -61,7 +69,7 @@ Cloud находятся в [runbook](RESEARCH_MVP_RUNBOOK.md#45-cloud-цепо�
 | `ORDER-FLOW-CLOUD-EXPLORER-V2-001` | [Cloud Explorer v2 contract](CLOUD_EXPLORER_V2_SPEC.md) | Отдельный реализованный offline-режим, формулы и критерии приёмки |
 | `ORDER-FLOW-CLOUD-EXPLORER-GUIDE-001` | [Cloud Explorer user guide](CLOUD_EXPLORER_USER_GUIDE.md) | Пошаговая русская инструкция по отдельному окну, настройкам, результатам, графику и реплею |
 | `ORDER-FLOW-CLOUD-EXPLORER-FOLLOWUP-001` | [Cloud Explorer follow-up contract](CLOUD_EXPLORER_FOLLOWUP_SPEC.md) | Русские ошибки, исправления экранов и отдельный offline-поиск сочетаний событий до внутридневного движения |
-| `ORDER-FLOW-CLOUD-CALIBRATION-001` | [Cloud calibration target](CLOUD_CALIBRATION_SPEC.md) | Будущий session-aware подбор Single/Chain/Diagonal Cloud: статистика, heatmap параметров, per-range rules и Cloud Anatomy |
+| `ORDER-FLOW-CLOUD-CALIBRATION-001` | [Cloud calibration contract](CLOUD_CALIBRATION_SPEC.md) | Реализованный offline подбор Single/Chain и Standard/Diagonal rules: статистика, heatmap параметров, per-range rules, replay и Cloud Anatomy; физический DPI/focus — OWNER-RUN |
 | `UI-DETACHED-TABLES-001` | [Задание на окна таблиц](../UI/DETACHED_TABLES_SPEC.md) | Целевое правило всего приложения: таблицы по кнопке в отдельных окнах, кнопки видны и доступны |
 
 Если краткое описание roadmap конфликтует с подробным контрактом, применяется

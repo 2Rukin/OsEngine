@@ -178,7 +178,7 @@ namespace OsEngine.OsData.OrderFlow
         private void ShowChartView()
         {
             TabControlResults.SelectedItem = TabItemChart;
-            if (_chartWindow == null) { return; }
+            if (_chartWindow == null) { Activate(); _chart.Focus(); return; }
             if (_chartWindow.WindowState == WindowState.Minimized) { _chartWindow.WindowState = WindowState.Normal; }
             _chartWindow.Activate();
             _chart.Focus();

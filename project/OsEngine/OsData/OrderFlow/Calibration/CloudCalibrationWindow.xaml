@@ -1,0 +1,141 @@
+<Window x:Class="OsEngine.OsData.OrderFlow.Calibration.CloudCalibrationWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Width="1380" Height="850" MinWidth="800" MinHeight="450" WindowStartupLocation="CenterScreen"
+        Style="{DynamicResource WindowStyleCanResize}">
+    <Grid Margin="8" Background="{DynamicResource ControlBackgroundNormalLight}">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <WrapPanel>
+            <Button Name="ButtonAnalyzeTicks" Tag="Analyze ticks first|Сначала анализ тиков" Height="Auto" MinHeight="32" Margin="4" Padding="8,4"/>
+            <Button Name="ButtonRun" Tag="Form grid|Сформировать сетку" Height="Auto" MinHeight="32" Margin="4" Padding="8,4"/>
+            <Button Name="ButtonCancel" Tag="Cancel|Отмена" Height="Auto" MinHeight="32" Margin="4" Padding="8,4" IsEnabled="False"/>
+            <Button Name="ButtonOpen" Tag="Open saved study|Открыть исследование" Height="Auto" MinHeight="32" Margin="4" Padding="8,4"/>
+            <Button Name="ButtonRules" Tag="Open table — Cloud rules|Открыть таблицу — Cloud rules" Height="Auto" MinHeight="32" Margin="4" Padding="8,4"/>
+            <TextBlock Name="TextBlockIdentity" Margin="6" TextWrapping="Wrap" Foreground="{DynamicResource ControlForegroundWhite}" MaxWidth="550"/>
+        </WrapPanel>
+        <TabControl Name="TabControlWorkspace" Grid.Row="1">
+            <TabItem Name="TabItemTicks" Tag="1. TimeRange / ticks|1. TimeRange / тики">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="6">
+                        <WrapPanel>
+                            <Label Tag="Profile|Профиль"/><ComboBox Name="ComboBoxProfile" Width="230" DisplayMemberPath="Name" Margin="4"/>
+                            <Label Tag="Source timezone (explicit)|Timezone файла (явно)"/><ComboBox Name="ComboBoxTimezone" Width="260" Margin="4" IsEditable="True"/>
+                            <Label Tag="Minimum tick volume|Минимальный объём тика"/><TextBox Name="TextBoxTickVolume" Width="100" Text="1" Margin="4"/>
+                            <ComboBox Name="ComboBoxSide" Width="100" Margin="4"/>
+                        </WrapPanel>
+                        <WrapPanel>
+                            <Label Tag="Custom name|Имя Custom"/><TextBox Name="TextBoxProfileName" Width="150" Text="Custom" Margin="4"/>
+                            <Label Tag="Days (Sun=1, Mon=2 … Sat=64)|Дни (Вс=1, Пн=2 … Сб=64)"/><TextBox Name="TextBoxDays" Width="60" Text="62" Margin="4"/>
+                            <Label Tag="Start inclusive|Начало включительно"/><TextBox Name="TextBoxStart" Width="80" Text="10:30" Margin="4"/>
+                            <Label Tag="End exclusive|Конец исключён"/><TextBox Name="TextBoxEnd" Width="80" Text="19:00" Margin="4"/>
+                            <Label Tag="Tag|Метка"/><TextBox Name="TextBoxTag" Width="100" Margin="4"/>
+                            <Button Name="ButtonCustom" Tag="Save as Custom|Сохранить как Custom" Height="Auto" MinHeight="30" Margin="4" Padding="8,4"/>
+                        </WrapPanel>
+                        <TextBlock Name="TextBlockClockHelp" TextWrapping="Wrap" Foreground="{DynamicResource TextSecondaryBrush}" Margin="4"/>
+                        <Border BorderBrush="{DynamicResource ControlBorderBrush}" BorderThickness="1" Padding="8" Margin="4">
+                            <TextBlock Name="TextBlockQuality" TextWrapping="Wrap" Foreground="{DynamicResource ControlForegroundWhite}"/>
+                        </Border>
+                        <TextBlock Name="TextBlockTickSummary" TextWrapping="Wrap" Margin="6" Foreground="{DynamicResource ControlForegroundWhite}"/>
+                        <WrapPanel Name="WrapPanelQuantiles"/>
+                        <ContentControl Name="ContentControlTicks" Height="280" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
+                        <WrapPanel>
+                            <Button Name="ButtonTicks" Tag="Open table — ticks|Открыть таблицу — тики" Height="Auto" MinHeight="30" Margin="4" Padding="8,4"/>
+                            <CheckBox Name="CheckBoxQualifying" Tag="Qualifying ticks only|Только прошедшие тики" Margin="8" VerticalAlignment="Center"/>
+                            <Button Name="ButtonPinTick" Tag="Pin threshold|Закрепить порог" Height="Auto" MinHeight="30" Margin="4" Padding="8,4"/>
+                        </WrapPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            <TabItem Name="TabItemExplorer" Tag="2. Chain parameter explorer|2. Исследование параметров Chain">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="6">
+                        <WrapPanel>
+                            <Label Tag="Gap grid, ms|Сетка Gap, мс"/><TextBox Name="TextBoxGaps" Text="50;100;250;500;750;1000;1500;2000" Width="300" Margin="4"/>
+                            <Label Tag="Range grid, ticks|Сетка Range, ticks"/><TextBox Name="TextBoxRanges" Text="1;2;3;5;8;13;20" Width="200" Margin="4"/>
+                            <Label Tag="Context, seconds|Контекст, секунд"/><TextBox Name="TextBoxContext" Text="30" Width="70" Margin="4"/>
+                        </WrapPanel>
+                        <WrapPanel>
+                            <Label Tag="Maximum cells|Макс. ячеек"/><TextBox Name="TextBoxCellBudget" Text="128" Width="65" Margin="4"/>
+                            <Label Tag="Buffer values|Значений в буфере"/><TextBox Name="TextBoxBufferBudget" Text="250000" Width="95" Margin="4"/>
+                            <Label Tag="Managed memory, MB|Managed memory, МБ"/><TextBox Name="TextBoxMemoryBudget" Text="1024" Width="80" Margin="4"/>
+                            <Label Tag="Artifact budget, MB|Лимит artifacts, МБ"/><TextBox Name="TextBoxDiskBudget" Text="65536" Width="80" Margin="4"/>
+                        </WrapPanel>
+                        <WrapPanel>
+                            <Label Tag="Heatmap metric|Метрика heatmap"/><ComboBox Name="ComboBoxHeatMetric" Width="270" Margin="4"/>
+                            <Label Tag="Gap, ms|Gap, мс"/><ComboBox Name="ComboBoxGap" Width="100" Margin="4"/>
+                            <Label Tag="Range, ticks|Range, ticks"/><ComboBox Name="ComboBoxRange" Width="100" Margin="4"/>
+                            <Button Name="ButtonSelectCell" Tag="Select cell|Выбрать ячейку" Height="Auto" MinHeight="30" Margin="4" Padding="8,4"/>
+                        </WrapPanel>
+                        <ContentControl Name="ContentControlHeatmap" Height="430" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
+                        <TextBlock Name="TextBlockCandidate" TextWrapping="Wrap" Foreground="{DynamicResource ControlForegroundWhite}" Margin="8"/>
+                        <WrapPanel>
+                            <Button Name="ButtonPin" Tag="Pin candidate|Закрепить вариант" Height="Auto" MinHeight="30" Margin="4" Padding="8,4"/>
+                            <Button Name="ButtonCompare" Tag="Open table — compare|Открыть таблицу — сравнение" Height="Auto" MinHeight="30" Margin="4" Padding="8,4"/>
+                            <Button Name="ButtonCreateRule" Tag="Create Cloud rule|Создать Cloud rule" Height="Auto" MinHeight="30" Margin="4" Padding="8,4"/>
+                            <Button Name="ButtonChains" Tag="Open table — Chains|Открыть таблицу — Chains" Height="Auto" MinHeight="30" Margin="4" Padding="8,4"/>
+                            <Button Name="ButtonDiagonal" Tag="Open table — diagonal|Открыть таблицу — диагональ" Height="Auto" MinHeight="30" Margin="4" Padding="8,4"/>
+                        </WrapPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            <TabItem Name="TabItemTuner" Tag="3. Cloud Tuner|3. Cloud Tuner">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="6">
+                        <WrapPanel>
+                            <Label Tag="Rule name|Имя правила"/><TextBox Name="TextBoxRuleName" Text="Cloud" Width="170" Margin="4"/>
+                            <Label Tag="FormationMode|Формирование"/><ComboBox Name="ComboBoxFormation" Width="100" Margin="4"/>
+                            <Label Tag="RuleKind|Тип правила"/><ComboBox Name="ComboBoxRuleKind" Width="110" Margin="4"/>
+                            <CheckBox Name="CheckBoxEnabled" Tag="Enabled|Включено" IsChecked="True" Margin="8"/>
+                            <CheckBox Name="CheckBoxVisible" Tag="Show layer|Показывать слой" IsChecked="True" Margin="8"/>
+                        </WrapPanel>
+                        <TextBlock Name="TextBlockFormation" TextWrapping="Wrap" Foreground="{DynamicResource ControlForegroundWhite}" Margin="5"/>
+                        <WrapPanel Name="WrapPanelFilters"/>
+                        <WrapPanel>
+                            <Label Tag="Delta direction|Направление delta"/><ComboBox Name="ComboBoxDeltaDirection" Width="100" Margin="4"/>
+                            <CheckBox Name="CheckBoxDiagonalFilter" Tag="Diagonal filter|Diagonal фильтр" Margin="8"/>
+                            <Label Tag="Diagonal source|Источник diagonal"/><ComboBox Name="ComboBoxDiagonalSource" Width="100" Margin="4"/>
+                            <Label Tag="Direction|Направление"/><ComboBox Name="ComboBoxDiagonalDirection" Width="100" Margin="4"/>
+                            <Label Tag="Ratio, %|Ratio, %"/><TextBox Name="TextBoxRatio" Text="300" Width="75" Margin="4"/>
+                            <Label Tag="Dominant volume|Объём стороны"/><TextBox Name="TextBoxDominant" Text="0" Width="75" Margin="4"/>
+                            <Label Tag="Difference|Разность"/><TextBox Name="TextBoxDifference" Text="0" Width="75" Margin="4"/>
+                            <Label Tag="Minimum stack|Минимум stack"/><TextBox Name="TextBoxStack" Text="1" Width="65" Margin="4"/>
+                        </WrapPanel>
+                        <WrapPanel>
+                            <Label Tag="Time bucket, minutes|Time bucket, минут"/><ComboBox Name="ComboBoxBucket" Width="70" Margin="4"/>
+                            <Label Tag="Time map events|События time map"/><ComboBox Name="ComboBoxTimeMode" Width="130" Margin="4"/>
+                            <Label Tag="Time map metric|Метрика time map"/><ComboBox Name="ComboBoxTimeMetric" Width="160" Margin="4"/>
+                            <Button Name="ButtonSaveRule" Tag="Save rule|Сохранить правило" Height="Auto" MinHeight="32" Margin="4" Padding="8,4" IsEnabled="False"/>
+                            <ComboBox Name="ComboBoxCopyRange" Width="220" DisplayMemberPath="Name" Margin="4"/>
+                            <Button Name="ButtonCopyRule" Tag="Copy rule to range|Копировать правило в диапазон" Height="Auto" MinHeight="32" Margin="4" Padding="8,4"/>
+                            <Button Name="ButtonPassed" Tag="Open table — passed Clouds|Открыть таблицу — passed Clouds" Height="Auto" MinHeight="32" Margin="4" Padding="8,4"/>
+                        </WrapPanel>
+                        <Border BorderBrush="{DynamicResource ControlBorderBrush}" BorderThickness="1" Padding="8" Margin="4">
+                            <TextBlock Name="TextBlockRuleSummary" TextWrapping="Wrap" Foreground="{DynamicResource ControlForegroundWhite}"/>
+                        </Border>
+                        <WrapPanel Name="WrapPanelDistributions"/>
+                        <ContentControl Name="ContentControlTimeHistogram" Height="240" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
+                        <TextBlock Name="TextBlockTimeOverlay" TextWrapping="Wrap" Foreground="{DynamicResource TextSecondaryBrush}" Margin="5"/>
+                        <ContentControl Name="ContentControlTimeMap" Height="350" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            <TabItem Name="TabItemChart" Tag="4. Saved layers / Anatomy|4. Сохранённые слои / Anatomy">
+                <Grid>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                    <WrapPanel>
+                        <Button Name="ButtonRefreshLayers" Tag="Load saved layers|Загрузить сохранённые слои" Height="Auto" MinHeight="30" Margin="4" Padding="8,4"/>
+                        <Button Name="ButtonAnatomy" Tag="Cloud Anatomy|Cloud Anatomy" Height="Auto" MinHeight="30" Margin="4" Padding="8,4"/>
+                        <Button Name="ButtonMainChart" Tag="Show in Order Flow chart|Показать на графике Order Flow" Height="Auto" MinHeight="30" Margin="4" Padding="8,4"/>
+                        <ComboBox Name="ComboBoxChartTimeFrame" Width="130" Margin="4"/>
+                        <Button Name="ButtonChartAll" Tag="All bars|Все свечи" Height="Auto" MinHeight="30" Margin="4" Padding="8,4"/>
+                        <Button Name="ButtonChartPlus" Content="+" Height="Auto" MinHeight="30" Width="35" Margin="4"/>
+                        <Button Name="ButtonChartMinus" Content="−" Height="Auto" MinHeight="30" Width="35" Margin="4"/>
+                    </WrapPanel>
+                    <ContentControl Name="ContentControlChart" Grid.Row="1" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
+                    <TextBlock Name="TextBlockChartStatus" Grid.Row="2" Margin="6" TextWrapping="Wrap" Foreground="{DynamicResource ControlForegroundWhite}"/>
+                </Grid>
+            </TabItem>
+        </TabControl>
+        <TextBlock Name="TextBlockStatus" Grid.Row="2" TextWrapping="Wrap" Foreground="{DynamicResource ControlForegroundWhite}" Margin="6"/>
+    </Grid>
+</Window>

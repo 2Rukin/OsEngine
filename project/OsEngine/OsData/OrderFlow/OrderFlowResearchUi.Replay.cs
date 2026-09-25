@@ -52,6 +52,7 @@ namespace OsEngine.OsData.OrderFlow
             _beforeReplayLegend = TextBlockChartLegend.Text;
             _beforeReplayDetails = TextBlockCandidateDetails.Text;
             _chart.BeginReplay(_replay.CloudReferenceVolume, _replay.Cloud2ReferenceVolume);
+            StartCalibrationReplay();
             SetRunningState(true);
             ButtonCancel.IsEnabled = ButtonOpenArtifacts.IsEnabled = ButtonChartSelected.IsEnabled = false;
             TabItemSummary.IsEnabled = TabItemCandidates.IsEnabled = TabItemClouds.IsEnabled = TabItemClouds2.IsEnabled = TabItemJournal.IsEnabled = false;
@@ -73,6 +74,7 @@ namespace OsEngine.OsData.OrderFlow
         {
             if (_replay == null) { return; }
             _replayTimer.Stop();
+            StopCalibrationReplay();
             _replay.Dispose();
             _replay = null;
             _chart.EndReplay();
@@ -163,6 +165,8 @@ namespace OsEngine.OsData.OrderFlow
                 if (frame != null)
                 {
                     _chart.ApplyReplayFrame(frame.Result);
+                    _chart.SetCalibrationReplay(frame.SourceSequence, frame.Complete);
+                    _calibrationPlayback?.Request(frame.SourceSequence, frame.Complete);
                     RefreshCloudViewRows();
                     TextBlockReplayStatus.Text = frame.Time.ToString("dd.MM.yyyy HH:mm:ss.ffffff", CultureInfo.InvariantCulture)
                         + L(" · ticks ", " · тики ") + frame.TickCount + " / " + _displayedResult.Quality.DealCount;

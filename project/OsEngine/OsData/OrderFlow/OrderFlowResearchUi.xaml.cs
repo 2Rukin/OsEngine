@@ -97,6 +97,8 @@ namespace OsEngine.OsData.OrderFlow
             InitializeStatistics();
             InitializeFieldHelp();
             InitializeCloudExplorer();
+            InitializeTableWindows();
+            InitializeCalibration();
             Chart_ViewChanged(this, EventArgs.Empty);
         }
 
@@ -436,6 +438,7 @@ namespace OsEngine.OsData.OrderFlow
             DataGridClouds2.ItemsSource = result.Clouds2;
             TextBlockCandidateDetails.Text = string.Empty;
             _chart.SetResult(result);
+            RestoreCalibrationLayers();
             _chart.SetCloudFilters(null, null);
             try { ApplyCloudViewFilters(); }
             catch (Exception error) { RefreshCloudViewRows(); ShowError(error); }
@@ -799,6 +802,8 @@ namespace OsEngine.OsData.OrderFlow
             try
             {
                 _isClosing = true;
+                DisposeCalibration();
+                _tableWindows?.Dispose();
                 DisposeCloudExplorer();
                 DisposeCloudImbalanceControls();
                 DisposeCloudNavigation();

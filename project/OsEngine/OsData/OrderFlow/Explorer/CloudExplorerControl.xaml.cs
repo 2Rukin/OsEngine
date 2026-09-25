@@ -95,6 +95,7 @@ namespace OsEngine.OsData.OrderFlow.Explorer
             _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) }; _timer.Tick += Poll; _timer.Start();
             InitializePatterns();
             foreach (DataGrid grid in ResultGrids()) { grid.AutoGeneratingColumn += TranslateColumn; }
+            InitializeTableWindows();
         }
 
         #region Settings and worker ownership
@@ -356,7 +357,7 @@ namespace OsEngine.OsData.OrderFlow.Explorer
             }
             catch (Exception error) { Error(error); }
         }
-        private void CatalogDoubleClick(object sender, MouseButtonEventArgs e) { try { if (DataGridCatalog.SelectedItem is CatalogRow row) { ShowInterval(row.Cloud.StartTime.AddMinutes(-2), row.Cloud.Time.AddMinutes(2)); } TabControlResult.SelectedItem = TabItemChart; _window?.Activate(); } catch (Exception error) { Error(error); } }
+        private void CatalogDoubleClick(object sender, MouseButtonEventArgs e) { try { if (DataGridCatalog.SelectedItem is CatalogRow row) { ShowInterval(row.Cloud.StartTime.AddMinutes(-2), row.Cloud.Time.AddMinutes(2)); } TabControlResult.SelectedItem = TabItemChart; (_window as Window ?? Window.GetWindow(this))?.Activate(); } catch (Exception error) { Error(error); } }
         private void EpisodeSelected(object sender, SelectionChangedEventArgs e)
         {
             try
@@ -445,7 +446,7 @@ namespace OsEngine.OsData.OrderFlow.Explorer
         {
             try
             {
-                if (_disposed) { return; } _disposed = true; _timer.Stop(); _timer.Tick -= Poll; _job?.Dispose(); _job = null; _finish = null; DisposePatterns();
+                if (_disposed) { return; } _tableWindows?.Dispose(); _disposed = true; _timer.Stop(); _timer.Tick -= Poll; _job?.Dispose(); _job = null; _finish = null; DisposePatterns();
                 StopPlayback(); _window?.Close(); _chart.Selected -= ChartSelected; ContentControlPlot.Content = null; RequestProvider = null; InputFingerprint = null; InputFocus = null;
                 foreach (DataGrid grid in ResultGrids()) { grid.AutoGeneratingColumn -= TranslateColumn; }
                 _chart.ObservationSelected -= ChartObservationSelected; ButtonReopen.Click -= Reopen; ComboBoxTimeFrame.SelectionChanged -= TimeFrameChanged;
