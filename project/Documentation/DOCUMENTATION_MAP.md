@@ -1,7 +1,7 @@
 # DOCMAP-001: реестр документации OsEngine
 
 **Статус:** CURRENT INDEX
-**Обновлено:** 24.09.2026 (UTC)
+**Обновлено:** 25.09.2026 (UTC)
 **Repository:** `2Rukin/OsEngine`
 
 Этот файл — единая точка входа для определения назначения, статуса и
@@ -62,6 +62,7 @@ authoritative level документа. Он не превращает roadmap �
 | `ORDER-FLOW-CLOUD-EXPLORER-V2-001` | `project/Documentation/OrderFlow/CLOUD_EXPLORER_V2_SPEC.md` | CURRENT IMPLEMENTATION CONTRACT — OFFLINE RESEARCH ONLY | Opt-in полный каталог Cloud, адаптация, эпизоды, anchored VWAP, swing/structure research и приёмка без изменения legacy |
 | `ORDER-FLOW-CLOUD-EXPLORER-GUIDE-001` | `project/Documentation/OrderFlow/CLOUD_EXPLORER_USER_GUIDE.md` | CURRENT OPERATOR GUIDE — OFFLINE RESEARCH ONLY | Русский пошаговый сценарий отдельного окна Cloud Explorer, результатов, графика, реплея, файлов и типичных ошибок |
 | `ORDER-FLOW-CLOUD-EXPLORER-FOLLOWUP-001` | `project/Documentation/OrderFlow/CLOUD_EXPLORER_FOLLOWUP_SPEC.md` | CURRENT IMPLEMENTATION CONTRACT — OFFLINE RESEARCH ONLY | Адресная валидация, согласованный график и ограниченный причинный поиск сценариев с недельным контекстом, Fit/Test и отдельными артефактами |
+| `ORDER-FLOW-CLOUD-CALIBRATION-001` | `project/Documentation/OrderFlow/CLOUD_CALIBRATION_SPEC.md` | TARGET SPECIFICATION — NOT IMPLEMENTED | Будущий session-aware подбор Single/Chain/Diagonal Cloud: предварительная статистика, heatmap параметров, per-range rules, detached tables и Cloud Anatomy |
 | `ORDER-FLOW-DATA-001` | `project/Documentation/OrderFlow/DATA_REPLAY_CONTRACT.md` | TARGET CONTRACT — PARTIAL RESEARCH MVP | Локальный tick text, ручной decimal step, inclusive dates, provenance и causal replay |
 | `ORDER-FLOW-RESEARCH-001` | `project/Documentation/OrderFlow/RESEARCH_PROTOCOL.md` | TARGET RESEARCH CONTRACT — PARTIAL MVP | Observation dataset, labels, experiment registry, rule/ML boundary и temporal validation |
 | `ORDER-FLOW-STRATEGY-001` | `project/Documentation/OrderFlow/STRATEGY_LIFECYCLE.md` | TARGET CONTRACT — BROAD CANDIDATE ONLY | Candidate/confirmation/no-trade/intent lifecycle и обязательное содержание StrategySpec |
