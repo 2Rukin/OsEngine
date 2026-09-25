@@ -1,0 +1,36 @@
+{
+  "kind": "documentation_contract_checks_not_OsEngine_tests",
+  "date": "2026-09-25",
+  "base_commit": "f54de33961d45f73319ae1c7313f2854bcb27398",
+  "checked_tree": "3806cdcf58941b2fd5be794d93c85600f7669040",
+  "catalog_markdown_files": 30,
+  "navigation_catalog_checks": 45,
+  "requirements_covered": 22,
+  "tasks": 12,
+  "scenario_ids": 26,
+  "quality_gate_ids": 13,
+  "dependency_graph": "PASS",
+  "traceability_ids": "PASS",
+  "S01": {
+    "prices": [100, 102, 104, 102, 100, 104, 102],
+    "targets": [10, 8, 6, 8, 10, 6, 8],
+    "first_five_equity": "8"
+  },
+  "S02": {
+    "prices": [100, 98, 96, 98, 96, 98],
+    "targets": [10, 14, 18, 14, 18, 14]
+  },
+  "S04_mirror": "PASS",
+  "S14": {
+    "risks": ["100", "109", "118"],
+    "budget": "110",
+    "max_add": "1"
+  },
+  "algebra_reference_cases": 1000,
+  "seed": 20260925,
+  "limitations": [
+    "Navigation was checked against the retrieved Git tree and the declared catalog; not a full automatic byte-level scan of all Markdown hyperlinks.",
+    "Arithmetic checks exercise an independent reference transcription of the documented formulas, not production code.",
+    "Windows build, native Tester/Optimizer, broker execution, MCP stand and live trading were NOT_RUN."
+  ]
+}
