@@ -182,10 +182,12 @@ Calibration не склеивает фьючерсные контракты и �
 | Saturday | Sat | все тики исходной даты |
 | Sunday | Sun | все тики исходной даты |
 
-Для соседних внутридневных диапазонов границы не дублируются:
-Morning содержит время до 10:30, Main — начиная с 10:30 и до 19:00,
-Evening — начиная с 19:00. Внутренняя модель должна иметь однозначную
-boundary semantics; тесты обязаны покрыть тики ровно в 10:30 и 19:00.
+Для соседних внутридневных диапазонов используется единая семантика
+`[StartInclusive, EndExclusive)`: Morning содержит время до 10:30,
+Main — `[10:30, 19:00)`, Evening — начиная с 19:00. Чтобы пользовательское
+«до 23:50 включительно» было однозначным, встроенный Evening хранит внутреннюю
+границу `EndExclusive = 23:51:00`, а UI показывает `19:00–23:50`.
+Тесты обязаны покрыть тики ровно в 10:30, 19:00, 23:50:00 и 23:51:00.
 
 `Saturday` и `Sunday` специально не получают придуманного биржевого
 расписания. Это отдельный day-type по фактически присутствующим тикам.
@@ -482,10 +484,13 @@ Diagonal не создаёт третью независимую сегмент�
 Single или Chain event. Затем сохранённая price-profile evidence даёт
 diagonal metrics.
 
-В UI допускается отдельный режим/тип правила **Diagonal**, но он ссылается
-на исходный Single/Chain event и отличается набором включённых filters.
-Это исключает циклическую схему «сначала diagonal определяет Chain, затем
-Chain нужен для diagonal».
+Поэтому в модели правила разделить два независимых измерения:
+`FormationMode = Single | Chain` и
+`RuleKind = Standard | Diagonal`. В UI допускается отдельный shortcut
+**Diagonal**, но при его создании явно виден base formation mode. Diagonal
+rule всегда ссылается на исходный Single/Chain event и отличается набором
+включённых filters. Это исключает циклическую схему «сначала diagonal
+определяет Chain, затем Chain нужен для diagonal».
 
 ---
 
@@ -535,7 +540,8 @@ CloudRule содержит:
 - Name;
 - Enabled;
 - TimeRangeId;
-- SourceMode: Single / Chain / Diagonal;
+- FormationMode: Single / Chain;
+- RuleKind: Standard / Diagonal;
 - ссылку на exact formation spec;
 - filter spec;
 - display settings;
@@ -558,7 +564,7 @@ CloudRule содержит:
 
 - TimeRange boundaries/day mask;
 - PriceStep;
-- Single/Chain source mode;
+- FormationMode Single/Chain;
 - MinimumTickVolume;
 - MaximumGapMilliseconds;
 - MaximumRangeTicks;
