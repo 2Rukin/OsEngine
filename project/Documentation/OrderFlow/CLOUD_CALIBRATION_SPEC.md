@@ -53,7 +53,7 @@ Raw text разбирается один раз при подготовке; gri
 этот control отключён. Закрытие workspace закрывает принадлежащие ему таблицы.
 
 Явные пределы: default grid 56 Chain cells + Single, default maximum 128
-Chain cells (настраивается до 256), default buffer 250000 значений
+Chain cells (настраивается до 256), default buffer 250000 рабочих элементов
 (до 2000000), managed memory 1024 MB и artifacts 65536 MB. Дополнительно
 один event ограничен 100000 суммарных inside/context pairs. Превышение budget
 завершает study ошибкой без публикации частичного successful bundle.
@@ -948,6 +948,66 @@ Double click / команда на Cloud в chart/replay открывает
 переиспользовать compact normalized cache. Требование к результату:
 один parameter study не должен заново парсить текстовый файл для каждой
 ячейки heatmap.
+
+### 16.1. Exact statistics и memory guard
+
+Append-only `CalibrationDistribution` не использует отдельные AVL и
+`SortedDictionary` на каждую метрику. Значения собираются в decimal buffer до
+4096 элементов на метрику; суммарная ёмкость 14 event buffers не превышает
+`MaximumBufferItems` (при default — 57344 decimal, 896 KiB полезной памяти).
+Raw Volume/Gap используют два таких buffer. Уникальные значения сверх ёмкости
+не отбрасываются и не требуют увеличивать лимит: отсортированные counted runs
+сливаются на диске. Число run slots ограничено 64 на метрику, merge открывает
+два входных потока. Память значений не растёт с числом distinct observations.
+
+Nearest-rank остаётся **точным**: значение на позиции `ceil(p × N)` по всем
+наблюдениям с учётом повторов, без sampling, rounding или approximate sketch.
+Histogram сохраняет прежнюю группировку последовательных distinct values:
+`ceil(distinct / 40)` значений на bucket. Это не меняет формулы, event identity,
+Chain или diagonal pairs; общий rolling `ExplorerDistribution` не изменён.
+
+Временные runs принадлежат отдельному worker scope в системном temp и не
+пишутся в immutable bundle. Scratch вместе с artifacts текущего study проверяется
+по `MaximumCacheBytes`. Snapshot освобождает buffers/runs; Dispose удаляет
+оставшийся scratch при success/cancel/failure. Каждая formation cell имеет
+отдельную границу lifetime. Между cells остаются только compact distribution
+summaries и time maps: maps всё ещё зависят от числа заполненных date/time buckets,
+а не являются constant-memory представлением всех дней.
+
+`MaximumMemoryMegabytes` по-прежнему ограничивает managed heap **всего процесса**,
+а не только одного окна и не OS working set. Проверки периодические: это не
+жёсткий лимит каждой отдельной аллокации. При давлении от 75% лимита worker
+сначала возвращает сборщику мусора несобранные временные/предыдущие объекты,
+затем проверяет тот же предел. Для уже большого живого heap повторная сборка
+откладывается до новых 6.25% лимита сверх последней blocking collection,
+но не далее самого лимита. Чужие живые объекты приложения не исключаются:
+если после сборки превышение остаётся, study завершается ошибкой.
+
+Regression evidence: `CalibrationSpilledExactQuantiles` сверяет 60000 наблюдений
+с полным sorted oracle и прежними histogram buckets; `CalibrationHighCardinalityCellMemory`
+обрабатывает шесть cells по 40000 событий с high-cardinality метриками, проверяет
+fixed buffers, освобождение scratch и недостижимость collectors при сохранённых
+summaries. `CalibrationScratchCancelAndBudget` и `CalibrationManagedMemoryGuard`
+проверяют failure cleanup и сохранение реального live-memory guard.
+Это synthetic evidence, не замена контрольному полному owner-file прогону.
+
+Явный offline runner из `project/`:
+
+```text
+dotnet run --project Tests/OrderFlowResearch/OsEngine.OrderFlowResearch.Tests.csproj -- --calibration-input <SRU6.txt> <new-output-root> 1
+```
+
+Сценарий читает весь файл без date restriction, использует FORTS Main,
+проверяет P95=12, сохраняет pinned threshold=12, формирует default 57 cells,
+проверяет Tuner, сохранение/reopen rule, chart layer и Anatomy conservation.
+Выбранная для smoke-проверки последняя cell не является рекомендацией или winner.
+Owner-run требует явного разрешения на конкретный input; не запускает приложение,
+коннектор или торговлю. Artifacts остаются в новом output root для проверки.
+Managed peak — максимум `GC.GetTotalMemory(false)` с sampling 20 ms и на progress,
+не гарантия регистрации каждой кратковременной аллокации; peak working set берётся
+из OS high-water mark. Вывод содержит baseline, GC mode, processors, seconds,
+SHA и terminal 57/57 либо ошибку. Для сопоставимости с приложением использовать
+его `OsEngine.runtimeconfig.json` через `dotnet exec --runtimeconfig`.
 
 ---
 

@@ -42,6 +42,10 @@ namespace OsEngine.OrderFlowResearch.Tests
             Run("CalibrationPreliminaryTickWorkflow", root, TestCalibrationPreliminary);
             Run("CalibrationRuleEditorRangeIsolation", root, TestCalibrationEditorIsolation);
             Run("CalibrationMillionTickCompactCache", root, TestCalibrationMillion);
+            Run("CalibrationSpilledExactQuantiles", root, TestCalibrationSpilledQuantiles);
+            Run("CalibrationHighCardinalityCellMemory", root, TestCalibrationCellMemory);
+            Run("CalibrationScratchCancelAndBudget", root, TestCalibrationScratchFailure);
+            Run("CalibrationManagedMemoryGuard", root, TestCalibrationManagedGuard);
         }
 
         private static CalibrationSpec CalSpec(string root, params string[] rows)
@@ -203,7 +207,7 @@ namespace OsEngine.OrderFlowResearch.Tests
         {
             CalibrationSpec spec = CalSpec(root, Enumerable.Range(0, 40).Select(i => Row(Start.AddTicks(i * 10), 100, i + 1, Side.Buy)).ToArray()) with { MaximumBufferItems = 16 };
             bool rejected = false; try { CalRun(spec); } catch (InvalidDataException) { rejected = true; }
-            AssertTrue(rejected && !Directory.EnumerateDirectories(spec.OutputRootPath).Any(), "Distinct-value budget rejects without partial publication");
+            AssertTrue(rejected && !Directory.EnumerateDirectories(spec.OutputRootPath).Any(), "Context buffer budget still rejects without partial publication");
             bool grid = false; try { (spec with { MaximumCells = 1 }).Validate(); } catch (ArgumentException) { grid = true; }
             AssertTrue(grid, "Explicit grid budget");
         }

@@ -1,70 +1,101 @@
 # Authoritative active task state
 
-**ID:** `TASK-ORDER-FLOW-CLOUD-CALIBRATION-IMPLEMENTATION-001`
-**Статус:** `COMPLETE`
-**Фаза:** `TERMINAL — implemented, verified, reviewed and published`
+**ID:** `TASK-CLOUD-CALIBRATION-BOUNDED-MEMORY-001`
+**Статус:** `IN_PROGRESS`
+**Фаза:** `VERIFIED — publication pending`
 **Ветка:** `docs/order-flow-production-roadmap`
-**Baseline HEAD:** `ec1acf15f342d186f7527f0e8a502b52679766cd`
-**Implementation commit:** `73229d9f970c73d96d68448a7c7c86e79fc0a44f`
-**Completed transition IDs:** `SCOPE_ENTRY`, `CONTRACT_READ`, `BASELINE_TESTS`, `CORE_BCD`, `CALIBRATION_UI`, `FINAL_TEST_BUILD`, `PRIMARY_REVIEWS`, `REVIEW_FIX`, `VALIDATION_1`, `VALIDATION_2`, `GIT_PUBLICATION`
-**Next transition ID:** `OWNER_RUN_OPTIONAL`
+**Baseline HEAD:** `e3ec754aa1880143a9763b150f67df3f74a3523e`
+**Completed transition IDs:** `SCOPE_ENTRY`, `CONTRACT_READ`, `BOUNDED_STATISTICS_FIX`, `REGRESSION_SUITE`, `SOLUTION_BUILD`, `PRIMARY_REVIEWS`, `OWNER_RUN_TERMINAL`
+**Next transition ID:** `GIT_PUBLICATION`
 
 ## Frozen scope and authority
 
-All A–H of ORDER-FLOW-CLOUD-CALIBRATION-001 inside existing OsData → Order Flow:
-preliminary TimeRange/tick statistics, Chain grid/heatmap, exact diagonal delta
-and strict stacks, independent Single/Chain + Standard/Diagonal rules, Tuner,
-Anatomy, detached tables, immutable artifacts and saved-layer chart/replay.
+Memory fix inside existing OsData Order Flow calibration, not a new module.
+User explicitly authorized full SRU6 offline run, FORTS Main, threshold12,
+PriceStep1, default57, no date restriction, tests/build/reviews and normal
+fast-forward commit/push to this branch. Preserve default1024MiB limit,
+Chain/Delta/Diagonal/Cloud algorithms and streaming/atomic artifacts.
+Previous A–H iteration remains complete; do not reimplement it.
 
-No new trading, future reaction/MFE/MAE/PnL, automatic winner, connector,
-credentials or Tester/live execution. Legacy Cloud 1/2 and Explorer algorithms
-unchanged. Existing dirty detached-table source was preserved and included as
-required integration foundation. User DetachedTables/README.md and Verification/
-remain untouched/untracked; tracked build outputs remain unstaged, not committed.
+Changed scope: CalibrationDistribution.cs(new), CalibrationEngine.cs,
+CalibrationMetrics.cs; CalibrationMemoryTests.cs(new), CalibrationTests.cs,
+Program.cs; CLOUD_CALIBRATION_SPEC.md section16.1 and this checkpoint.
+Do not stage unrelated tracked binaries or user untracked
+DetachedTables/README.md and Verification/. No app/connector/trading launch.
+
+## Implementation and diagnosis
+
+Each metric previously retained both an AVL and sorted dictionary per distinct
+decimal; now fixed4096-value buffers plus exact counted binary disk runs.
+All14 buffers total at most57344 decimals (896KiB at defaults), no value trees.
+Per-cell method/disposal closes scratch and releases buffers before next cell.
+Only immutable summaries and date/time maps remain. Nearest-rank and histogram
+semantics are unchanged. Scratch shares the artifact budget and rolls back.
+The process-wide guard now reclaims collectible garbage under pressure before
+enforcing the same live-memory cap; it does not ignore other live app objects.
+
+Original isolated SRU6 runs also passed57/57 (workstation and ServerGC).
+Actual host-state root cause remains NOT_DETERMINED; hosting code can retain
+previous main results and run other jobs concurrently. This does not establish
+which roots existed in the owner's failed session. Do not claim reproduction
+of the original host failure or a measured427MiB SRU6 distribution heap.
 
 ## Verification status
 
-Final runtime/test/docs checkpoint:
-`3453510df0905230cc28cbf9a22927f1273ff0d4` (state-only changes excluded).
+- Exact current-code suite:198/198 PASS, exit0, session84084 collected;
+  executable under temp OsEngine-calibration-memory-final-bin/.
+- Canonical no-build suite from normal output:198/198 PASS, exit0,
+  session7480 collected.
+- Normal solution: dotnet build OsEngine.sln --no-restore -v:minimal:
+  PASS0errors/1NU1900 vulnerability-feed warning. Earlier output-lock failure
+  resolved after owner closed OsEngine; successful normal build log below.
+- Git Bash agent validator109/109 PASS; diff whitespace PASS.
+- Production memory_production PRIMARY CLEAN -> TERMINAL.
+- Documentation calibration_documentation_review PRIMARY CLEAN -> TERMINAL.
+  No findings/fix-validation cycle; do not repeat completed reviews.
+- Frozen production SHA256 Engine:
+  ADEFA3724D49EBE2FA4D1ABC33BDD2EB9FB2AB73B861A4E0DB65E1EF690EC85D.
+  Distribution:A4946F3162A05268B598FC6B5A73824E0B82A1B4A3CDD52347451AD875888EE5.
+  Later formatting changed only mixed line endings in spec/Program, no semantics.
+- Four new regression groups:60000-observation sorted oracle/exact histogram;
+  six40000-event high-cardinality cells, fixed buffers, unreachable collectors
+  and no inter-cell live-memory accumulation; scratch cancel/budget cleanup;
+  garbage reclamation and rejection of genuinely live over-budget memory.
 
-- Full offline `dotnet run --project Tests/OrderFlowResearch/OsEngine.OrderFlowResearch.Tests.csproj`:
-  194 passed, 0 failed, exit 0 (session 74421 collected).
-- `dotnet build OsEngine.sln -v:minimal`: exit 0, 0 errors, 2 NU1900 warnings
-  because NuGet vulnerability feed was unavailable. Full recompilation also
-  reports 16 preexisting code warnings outside calibration.
-- Git Bash `bash .agents/validation/validate-agent-system.sh`: 109/109 PASS.
-- Staged/working diff whitespace PASS; local Markdown targets 23/23 resolve.
-- Million-tick synthetic fixture: 1000000 accepted rows, 49000000-byte compact
-  cache, full catalog/statistics retained; this is not owner-file timing proof.
-- Actual captured replay prefix/source SHA/EOF, all supported chart timeframes,
-  cross-range editor isolation, histogram before grid, cache-only grid,
-  lowered-budget fresh/cache rejection, global table paging and Anatomy tested.
-- Negative-test log MessageBox was observed by owner during development.
-  Final standalone test runner routes logs to stderr and verifies the expected
-  invalid-grid error; production logging is unchanged.
+## Full owner-file evidence
 
-Independent read-only review outcomes:
-- Documentation VALIDATION_1: CLEAN, CAL-DOC-001/002 closed, checkpoint
-  `77de7815b1b23825ac6fd29384cd81ce8d354a0d`; no subsequent semantic doc change.
-- Production VALIDATION_2: CLEAN, CAL-PROD-001/002/003/004 closed, final checkpoint
-  above. All six findings closed. No additional review pass is required.
-- Observability: stage/row/date/cell progress, ordinary error logs, reproducible
-  IDs and checksums. Trading/Tester/Optimizer parity: NO CHANGE.
+Input project/OsEngine/bin/Debug/Data/Set_SRTicks/SRU6/Tick/SRU6.txt:
+158316586bytes,3130667rows,174source dates,134active FORTS Main dates.
+SHA256:435ea400ffcc45cd3215be0806f660368a024d1c2942b8eed8aa8e3d2fed1f7b.
+Final exact-code session45520 collected exit0, terminal PASS57/57.
+ServerGC=true,22processors, default bounds; P95=12 confirmed before pin/grid.
+Grid707.6323415s; full scenario765.274585s.
+Whole-scenario peak managed535046368bytes (510.26MiB,20ms/progress sampling);
+OS peak working set574607360bytes (547.99MiB).
+Tuner21770 passed; context diagonal stack>=2 filter8266; chart2000markers;
+saved rule/reopen and Anatomy tick/level conservation PASS.
+Final manifest JsonElement.DeepEquals baseline PASS: all57cell summaries,
+neighbors, provenance and all artifact checksums match exactly.
+A first fixed run (before guard anti-repeat refinement) also passed57/57/fullflow.
 
-Implementation commit was pushed normally to the same branch; remote SHA
-`73229d9f970c73d96d68448a7c7c86e79fc0a44f` verified with ls-remote.
-This terminal checkpoint is metadata-only; its final HEAD/upstream is in Git.
+Logs/artifacts survive under C:/Users/Mi/AppData/Local/Temp/:
+- OsEngine-calibration-memory-final-owner.log and same-name output root;
+- OsEngine-calibration-memory-normal-build.log;
+- OsEngine-calibration-memory-suite-final.log and -normal-suite.log;
+- baseline roots/logs OsEngine-calibration-memory-baseline-e3ec754 and
+  OsEngine-calibration-server-baseline-e3ec754;
+- first fixed run OsEngine-calibration-memory-fixed-owner-1.
+Final bundle suffix:
+cloud-calibration-9cdb89952a1f095d78fcf03ea9145834d32c2fb9608f325a7dfc2a8169d75b0d.
+These are explicit owner offline outputs, not committed market data.
 
 ## Blockers
 
-No implementation/publication blocker. Physical Windows/DPI/focus/mouse remains
-REQUIRES OWNER-RUN, explicitly permitted by section H: 1366×768 at 100/125%,
-1920×1080 at 150%, both themes, restored/maximized, independent table focus.
-No live/connector, profitability or economic-readiness evidence is claimed.
+No implementation/review/verification blocker. Physical Windows/DPI/focus
+remains OWNER-RUN; no physical UI or actual prior host-state reproduction claimed.
 
 ## Next action
 
-No automatic implementation or review remains. On restart inspect Git and this
-checkpoint; do not reimplement completed A–H. Owner may perform the physical
-Windows acceptance matrix from the calibration/UI contracts. Do not start an
-app, connector, test stand or trading session without scenario-specific authority.
+Stage only eight scoped files, final validator/diff
+checks, commit and normal push. Then terminal metadata checkpoint/push.
+On restart do not repeat implementation, clean reviews or completed owner runs.

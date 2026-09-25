@@ -36,6 +36,7 @@ namespace OsEngine.OrderFlowResearch.Tests
         {
             if (args.Length > 0 && args[0] == "--explorer-input") { return RunExplorerOwner(args); }
             if (args.Length > 0 && args[0] == "--pattern-input") { return RunPatternOwner(args); }
+            if (args.Length > 0 && args[0] == "--calibration-input") { return RunCalibrationOwner(args); }
             string root = Path.Combine(Path.GetTempPath(), "OsEngine-TickResearch-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(root);
             // Standalone WPF component tests must not use ServerMaster's no-subscriber MessageBox fallback.

@@ -66,35 +66,6 @@ namespace OsEngine.OsData.OrderFlow.Calibration
     internal sealed record DistributionSummary(long Count, decimal? P50, decimal? P75, decimal? P90, decimal? P95,
         decimal? P99, decimal? P995, decimal? P999, decimal? Maximum, ImmutableArray<DistributionPoint> Histogram);
 
-    /// <summary>Exact nearest-rank statistics with an explicit distinct-value budget; histogram alone groups adjacent values.</summary>
-    internal sealed class CalibrationDistribution
-    {
-        private readonly ExplorerDistribution _quantiles = new ExplorerDistribution();
-        private readonly SortedDictionary<decimal, long> _counts = new SortedDictionary<decimal, long>();
-        private readonly int _limit;
-        internal CalibrationDistribution(int limit) { _limit = limit; }
-        internal void Add(decimal value)
-        {
-            if (!_counts.TryGetValue(value, out long count) && _counts.Count >= _limit)
-            { throw new InvalidDataException("Превышен лимит уникальных значений статистики; сократите период или увеличьте явный лимит."); }
-            if (_quantiles.Count == int.MaxValue) { throw new InvalidDataException("Превышен лимит количества наблюдений статистики."); }
-            _counts[value] = count + 1; _quantiles.Add(value);
-        }
-        internal DistributionSummary Snapshot()
-        {
-            List<DistributionPoint> points = new List<DistributionPoint>();
-            int groupSize = Math.Max(1, (int)Math.Ceiling(_counts.Count / 40d)), index = 0;
-            decimal anchor = 0; long count = 0;
-            foreach (KeyValuePair<decimal, long> item in _counts)
-            {
-                if (index % groupSize == 0) { if (count > 0) { points.Add(new DistributionPoint(anchor, count)); } anchor = item.Key; count = 0; }
-                count += item.Value; index++;
-            }
-            if (count > 0) { points.Add(new DistributionPoint(anchor, count)); }
-            return new DistributionSummary(_quantiles.Count, Q(.5m), Q(.75m), Q(.9m), Q(.95m), Q(.99m), Q(.995m), Q(.999m), Q(1), points.ToImmutableArray());
-        }
-        private decimal? Q(decimal p) => _quantiles.Count == 0 ? null : _quantiles.Quantile(p);
-    }
 
     internal sealed record TickStatistics(long Total, long Passed, int ActiveDays, int CalendarDates,
         DistributionSummary Volumes, DistributionSummary Gaps)
@@ -135,8 +106,9 @@ namespace OsEngine.OsData.OrderFlow.Calibration
         }
     }
 
-    /// <summary>Bounded worker-owned summaries. Time maps use source dates and completion-independent event start time.</summary>
-    internal sealed class EventStatistics
+    /// <summary>Worker-owned summaries with bounded disk-backed exact distributions; Dispose releases all per-cell working state.</summary>
+    /// <remarks>Time maps retain bounded source-date/event-start buckets. Only immutable summary cards/maps survive a completed cell.</remarks>
+    internal sealed class EventStatistics : IDisposable
     {
         internal static readonly string[] Metrics = { "Volume", "Delta", "AbsoluteDelta", "DeltaPercent", "DiagonalDelta", "AbsoluteDiagonalDelta",
             "DiagonalDeltaPercent", "StackLength", "Duration", "TradeCount", "RangeTicks", "PriceLevels", "TopLevelShare", "LargestTickShare" };
@@ -145,19 +117,21 @@ namespace OsEngine.OsData.OrderFlow.Calibration
         private readonly int _limit, _bucket;
         private long _total, _passed, _single;
         private readonly Dictionary<int, long> _stacks = new[] { 1, 2, 3, 5, 7, 10, 15 }.ToDictionary(k => k, k => 0L);
-        internal EventStatistics(int limit, int bucket = 15)
+        internal int DistributionBufferItems => _distributions.Values.Sum(d => d.BufferCapacity);
+        internal EventStatistics(CalibrationStatisticsWorkspace workspace, int limit, int bucket = 15)
         {
             if (bucket != 5 && bucket != 15 && bucket != 30 && bucket != 60) { throw new ArgumentException("Некорректный time bucket."); }
             _limit = limit; _bucket = bucket;
-            _distributions = Metrics.ToDictionary(m => m, m => new CalibrationDistribution(limit));
+            _distributions = Metrics.ToDictionary(m => m, m => new CalibrationDistribution(workspace, limit / Metrics.Length));
         }
         internal void Add(CalibrationEvent item, decimal step, RuleKind kind, CloudFilters filters)
         {
             _total++;
             if (!CalibrationFilter.Passes(item, step, kind, filters, out DiagonalMetrics diagonal)) { return; }
             _passed++; if (item.Evidence.Count == 1) { _single++; }
-            foreach (int length in _stacks.Keys.ToArray()) { if (diagonal.StackLength >= length) { _stacks[length]++; } }
-            decimal[] values = { item.Volume, item.Delta, Math.Abs(item.Delta), item.DeltaPercent, diagonal.Delta, Math.Abs(diagonal.Delta),
+            ReadOnlySpan<int> stackLengths = stackalloc int[] { 1, 2, 3, 5, 7, 10, 15 };
+            foreach (int length in stackLengths) { if (diagonal.StackLength >= length) { _stacks[length]++; } }
+            ReadOnlySpan<decimal> values = stackalloc decimal[] { item.Volume, item.Delta, Math.Abs(item.Delta), item.DeltaPercent, diagonal.Delta, Math.Abs(diagonal.Delta),
                 diagonal.DeltaPercent, diagonal.StackLength, item.Evidence.DurationMilliseconds, item.Evidence.Count,
                 (item.Evidence.High - item.Evidence.Low) / step, item.PriceLevels, item.TopLevelShare, item.LargestTick / item.Volume * 100 };
             for (int i = 0; i < Metrics.Length; i++) { _distributions[Metrics[i]].Add(values[i]); }
@@ -177,6 +151,12 @@ namespace OsEngine.OsData.OrderFlow.Calibration
         internal EventSummary Snapshot(int activeDays) => new EventSummary(_total, _passed, _single, activeDays,
             _distributions.ToImmutableDictionary(p => p.Key, p => p.Value.Snapshot()),
             _time.Values.OrderBy(v => v.Date).ThenBy(v => v.Minute).ToImmutableArray()) { StackFrequencies = _stacks.ToImmutableDictionary() };
+
+        public void Dispose()
+        {
+            try { foreach (CalibrationDistribution distribution in _distributions.Values) { distribution.Dispose(); } }
+            finally { _distributions.Clear(); _time.Clear(); _stacks.Clear(); }
+        }
 
         internal static ImmutableArray<ParameterCell> Neighbors(IReadOnlyList<ParameterCell> cells, IReadOnlyList<int> gaps, IReadOnlyList<int> ranges)
         {

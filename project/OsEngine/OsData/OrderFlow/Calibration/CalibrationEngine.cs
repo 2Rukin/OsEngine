@@ -90,27 +90,8 @@ namespace OsEngine.OsData.OrderFlow.Calibration
                 for (int i = 0; i < formations.Count; i++)
                 {
                     cancellation.ThrowIfCancellationRequested(); CheckMemory(spec);
-                    FormationSpec formation = formations[i]; string hash = spec.FormationHash(formation), name = "events-" + hash;
-                    EventStatistics statistics = new EventStatistics(spec.MaximumBufferItems);
-                    CloudFilters filters = new CloudFilters { Diagonal = spec.Diagonal with { Enabled = false } };
-                    int cellNumber = i + 1;
-                    using (ExplorerStorage.RowWriter<CalibrationEvent> writer = new ExplorerStorage.RowWriter<CalibrationEvent>(staging, name))
-                    {
-                        RangeCatalog catalog = new RangeCatalog(spec, formation, item => { writer.Add(item); statistics.Add(item, spec.PriceStep, RuleKind.Standard, filters); });
-                        long processed = 0;
-                        foreach (OrderFlowDeal tick in CalibrationCache.Read(staging, cancellation))
-                        {
-                            catalog.Add(tick, cancellation); processed++;
-                            if (processed % 8192 == 0)
-                            {
-                                CheckMemory(spec); CheckDisk(staging, spec);
-                                progress?.Invoke(new CalibrationProgress("Formation", processed, tick.Time.Date, cellNumber, formations.Count));
-                            }
-                        }
-                        catalog.Complete();
-                    }
-                    cells.Add(new ParameterCell(formation, hash, name, statistics.Snapshot(raw.ActiveDays), 0, ImmutableDictionary<string, NumericFilter>.Empty));
-                    CheckDisk(staging, spec);
+                    cells.Add(FormCell(staging, spec, formations[i], raw.ActiveDays, i + 1, formations.Count, cancellation, progress));
+                    CheckDisk(staging, spec); CheckMemory(spec);
                     progress?.Invoke(new CalibrationProgress("Cell complete", quality.Accepted, quality.Last?.Date, i + 1, formations.Count));
                 }
                 CalibrationManifest manifest = new CalibrationManifest(CalibrationSpec.Version, CalibrationSpec.Formulas, spec.Hash,
@@ -126,9 +107,22 @@ namespace OsEngine.OsData.OrderFlow.Calibration
             string.Equals(run.SourcePath, Path.GetFullPath(spec.InputPath), StringComparison.OrdinalIgnoreCase) &&
             run.Spec.FromDate == spec.FromDate?.Date && run.Spec.ToDate == spec.ToDate?.Date && run.Spec.PriceStep == spec.PriceStep;
 
+        /// <summary>Enforces the process-wide managed-memory cap after reclaiming collectible objects under pressure.</summary>
+        /// <remarks>This is a periodic managed-heap guard, not an OS working-set cap. Other live application objects count too.
+        /// A blocking collection starts at 75% pressure, with 6.25% new-allocation headroom above the previous blocking live heap
+        /// to avoid repeatedly collecting an unchanged large application baseline. Live usage above the cap still fails.</remarks>
         internal static void CheckMemory(CalibrationSpec spec)
         {
-            if (GC.GetTotalMemory(false) > spec.MaximumMemoryMegabytes * 1024L * 1024)
+            long limit = spec.MaximumMemoryMegabytes * 1024L * 1024;
+            // A process-wide reading includes collectible serialization/previous-cell objects. Reclaim under pressure
+            // before rejecting, while leaving headroom between periodic checks. Live objects still enforce the same cap.
+            if (GC.GetTotalMemory(false) >= limit * 3 / 4)
+            {
+                GCMemoryInfo last = GC.GetGCMemoryInfo(GCKind.FullBlocking);
+                long collectAt = Math.Min(limit, Math.Max(limit * 3 / 4, last.HeapSizeBytes - last.FragmentedBytes + limit / 16));
+                if (GC.GetTotalMemory(false) >= collectAt) { GC.Collect(2, GCCollectionMode.Forced, true, false); }
+            }
+            if (GC.GetTotalMemory(false) > limit)
             { throw new InvalidDataException("Превышен явный лимит managed memory calibration."); }
         }
         private static void CheckDisk(string directory, CalibrationSpec spec)
@@ -139,11 +133,40 @@ namespace OsEngine.OsData.OrderFlow.Calibration
 
         #endregion
 
+        /// <summary>Lifetime boundary: only immutable summaries escape; scratch, writers and distribution buffers close before the next cell.</summary>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private static ParameterCell FormCell(string staging, CalibrationSpec spec, FormationSpec formation, int activeDays,
+            int cellNumber, int cells, CancellationToken cancellation, Action<CalibrationProgress> progress)
+        {
+            string hash = spec.FormationHash(formation), name = "events-" + hash;
+            using CalibrationStatisticsWorkspace workspace = new CalibrationStatisticsWorkspace(spec, staging, cancellation);
+            using EventStatistics statistics = new EventStatistics(workspace, spec.MaximumBufferItems);
+            CloudFilters filters = new CloudFilters { Diagonal = spec.Diagonal with { Enabled = false } };
+            using (ExplorerStorage.RowWriter<CalibrationEvent> writer = new ExplorerStorage.RowWriter<CalibrationEvent>(staging, name))
+            {
+                RangeCatalog catalog = new RangeCatalog(spec, formation, item => { writer.Add(item); statistics.Add(item, spec.PriceStep, RuleKind.Standard, filters); });
+                long processed = 0;
+                foreach (OrderFlowDeal tick in CalibrationCache.Read(staging, cancellation))
+                {
+                    catalog.Add(tick, cancellation); processed++;
+                    if (processed % 8192 == 0)
+                    {
+                        workspace.Check();
+                        progress?.Invoke(new CalibrationProgress("Formation", processed, tick.Time.Date, cellNumber, cells));
+                    }
+                }
+                catalog.Complete();
+            }
+            return new ParameterCell(formation, hash, name, statistics.Snapshot(activeDays), 0, ImmutableDictionary<string, NumericFilter>.Empty);
+        }
+
         #region Saved-data statistics
 
         internal static TickStatistics Ticks(string directory, CalibrationSpec spec, Side? side, decimal threshold, CancellationToken cancellation)
         {
-            CalibrationDistribution volumes = new CalibrationDistribution(spec.MaximumBufferItems), gaps = new CalibrationDistribution(spec.MaximumBufferItems);
+            using CalibrationStatisticsWorkspace workspace = new CalibrationStatisticsWorkspace(spec, directory, cancellation);
+            using CalibrationDistribution volumes = new CalibrationDistribution(workspace, spec.MaximumBufferItems / 2);
+            using CalibrationDistribution gaps = new CalibrationDistribution(workspace, spec.MaximumBufferItems / 2);
             HashSet<DateTime> active = new HashSet<DateTime>();
             DateTime? previous = null, first = null, last = null;
             long total = 0, passed = 0;
@@ -152,8 +175,9 @@ namespace OsEngine.OsData.OrderFlow.Calibration
                 first ??= tick.Time.Date; last = tick.Time.Date;
                 if (!spec.Range.Includes(tick.Time)) { continue; }
                 active.Add(tick.Time.Date);
+                if (active.Count > spec.MaximumBufferItems) { throw new InvalidDataException("Превышен лимит source dates статистики."); }
                 if (side.HasValue && tick.Side != side) { continue; }
-                total++; volumes.Add(tick.Volume); if (total % 8192 == 0) { CheckMemory(spec); }
+                total++; volumes.Add(tick.Volume); if (total % 8192 == 0) { workspace.Check(); }
                 if (tick.Volume < threshold) { continue; }
                 passed++;
                 if (previous.HasValue && previous.Value.Date == tick.Time.Date) { gaps.Add((tick.Time.Ticks - previous.Value.Ticks) / (decimal)TimeSpan.TicksPerMillisecond); }
@@ -176,10 +200,12 @@ namespace OsEngine.OsData.OrderFlow.Calibration
         internal static EventSummary Filter(CalibrationRun run, FormationSpec formation, RuleKind kind, CloudFilters filters,
             int bucket, CancellationToken cancellation)
         {
-            filters.Validate(); EventStatistics statistics = new EventStatistics(run.Spec.MaximumBufferItems, bucket);
+            filters.Validate();
+            using CalibrationStatisticsWorkspace workspace = new CalibrationStatisticsWorkspace(run.Spec, run.Directory, cancellation);
+            using EventStatistics statistics = new EventStatistics(workspace, run.Spec.MaximumBufferItems, bucket);
             long count = 0;
             foreach (CalibrationEvent item in CalibrationStorage.Events(run, formation, cancellation))
-            { statistics.Add(item, run.Spec.PriceStep, kind, filters); if (++count % 8192 == 0) { CheckMemory(run.Spec); } }
+            { statistics.Add(item, run.Spec.PriceStep, kind, filters); if (++count % 8192 == 0) { workspace.Check(); } }
             return statistics.Snapshot(run.Manifest.ActiveDays);
         }
 
