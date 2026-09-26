@@ -32,6 +32,7 @@
 | [14 — реализованные research модели](14-research-implementation.md) | OFI/calibration, AS/AC/ADAPT и default-off pacing |
 | [15 — реализованная operational граница](15-operations-implementation.md) | Lifetime budgets, checkpoint, watchdog и границы нагрузочного evidence |
 | [16 — локальная поставка и запуск](16-release-readiness.md) | Реальная история, штатный Optimizer, ResearchOnly, owner checks и rollback |
+| [17 — ручная UX-приёмка](17-manual-ui-acceptance.md) | Результаты owner walkthrough, подтверждённые UX-находки и acceptance criteria |
 | [Задания агенту](tasks/README.md) | T01–T12 с зависимостями и критериями готовности |
 | [Форма отчёта задания](templates/task-report.md) | Единый формат доказательств |
 | [Проверка документации](evidence/documentation-review.md) | Фактически выполненные проверки этой поставки |

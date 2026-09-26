@@ -109,10 +109,15 @@ Core recovery сохраняет identities, fills, pending и ExitLatch; native
 
 ## Ручное участие и сохранение состояния
 
-QG06 открыт только на физические DPI100/125/200% и пользовательский walkthrough:
-S01/S02, причины ADD/REDUCE/SKIP, stop, пять таблиц, сортировка/CSV и доступность
-кнопок при resize. Результаты записать для каждого реального DPI; layout simulation
-не засчитывать. Другие открытые gates требуют выбора исторического dataset/
+Owner walkthrough выполнен частично и зафиксирован в [17 — ручная UX-приёмка](17-manual-ui-acceptance.md).
+S01/S02, Pause/Resume, manual/emergency close, Next/Current, сортировка/CSV,
+reopen и resize проверены вручную. Walkthrough выявил UX/functional findings,
+включая несоответствие «Начать сценарий», слабые «Кампании/Отчёт», отсутствие
+визуального состояния Pause, одинаковые CSV names и robustness path inputs.
+Поэтому QG06 остаётся BLOCKED до исправления/явного решения findings и
+физических DPI100/125/200%. HardStop и FAST manual walkthrough остаются NOT_RUN;
+их native automated evidence не заменяет ручную проверку. Layout simulation
+не засчитывается как physical DPI. Другие открытые gates требуют выбора исторического dataset/
 интервалов/economic profile, согласованной книги для A4 и отдельной operational
 квалификации. Shadow/paper/live не запускались и требуют точного разрешённого
 сценария. После CP14 пользователь отдельно разрешил commit/push APM; это не

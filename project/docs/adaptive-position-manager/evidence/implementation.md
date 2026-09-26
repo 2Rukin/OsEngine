@@ -468,3 +468,25 @@ evidence CP14 не изменено; повторная сборка не тре
 APM source/tests/docs/evidence, без generated outputs, пяти DividendsUpdater files
 и пользовательских DetachedTables. Commit идентифицируется содержащим его Git ref;
 успех push проверяется совпадением remote ref с локальным HEAD после отправки.
+
+
+## CP15: ручная owner UX-приёмка
+
+Пользователь выполнил ручной walkthrough штатного Tester/Tester Lite на опубликованном
+APM ResearchOnly candidate. Подробный протокол и находки: [17 — ручная UX-приёмка](../17-manual-ui-acceptance.md).
+
+Подтверждено вручную: S01 `10→8→6→8→10→6→8→0`; S02
+`10→14→18→14→18→14`; Pause блокирует ADD, но разрешает REDUCE; Resume снова
+разрешает ADD; manual close и emergency close доводят позицию до `Completed/q0/pending0`;
+закрытие diagnostics не останавливает сопровождение; исторический Next/Current не
+меняет фактическое состояние; sorting/export/reopen/resize работают на проверенном
+окружении.
+
+Walkthrough выявил открытые UX/functional findings: нечитаемый status block,
+нет визуального состояния Pause, `Начать сценарий` фактически вызывает Resume,
+`Кампании` и `Отчёт` показывают только последний audit row, одинаковое default
+имя CSV, path inputs не trim-ятся, audit UI перегружен повторными Wait.
+Поэтому QG06 после walkthrough остаётся BLOCKED не только на physical DPI100/125/200,
+но и на исправление/явное решение этих находок. HardStop и FAST manual walkthrough
+не выполнялись; их ранее сохранённые native automated S06/S08/S09 PASS не
+переименовываются в ручной PASS.
