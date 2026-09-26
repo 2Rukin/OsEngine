@@ -1,0 +1,1142 @@
+[
+  {
+    "Directory": "C:\\Users\\Mi\\AppData\\Local\\Temp\\OsEngine-APM-t10-native-A5",
+    "SHA256": "000693A64262CB95C9E7368E3349CCCEBB44059FCAF1DEEDA823ABBCAFA44139",
+    "Result": {
+      "Status": "PASS",
+      "Threads": 2,
+      "Variant": "A5",
+      "Planned": 2,
+      "Completed": 2,
+      "Passes": [
+        {
+          "Summary": {
+            "SchemaVersion": "APM-RunSummary-v1",
+            "RunId": "run-033c6c18d1004eb08becef4cd338f4f2",
+            "CompletionStatus": "CompletedResearchOnly",
+            "DatasetHash": "AE1B7E363C0795B5B42609546B8C997766A6E7974EAD1500B8BFDBD89AA444CD",
+            "ScheduleHash": "BB53C02CF5F95612D0A2B103067C6292EAD7D4BC1402096B6A4A1EB50FA0D0DF",
+            "SourceScheduleHash": "92F534472769836489DF0DB23C57A6C4CD88D9E0F7059D287947BEF0D359EC4D",
+            "PhaseStart": "2026-09-24T00:00:01",
+            "PhaseEnd": "2026-09-24T00:02:30",
+            "BotName": "1 OpT InSample",
+            "Parameters": {
+              "ModelVersion": "APM-Target-v0.1",
+              "ConstantInventory": false,
+              "FixedScales": true,
+              "AddScale": 5,
+              "ReduceScale": 10,
+              "MinimumScaleTicks": 1,
+              "AddVolatilityFactor": 2,
+              "ReduceVolatilityFactor": 2,
+              "SpeedScaleFactor": 0.25,
+              "MaximumScaleMultiplier": 3,
+              "InventoryPenalty": 0,
+              "RiskHorizonSeconds": 300,
+              "MinActiveVolume": 1,
+              "MinRebalanceVolume": 1,
+              "VolumeDeadband": 0,
+              "MaxChildVolume": 20,
+              "NoAddFraction": 0.3,
+              "RearmMinTicks": 1,
+              "RearmVolatilityFactor": 0,
+              "MinActionIntervalSeconds": 0,
+              "FastEnabled": false,
+              "FavorableOn": 3,
+              "FavorableOff": 1,
+              "AdverseOn": 3,
+              "AdverseOff": 1,
+              "MinRegimeHoldSeconds": 5,
+              "MaxFavorableDeferSeconds": 30,
+              "GridSeconds": 1,
+              "WarmupSeconds": 30,
+              "MinSamples": 10,
+              "MaxPriceAgeSeconds": 10,
+              "FastHalfLifeSeconds": 10,
+              "SlowHalfLifeSeconds": 60,
+              "SpeedWindowSeconds": 10,
+              "SigmaFloor": 1e-06,
+              "OrderLifetimeSeconds": 30,
+              "UseLimitOrders": false,
+              "ResearchExecution": {
+                "Steps": 3,
+                "HorizonSeconds": 6,
+                "Lambda": 0,
+                "MonetaryVariancePerSecond": 1,
+                "TemporaryImpact": 1,
+                "PermanentImpact": 0,
+                "CalibrationVersion": "SYNTHETIC-UNFITTED-AC-v1",
+                "TrainingCutoff": "2026-09-23T00:00:00"
+              }
+            },
+            "Planned": 1,
+            "Completed": 1,
+            "Unstarted": 0,
+            "Campaigns": [
+              {
+                "CampaignId": "S01",
+                "State": 7,
+                "ExitLatch": true,
+                "ExitReason": "SESSION_EXIT",
+                "Anchor": 100,
+                "FilledVolume": 0,
+                "AverageEntry": 0,
+                "RealizedNet": 36.0,
+                "Fees": 0,
+                "Equity": 36.0,
+                "MaximumDrawdown": 28.0,
+                "MaximumVolume": 10,
+                "Turnover": 32,
+                "PendingIncrease": 0,
+                "PendingReduce": 0,
+                "Regime": 0,
+                "Decision": {
+                  "Id": 240,
+                  "Time": "2026-09-24T00:02:00",
+                  "Sequence": 285,
+                  "Price": 102,
+                  "CurveTarget": 8.0,
+                  "RawTarget": 8.0,
+                  "PolicyTarget": 8,
+                  "RiskAllowedTarget": 8,
+                  "FilledVolume": 0,
+                  "PendingIncrease": 0,
+                  "PendingReduce": 0,
+                  "Action": 0,
+                  "Volume": 0,
+                  "IntentId": "",
+                  "Reasons": [
+                    "SESSION_EXIT"
+                  ],
+                  "Regime": 0,
+                  "Kappa": 0,
+                  "AddScale": 5,
+                  "ReduceScale": 10
+                },
+                "Market": {
+                  "Time": "2026-09-24T00:02:00",
+                  "Sequence": 285,
+                  "Price": 102,
+                  "Ready": true,
+                  "SlowVariance": 0.24973063738454213,
+                  "FastVariance": 0.1642551144940982,
+                  "Speed": 0,
+                  "Quality": "OK",
+                  "Profile": 0
+                }
+              }
+            ],
+            "Metrics": [
+              {
+                "NetEquity": 36.0,
+                "MaximumDrawdown": 28.0,
+                "Fees": 0,
+                "Turnover": 32,
+                "MaximumVolume": 10,
+                "AverageVolume": 8.047058823529412,
+                "SecondsInPosition": 85,
+                "ObservedSeconds": 85
+              }
+            ],
+            "Current": {
+              "CampaignId": "S01",
+              "State": 7,
+              "ExitLatch": true,
+              "ExitReason": "SESSION_EXIT",
+              "Anchor": 100,
+              "FilledVolume": 0,
+              "AverageEntry": 0,
+              "RealizedNet": 36.0,
+              "Fees": 0,
+              "Equity": 36.0,
+              "MaximumDrawdown": 28.0,
+              "MaximumVolume": 10,
+              "Turnover": 32,
+              "PendingIncrease": 0,
+              "PendingReduce": 0,
+              "Regime": 0,
+              "Decision": {
+                "Id": 86700,
+                "Time": "2026-09-25T00:02:31",
+                "Sequence": 86745,
+                "Price": 102,
+                "CurveTarget": 8.0,
+                "RawTarget": 8.0,
+                "PolicyTarget": 8,
+                "RiskAllowedTarget": 8,
+                "FilledVolume": 0,
+                "PendingIncrease": 0,
+                "PendingReduce": 0,
+                "Action": 0,
+                "Volume": 0,
+                "IntentId": "",
+                "Reasons": [
+                  "SESSION_EXIT"
+                ],
+                "Regime": 0,
+                "Kappa": 0,
+                "AddScale": 5,
+                "ReduceScale": 10
+              },
+              "Market": {
+                "Time": "2026-09-25T00:02:31",
+                "Sequence": 86745,
+                "Price": 102,
+                "Ready": false,
+                "SlowVariance": 0,
+                "FastVariance": 0,
+                "Speed": 0,
+                "Quality": "STALE_OR_WARMUP",
+                "Profile": 0
+              }
+            },
+            "CurrentMetrics": null
+          },
+          "Quantities": "10,9,8,7,6,7,8,9,10,9,8,6,7,8,0",
+          "Fills": [
+            {
+              "Time": "2026-09-24T00:00:36",
+              "Price": 100,
+              "Volume": 10,
+              "Side": "Buy"
+            },
+            {
+              "Time": "2026-09-24T00:00:48",
+              "Price": 102,
+              "Volume": 1,
+              "Side": "Sell"
+            },
+            {
+              "Time": "2026-09-24T00:00:50",
+              "Price": 102,
+              "Volume": 1,
+              "Side": "Sell"
+            },
+            {
+              "Time": "2026-09-24T00:00:58",
+              "Price": 104,
+              "Volume": 1,
+              "Side": "Sell"
+            },
+            {
+              "Time": "2026-09-24T00:01:00",
+              "Price": 104,
+              "Volume": 1,
+              "Side": "Sell"
+            },
+            {
+              "Time": "2026-09-24T00:01:08",
+              "Price": 102,
+              "Volume": 1,
+              "Side": "Buy"
+            },
+            {
+              "Time": "2026-09-24T00:01:10",
+              "Price": 102,
+              "Volume": 1,
+              "Side": "Buy"
+            },
+            {
+              "Time": "2026-09-24T00:01:18",
+              "Price": 100,
+              "Volume": 1,
+              "Side": "Buy"
+            },
+            {
+              "Time": "2026-09-24T00:01:20",
+              "Price": 100,
+              "Volume": 1,
+              "Side": "Buy"
+            },
+            {
+              "Time": "2026-09-24T00:01:26",
+              "Price": 104,
+              "Volume": 1,
+              "Side": "Sell"
+            },
+            {
+              "Time": "2026-09-24T00:01:28",
+              "Price": 104,
+              "Volume": 1,
+              "Side": "Sell"
+            },
+            {
+              "Time": "2026-09-24T00:01:30",
+              "Price": 104,
+              "Volume": 2,
+              "Side": "Sell"
+            },
+            {
+              "Time": "2026-09-24T00:01:38",
+              "Price": 102,
+              "Volume": 1,
+              "Side": "Buy"
+            },
+            {
+              "Time": "2026-09-24T00:01:40",
+              "Price": 102,
+              "Volume": 1,
+              "Side": "Buy"
+            },
+            {
+              "Time": "2026-09-24T00:02:01",
+              "Price": 102,
+              "Volume": 8,
+              "Side": "Sell"
+            }
+          ],
+          "DecisionHash": "D26B521365671124560CB5F7F991BC6590E7D3C3F2BA02DDEE9D41E20EBDC07B"
+        },
+        {
+          "Summary": {
+            "SchemaVersion": "APM-RunSummary-v1",
+            "RunId": "run-db79f97a88224f35be5763c5e5bd7103",
+            "CompletionStatus": "CompletedResearchOnly",
+            "DatasetHash": "AE1B7E363C0795B5B42609546B8C997766A6E7974EAD1500B8BFDBD89AA444CD",
+            "ScheduleHash": "4ED44C9FE302405140AD84F1333E912C54976848BB614786746923EAB6054EB4",
+            "SourceScheduleHash": "92F534472769836489DF0DB23C57A6C4CD88D9E0F7059D287947BEF0D359EC4D",
+            "PhaseStart": "2026-09-25T00:00:01",
+            "PhaseEnd": "2026-09-25T00:02:30",
+            "BotName": "1 OpT OutOfSample",
+            "Parameters": {
+              "ModelVersion": "APM-Target-v0.1",
+              "ConstantInventory": false,
+              "FixedScales": true,
+              "AddScale": 5,
+              "ReduceScale": 10,
+              "MinimumScaleTicks": 1,
+              "AddVolatilityFactor": 2,
+              "ReduceVolatilityFactor": 2,
+              "SpeedScaleFactor": 0.25,
+              "MaximumScaleMultiplier": 3,
+              "InventoryPenalty": 0,
+              "RiskHorizonSeconds": 300,
+              "MinActiveVolume": 1,
+              "MinRebalanceVolume": 1,
+              "VolumeDeadband": 0,
+              "MaxChildVolume": 20,
+              "NoAddFraction": 0.3,
+              "RearmMinTicks": 1,
+              "RearmVolatilityFactor": 0,
+              "MinActionIntervalSeconds": 0,
+              "FastEnabled": false,
+              "FavorableOn": 3,
+              "FavorableOff": 1,
+              "AdverseOn": 3,
+              "AdverseOff": 1,
+              "MinRegimeHoldSeconds": 5,
+              "MaxFavorableDeferSeconds": 30,
+              "GridSeconds": 1,
+              "WarmupSeconds": 30,
+              "MinSamples": 10,
+              "MaxPriceAgeSeconds": 10,
+              "FastHalfLifeSeconds": 10,
+              "SlowHalfLifeSeconds": 60,
+              "SpeedWindowSeconds": 10,
+              "SigmaFloor": 1e-06,
+              "OrderLifetimeSeconds": 30,
+              "UseLimitOrders": false,
+              "ResearchExecution": {
+                "Steps": 3,
+                "HorizonSeconds": 6,
+                "Lambda": 0,
+                "MonetaryVariancePerSecond": 1,
+                "TemporaryImpact": 1,
+                "PermanentImpact": 0,
+                "CalibrationVersion": "SYNTHETIC-UNFITTED-AC-v1",
+                "TrainingCutoff": "2026-09-23T00:00:00"
+              }
+            },
+            "Planned": 1,
+            "Completed": 1,
+            "Unstarted": 0,
+            "Campaigns": [
+              {
+                "CampaignId": "S02",
+                "State": 7,
+                "ExitLatch": true,
+                "ExitReason": "SESSION_EXIT",
+                "Anchor": 100,
+                "FilledVolume": 0,
+                "AverageEntry": 0,
+                "RealizedNet": -4.0,
+                "Fees": 0,
+                "Equity": -4.0,
+                "MaximumDrawdown": 48.0,
+                "MaximumVolume": 18,
+                "Turnover": 44,
+                "PendingIncrease": 0,
+                "PendingReduce": 0,
+                "Regime": 0,
+                "Decision": {
+                  "Id": 240,
+                  "Time": "2026-09-25T00:02:00",
+                  "Sequence": 291,
+                  "Price": 98,
+                  "CurveTarget": 14.0,
+                  "RawTarget": 14.0,
+                  "PolicyTarget": 14,
+                  "RiskAllowedTarget": 14,
+                  "FilledVolume": 0,
+                  "PendingIncrease": 0,
+                  "PendingReduce": 0,
+                  "Action": 0,
+                  "Volume": 0,
+                  "IntentId": "",
+                  "Reasons": [
+                    "SESSION_EXIT"
+                  ],
+                  "Regime": 0,
+                  "Kappa": 0,
+                  "AddScale": 5,
+                  "ReduceScale": 10
+                },
+                "Market": {
+                  "Time": "2026-09-25T00:02:00",
+                  "Sequence": 291,
+                  "Price": 98,
+                  "Ready": true,
+                  "SlowVariance": 0.12331992782146745,
+                  "FastVariance": 0.04587304999384723,
+                  "Speed": 0,
+                  "Quality": "OK",
+                  "Profile": 0
+                }
+              }
+            ],
+            "Metrics": [
+              {
+                "NetEquity": -4.0,
+                "MaximumDrawdown": 48.0,
+                "Fees": 0,
+                "Turnover": 44,
+                "MaximumVolume": 18,
+                "AverageVolume": 14.352941176470589,
+                "SecondsInPosition": 85,
+                "ObservedSeconds": 85
+              }
+            ],
+            "Current": {
+              "CampaignId": "S02",
+              "State": 7,
+              "ExitLatch": true,
+              "ExitReason": "SESSION_EXIT",
+              "Anchor": 100,
+              "FilledVolume": 0,
+              "AverageEntry": 0,
+              "RealizedNet": -4.0,
+              "Fees": 0,
+              "Equity": -4.0,
+              "MaximumDrawdown": 48.0,
+              "MaximumVolume": 18,
+              "Turnover": 44,
+              "PendingIncrease": 0,
+              "PendingReduce": 0,
+              "Regime": 0,
+              "Decision": {
+                "Id": 86700,
+                "Time": "2026-09-26T00:02:31",
+                "Sequence": 86751,
+                "Price": 98,
+                "CurveTarget": 14.0,
+                "RawTarget": 14.0,
+                "PolicyTarget": 14,
+                "RiskAllowedTarget": 14,
+                "FilledVolume": 0,
+                "PendingIncrease": 0,
+                "PendingReduce": 0,
+                "Action": 0,
+                "Volume": 0,
+                "IntentId": "",
+                "Reasons": [
+                  "SESSION_EXIT"
+                ],
+                "Regime": 0,
+                "Kappa": 0,
+                "AddScale": 5,
+                "ReduceScale": 10
+              },
+              "Market": {
+                "Time": "2026-09-26T00:02:31",
+                "Sequence": 86751,
+                "Price": 98,
+                "Ready": false,
+                "SlowVariance": 0,
+                "FastVariance": 0,
+                "Speed": 0,
+                "Quality": "STALE_OR_WARMUP",
+                "Profile": 0
+              }
+            },
+            "CurrentMetrics": null
+          },
+          "Quantities": "10,11,12,14,15,16,18,17,16,14,15,16,18,17,16,14,0",
+          "Fills": [
+            {
+              "Time": "2026-09-25T00:00:36",
+              "Price": 100,
+              "Volume": 10,
+              "Side": "Buy"
+            },
+            {
+              "Time": "2026-09-25T00:00:46",
+              "Price": 98,
+              "Volume": 1,
+              "Side": "Buy"
+            },
+            {
+              "Time": "2026-09-25T00:00:48",
+              "Price": 98,
+              "Volume": 1,
+              "Side": "Buy"
+            },
+            {
+              "Time": "2026-09-25T00:00:50",
+              "Price": 98,
+              "Volume": 2,
+              "Side": "Buy"
+            },
+            {
+              "Time": "2026-09-25T00:00:56",
+              "Price": 96,
+              "Volume": 1,
+              "Side": "Buy"
+            },
+            {
+              "Time": "2026-09-25T00:00:58",
+              "Price": 96,
+              "Volume": 1,
+              "Side": "Buy"
+            },
+            {
+              "Time": "2026-09-25T00:01:00",
+              "Price": 96,
+              "Volume": 2,
+              "Side": "Buy"
+            },
+            {
+              "Time": "2026-09-25T00:01:06",
+              "Price": 98,
+              "Volume": 1,
+              "Side": "Sell"
+            },
+            {
+              "Time": "2026-09-25T00:01:08",
+              "Price": 98,
+              "Volume": 1,
+              "Side": "Sell"
+            },
+            {
+              "Time": "2026-09-25T00:01:10",
+              "Price": 98,
+              "Volume": 2,
+              "Side": "Sell"
+            },
+            {
+              "Time": "2026-09-25T00:01:16",
+              "Price": 96,
+              "Volume": 1,
+              "Side": "Buy"
+            },
+            {
+              "Time": "2026-09-25T00:01:18",
+              "Price": 96,
+              "Volume": 1,
+              "Side": "Buy"
+            },
+            {
+              "Time": "2026-09-25T00:01:20",
+              "Price": 96,
+              "Volume": 2,
+              "Side": "Buy"
+            },
+            {
+              "Time": "2026-09-25T00:01:26",
+              "Price": 98,
+              "Volume": 1,
+              "Side": "Sell"
+            },
+            {
+              "Time": "2026-09-25T00:01:28",
+              "Price": 98,
+              "Volume": 1,
+              "Side": "Sell"
+            },
+            {
+              "Time": "2026-09-25T00:01:30",
+              "Price": 98,
+              "Volume": 2,
+              "Side": "Sell"
+            },
+            {
+              "Time": "2026-09-25T00:02:01",
+              "Price": 98,
+              "Volume": 14,
+              "Side": "Sell"
+            }
+          ],
+          "DecisionHash": "2C67CB7488976FAB3C11A6096CF6AD12CEFC539504D38A38DDE6903EAFE16B43"
+        }
+      ],
+      "NativeReports": [
+        {
+          "TypeFaze": 0,
+          "Count": 1
+        },
+        {
+          "TypeFaze": 1,
+          "Count": 1
+        }
+      ],
+      "Limitation": "Native synthetic engineering evidence; fill timing differs from Tester; no economic GO"
+    }
+  },
+  {
+    "Directory": "C:\\Users\\Mi\\AppData\\Local\\Temp\\OsEngine-APM-t11-native-B1",
+    "SHA256": "1A61F73A6BB6D6D2EE5617079CE3DCF50A069C6C81900FE556D0165BB40A0E0E",
+    "Result": {
+      "Status": "PASS",
+      "Threads": 1,
+      "Variant": "B1",
+      "Planned": 2,
+      "Completed": 2,
+      "Passes": [
+        {
+          "Summary": {
+            "SchemaVersion": "APM-RunSummary-v1",
+            "RunId": "run-1c1ef282b03f45a183658a8cf294f936",
+            "CompletionStatus": "CompletedResearchOnly",
+            "DatasetHash": "AE1B7E363C0795B5B42609546B8C997766A6E7974EAD1500B8BFDBD89AA444CD",
+            "ScheduleHash": "4ED44C9FE302405140AD84F1333E912C54976848BB614786746923EAB6054EB4",
+            "SourceScheduleHash": "92F534472769836489DF0DB23C57A6C4CD88D9E0F7059D287947BEF0D359EC4D",
+            "PhaseStart": "2026-09-25T00:00:01",
+            "PhaseEnd": "2026-09-25T00:02:30",
+            "BotName": "1 OpT OutOfSample",
+            "Parameters": {
+              "ModelVersion": "APM-Target-v0.1",
+              "ConstantInventory": false,
+              "FixedScales": true,
+              "AddScale": 5,
+              "ReduceScale": 10,
+              "MinimumScaleTicks": 1,
+              "AddVolatilityFactor": 2,
+              "ReduceVolatilityFactor": 2,
+              "SpeedScaleFactor": 0.25,
+              "MaximumScaleMultiplier": 3,
+              "InventoryPenalty": 0,
+              "RiskHorizonSeconds": 300,
+              "MinActiveVolume": 1,
+              "MinRebalanceVolume": 1,
+              "VolumeDeadband": 0,
+              "MaxChildVolume": 20,
+              "NoAddFraction": 0.3,
+              "RearmMinTicks": 1,
+              "RearmVolatilityFactor": 0,
+              "MinActionIntervalSeconds": 0,
+              "FastEnabled": false,
+              "FavorableOn": 3,
+              "FavorableOff": 1,
+              "AdverseOn": 3,
+              "AdverseOff": 1,
+              "MinRegimeHoldSeconds": 5,
+              "MaxFavorableDeferSeconds": 30,
+              "GridSeconds": 1,
+              "WarmupSeconds": 30,
+              "MinSamples": 10,
+              "MaxPriceAgeSeconds": 10,
+              "FastHalfLifeSeconds": 10,
+              "SlowHalfLifeSeconds": 60,
+              "SpeedWindowSeconds": 10,
+              "SigmaFloor": 1e-06,
+              "OrderLifetimeSeconds": 30,
+              "UseLimitOrders": false,
+              "ResearchExecution": null
+            },
+            "Planned": 1,
+            "Completed": 1,
+            "Unstarted": 0,
+            "Campaigns": [
+              {
+                "CampaignId": "S02",
+                "State": 7,
+                "ExitLatch": true,
+                "ExitReason": "SESSION_EXIT",
+                "Anchor": 100,
+                "FilledVolume": 0,
+                "AverageEntry": 0,
+                "RealizedNet": -4.0,
+                "Fees": 0,
+                "Equity": -4.0,
+                "MaximumDrawdown": 48.0,
+                "MaximumVolume": 18,
+                "Turnover": 44,
+                "PendingIncrease": 0,
+                "PendingReduce": 0,
+                "Regime": 0,
+                "Decision": {
+                  "Id": 240,
+                  "Time": "2026-09-25T00:02:00",
+                  "Sequence": 261,
+                  "Price": 98,
+                  "CurveTarget": 14.0,
+                  "RawTarget": 14.0,
+                  "PolicyTarget": 14,
+                  "RiskAllowedTarget": 14,
+                  "FilledVolume": 0,
+                  "PendingIncrease": 0,
+                  "PendingReduce": 0,
+                  "Action": 0,
+                  "Volume": 0,
+                  "IntentId": "",
+                  "Reasons": [
+                    "SESSION_EXIT"
+                  ],
+                  "Regime": 0,
+                  "Kappa": 0,
+                  "AddScale": 5,
+                  "ReduceScale": 10
+                },
+                "Market": {
+                  "Time": "2026-09-25T00:02:00",
+                  "Sequence": 261,
+                  "Price": 98,
+                  "Ready": true,
+                  "SlowVariance": 0.12331992782146745,
+                  "FastVariance": 0.04587304999384723,
+                  "Speed": 0,
+                  "Quality": "OK",
+                  "Profile": 0
+                }
+              }
+            ],
+            "Metrics": [
+              {
+                "NetEquity": -4.0,
+                "MaximumDrawdown": 48.0,
+                "Fees": 0,
+                "Turnover": 44,
+                "MaximumVolume": 18,
+                "AverageVolume": 14.470588235294118,
+                "SecondsInPosition": 85,
+                "ObservedSeconds": 85
+              }
+            ],
+            "Current": {
+              "CampaignId": "S02",
+              "State": 7,
+              "ExitLatch": true,
+              "ExitReason": "SESSION_EXIT",
+              "Anchor": 100,
+              "FilledVolume": 0,
+              "AverageEntry": 0,
+              "RealizedNet": -4.0,
+              "Fees": 0,
+              "Equity": -4.0,
+              "MaximumDrawdown": 48.0,
+              "MaximumVolume": 18,
+              "Turnover": 44,
+              "PendingIncrease": 0,
+              "PendingReduce": 0,
+              "Regime": 0,
+              "Decision": {
+                "Id": 86700,
+                "Time": "2026-09-26T00:02:31",
+                "Sequence": 86721,
+                "Price": 98,
+                "CurveTarget": 14.0,
+                "RawTarget": 14.0,
+                "PolicyTarget": 14,
+                "RiskAllowedTarget": 14,
+                "FilledVolume": 0,
+                "PendingIncrease": 0,
+                "PendingReduce": 0,
+                "Action": 0,
+                "Volume": 0,
+                "IntentId": "",
+                "Reasons": [
+                  "SESSION_EXIT"
+                ],
+                "Regime": 0,
+                "Kappa": 0,
+                "AddScale": 5,
+                "ReduceScale": 10
+              },
+              "Market": {
+                "Time": "2026-09-26T00:02:31",
+                "Sequence": 86721,
+                "Price": 98,
+                "Ready": false,
+                "SlowVariance": 0,
+                "FastVariance": 0,
+                "Speed": 0,
+                "Quality": "STALE_OR_WARMUP",
+                "Profile": 0
+              }
+            },
+            "CurrentMetrics": null
+          },
+          "Quantities": "10,14,18,14,18,14,0",
+          "Fills": [
+            {
+              "Time": "2026-09-25T00:00:36",
+              "Price": 100,
+              "Volume": 10,
+              "Side": "Buy"
+            },
+            {
+              "Time": "2026-09-25T00:00:46",
+              "Price": 98,
+              "Volume": 4,
+              "Side": "Buy"
+            },
+            {
+              "Time": "2026-09-25T00:00:56",
+              "Price": 96,
+              "Volume": 4,
+              "Side": "Buy"
+            },
+            {
+              "Time": "2026-09-25T00:01:06",
+              "Price": 98,
+              "Volume": 4,
+              "Side": "Sell"
+            },
+            {
+              "Time": "2026-09-25T00:01:16",
+              "Price": 96,
+              "Volume": 4,
+              "Side": "Buy"
+            },
+            {
+              "Time": "2026-09-25T00:01:26",
+              "Price": 98,
+              "Volume": 4,
+              "Side": "Sell"
+            },
+            {
+              "Time": "2026-09-25T00:02:01",
+              "Price": 98,
+              "Volume": 14,
+              "Side": "Sell"
+            }
+          ],
+          "DecisionHash": "9F825FE5EC0E59A44477AAC229D374A358BC97241C7F9D2A38C5497A621B37AC"
+        },
+        {
+          "Summary": {
+            "SchemaVersion": "APM-RunSummary-v1",
+            "RunId": "run-9be37c85ebfb4df78852c2fcf49999be",
+            "CompletionStatus": "CompletedResearchOnly",
+            "DatasetHash": "AE1B7E363C0795B5B42609546B8C997766A6E7974EAD1500B8BFDBD89AA444CD",
+            "ScheduleHash": "BB53C02CF5F95612D0A2B103067C6292EAD7D4BC1402096B6A4A1EB50FA0D0DF",
+            "SourceScheduleHash": "92F534472769836489DF0DB23C57A6C4CD88D9E0F7059D287947BEF0D359EC4D",
+            "PhaseStart": "2026-09-24T00:00:01",
+            "PhaseEnd": "2026-09-24T00:02:30",
+            "BotName": "1 OpT InSample",
+            "Parameters": {
+              "ModelVersion": "APM-Target-v0.1",
+              "ConstantInventory": false,
+              "FixedScales": true,
+              "AddScale": 5,
+              "ReduceScale": 10,
+              "MinimumScaleTicks": 1,
+              "AddVolatilityFactor": 2,
+              "ReduceVolatilityFactor": 2,
+              "SpeedScaleFactor": 0.25,
+              "MaximumScaleMultiplier": 3,
+              "InventoryPenalty": 0,
+              "RiskHorizonSeconds": 300,
+              "MinActiveVolume": 1,
+              "MinRebalanceVolume": 1,
+              "VolumeDeadband": 0,
+              "MaxChildVolume": 20,
+              "NoAddFraction": 0.3,
+              "RearmMinTicks": 1,
+              "RearmVolatilityFactor": 0,
+              "MinActionIntervalSeconds": 0,
+              "FastEnabled": false,
+              "FavorableOn": 3,
+              "FavorableOff": 1,
+              "AdverseOn": 3,
+              "AdverseOff": 1,
+              "MinRegimeHoldSeconds": 5,
+              "MaxFavorableDeferSeconds": 30,
+              "GridSeconds": 1,
+              "WarmupSeconds": 30,
+              "MinSamples": 10,
+              "MaxPriceAgeSeconds": 10,
+              "FastHalfLifeSeconds": 10,
+              "SlowHalfLifeSeconds": 60,
+              "SpeedWindowSeconds": 10,
+              "SigmaFloor": 1e-06,
+              "OrderLifetimeSeconds": 30,
+              "UseLimitOrders": false,
+              "ResearchExecution": null
+            },
+            "Planned": 1,
+            "Completed": 1,
+            "Unstarted": 0,
+            "Campaigns": [
+              {
+                "CampaignId": "S01",
+                "State": 7,
+                "ExitLatch": true,
+                "ExitReason": "SESSION_EXIT",
+                "Anchor": 100,
+                "FilledVolume": 0,
+                "AverageEntry": 0,
+                "RealizedNet": 36.0,
+                "Fees": 0,
+                "Equity": 36.0,
+                "MaximumDrawdown": 28.0,
+                "MaximumVolume": 10,
+                "Turnover": 32,
+                "PendingIncrease": 0,
+                "PendingReduce": 0,
+                "Regime": 0,
+                "Decision": {
+                  "Id": 240,
+                  "Time": "2026-09-24T00:02:00",
+                  "Sequence": 264,
+                  "Price": 102,
+                  "CurveTarget": 8.0,
+                  "RawTarget": 8.0,
+                  "PolicyTarget": 8,
+                  "RiskAllowedTarget": 8,
+                  "FilledVolume": 0,
+                  "PendingIncrease": 0,
+                  "PendingReduce": 0,
+                  "Action": 0,
+                  "Volume": 0,
+                  "IntentId": "",
+                  "Reasons": [
+                    "SESSION_EXIT"
+                  ],
+                  "Regime": 0,
+                  "Kappa": 0,
+                  "AddScale": 5,
+                  "ReduceScale": 10
+                },
+                "Market": {
+                  "Time": "2026-09-24T00:02:00",
+                  "Sequence": 264,
+                  "Price": 102,
+                  "Ready": true,
+                  "SlowVariance": 0.24973063738454213,
+                  "FastVariance": 0.1642551144940982,
+                  "Speed": 0,
+                  "Quality": "OK",
+                  "Profile": 0
+                }
+              }
+            ],
+            "Metrics": [
+              {
+                "NetEquity": 36.0,
+                "MaximumDrawdown": 28.0,
+                "Fees": 0,
+                "Turnover": 32,
+                "MaximumVolume": 10,
+                "AverageVolume": 8,
+                "SecondsInPosition": 85,
+                "ObservedSeconds": 85
+              }
+            ],
+            "Current": {
+              "CampaignId": "S01",
+              "State": 7,
+              "ExitLatch": true,
+              "ExitReason": "SESSION_EXIT",
+              "Anchor": 100,
+              "FilledVolume": 0,
+              "AverageEntry": 0,
+              "RealizedNet": 36.0,
+              "Fees": 0,
+              "Equity": 36.0,
+              "MaximumDrawdown": 28.0,
+              "MaximumVolume": 10,
+              "Turnover": 32,
+              "PendingIncrease": 0,
+              "PendingReduce": 0,
+              "Regime": 0,
+              "Decision": {
+                "Id": 86700,
+                "Time": "2026-09-25T00:02:31",
+                "Sequence": 86724,
+                "Price": 102,
+                "CurveTarget": 8.0,
+                "RawTarget": 8.0,
+                "PolicyTarget": 8,
+                "RiskAllowedTarget": 8,
+                "FilledVolume": 0,
+                "PendingIncrease": 0,
+                "PendingReduce": 0,
+                "Action": 0,
+                "Volume": 0,
+                "IntentId": "",
+                "Reasons": [
+                  "SESSION_EXIT"
+                ],
+                "Regime": 0,
+                "Kappa": 0,
+                "AddScale": 5,
+                "ReduceScale": 10
+              },
+              "Market": {
+                "Time": "2026-09-25T00:02:31",
+                "Sequence": 86724,
+                "Price": 102,
+                "Ready": false,
+                "SlowVariance": 0,
+                "FastVariance": 0,
+                "Speed": 0,
+                "Quality": "STALE_OR_WARMUP",
+                "Profile": 0
+              }
+            },
+            "CurrentMetrics": null
+          },
+          "Quantities": "10,8,6,8,10,6,8,0",
+          "Fills": [
+            {
+              "Time": "2026-09-24T00:00:36",
+              "Price": 100,
+              "Volume": 10,
+              "Side": "Buy"
+            },
+            {
+              "Time": "2026-09-24T00:00:46",
+              "Price": 102,
+              "Volume": 2,
+              "Side": "Sell"
+            },
+            {
+              "Time": "2026-09-24T00:00:56",
+              "Price": 104,
+              "Volume": 2,
+              "Side": "Sell"
+            },
+            {
+              "Time": "2026-09-24T00:01:06",
+              "Price": 102,
+              "Volume": 2,
+              "Side": "Buy"
+            },
+            {
+              "Time": "2026-09-24T00:01:16",
+              "Price": 100,
+              "Volume": 2,
+              "Side": "Buy"
+            },
+            {
+              "Time": "2026-09-24T00:01:26",
+              "Price": 104,
+              "Volume": 4,
+              "Side": "Sell"
+            },
+            {
+              "Time": "2026-09-24T00:01:36",
+              "Price": 102,
+              "Volume": 2,
+              "Side": "Buy"
+            },
+            {
+              "Time": "2026-09-24T00:02:01",
+              "Price": 102,
+              "Volume": 8,
+              "Side": "Sell"
+            }
+          ],
+          "DecisionHash": "AED131A006D785F534448ECB6CA6D3DFA08EA4876A8B1CCB723F0BEA059A780C"
+        }
+      ],
+      "NativeReports": [
+        {
+          "TypeFaze": 0,
+          "Count": 1
+        },
+        {
+          "TypeFaze": 1,
+          "Count": 1
+        }
+      ],
+      "Limitation": "Native synthetic engineering evidence; fill timing differs from Tester; no economic GO"
+    }
+  },
+  {
+    "Directory": "C:\\Users\\Mi\\AppData\\Local\\Temp\\OsEngine-APM-t11-native-tester",
+    "SHA256": "DE8AE727688C815DB5024AE1E2F014351703563FBFB4971D2ADFEB885FD9ADC0",
+    "Result": {
+      "status": "PASS",
+      "scenario": "S01",
+      "variant": "plain",
+      "engine": "ActualNativeTester",
+      "_clockEvents": 151,
+      "_tickEvents": 150,
+      "quantities": "10,8,6,8,10,6,8,0",
+      "nativeFills": 8,
+      "final": {
+        "CampaignId": "S01",
+        "State": 7,
+        "ExitLatch": true,
+        "ExitReason": "SESSION_EXIT",
+        "Anchor": 100,
+        "FilledVolume": 0,
+        "AverageEntry": 0,
+        "RealizedNet": 36.0,
+        "Fees": 0,
+        "Equity": 36.0,
+        "MaximumDrawdown": 28.0,
+        "MaximumVolume": 10,
+        "Turnover": 32,
+        "PendingIncrease": 0,
+        "PendingReduce": 0,
+        "Regime": 0,
+        "Decision": {
+          "Id": 301,
+          "Time": "2026-09-25T00:02:31",
+          "Sequence": 325,
+          "Price": 102,
+          "CurveTarget": 8.0,
+          "RawTarget": 8.0,
+          "PolicyTarget": 8,
+          "RiskAllowedTarget": 8,
+          "FilledVolume": 0,
+          "PendingIncrease": 0,
+          "PendingReduce": 0,
+          "Action": 0,
+          "Volume": 0,
+          "IntentId": "",
+          "Reasons": [
+            "SESSION_EXIT"
+          ],
+          "Regime": 0,
+          "Kappa": 0,
+          "AddScale": 5,
+          "ReduceScale": 10
+        },
+        "Market": {
+          "Time": "2026-09-25T00:02:31",
+          "Sequence": 325,
+          "Price": 102,
+          "Ready": true,
+          "SlowVariance": 0.17455796135347681,
+          "FastVariance": 0.019156930106456145,
+          "Speed": 0,
+          "Quality": "OK",
+          "Profile": 0
+        }
+      },
+      "feePerContract": 0,
+      "nativeSlippageTicks": 0,
+      "runtime": "10.0.12",
+      "operatingSystem": "Microsoft Windows NT 10.0.26200.0",
+      "moneyUnit": 0.01,
+      "cashflowDifference": 0.0,
+      "uiConcurrent": false,
+      "canonicalHash": "D8E397EE65EB3F3D2E4929C9926FAB028ED52177F63D337213EA7B0A58A09D6D",
+      "artifactDirectory": "C:\\Users\\Mi\\AppData\\Local\\Temp\\OsEngine-APM-t11-native-tester\\artifacts\\run-b1ce3beefab74ea2a4156f4b39029db5\\0000",
+      "limitations": "Synthetic TradeOnly; full fills; no queue/impact; no live parity"
+    }
+  }
+]

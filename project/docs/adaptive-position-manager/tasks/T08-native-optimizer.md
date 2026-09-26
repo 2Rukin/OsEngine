@@ -1,6 +1,6 @@
 # T08. Optimizer, диапазоны и walk-forward
 
-Статус: NOT_STARTED. Зависимость: T07. Gate: QG08. Требования: R12,R14,R15,R16,R21.
+Текущий статус: [work record](../evidence/implementation.md#состояние-заданий). Зависимость: T07. Gate: QG08. Требования: R12,R14,R15,R16,R21.
 
 ## Цель
 

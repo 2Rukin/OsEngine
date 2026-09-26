@@ -1,0 +1,63 @@
+<Window x:Class="OsEngine.OsTrader.AdaptivePositionManager.ApmTableWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Width="1050" Height="580" MinWidth="520" MinHeight="320"
+        WindowStartupLocation="CenterScreen" Style="{DynamicResource WindowStyleCanResize}">
+    <Grid Margin="8" Background="{DynamicResource ControlBackgroundNormalLight}">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <TextBlock Name="TextBlockContext" TextWrapping="Wrap" Foreground="{DynamicResource ControlForegroundWhite}"/>
+        <WrapPanel Grid.Row="1">
+            <TextBox Name="TextBoxCampaign" Width="125" Margin="3" ToolTip="CampaignId"/>
+            <TextBox Name="TextBoxAction" Width="100" Margin="3" ToolTip="Action"/>
+            <TextBox Name="TextBoxReason" Width="150" Margin="3" ToolTip="Причина"/>
+            <TextBox Name="TextBoxFrom" Width="140" Margin="3" ToolTip="От yyyy-MM-dd HH:mm:ss"/>
+            <TextBox Name="TextBoxTo" Width="140" Margin="3" ToolTip="До yyyy-MM-dd HH:mm:ss"/>
+            <Button Name="ButtonRefresh" Content="Обновить / фильтр" Padding="7,4" Margin="3"/>
+        </WrapPanel>
+        <DataGrid Name="DataGridRows" Grid.Row="2" AutoGenerateColumns="False" IsReadOnly="True"
+                  CanUserAddRows="False" CanUserDeleteRows="False" EnableRowVirtualization="True"
+                  EnableColumnVirtualization="True" SelectionMode="Single" Style="{DynamicResource DataGridStyle}">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Sequence" Binding="{Binding Sequence}"/>
+                <DataGridTextColumn Header="Время" Binding="{Binding Time, StringFormat=yyyy-MM-dd HH:mm:ss.fff}"/>
+                <DataGridTextColumn Header="CampaignId" Binding="{Binding CampaignId}"/>
+                <DataGridTextColumn Header="Тип события" Binding="{Binding Kind}"/>
+                <DataGridTextColumn Header="Action" Binding="{Binding Action}"/>
+                <DataGridTextColumn Header="Цена" Binding="{Binding Price}"/>
+                <DataGridTextColumn Header="Объём" Binding="{Binding Volume}"/>
+                <DataGridTextColumn Header="Filled" Binding="{Binding Filled}"/>
+                <DataGridTextColumn Header="Raw" Binding="{Binding Raw}"/>
+                <DataGridTextColumn Header="Curve" Binding="{Binding Snapshot.Decision.CurveTarget}"/>
+                <DataGridTextColumn Header="κ" Binding="{Binding Snapshot.Decision.Kappa}"/>
+                <DataGridTextColumn Header="Policy" Binding="{Binding Snapshot.Decision.PolicyTarget}"/>
+                <DataGridTextColumn Header="Allowed" Binding="{Binding Allowed}"/>
+                <DataGridTextColumn Header="Pending +" Binding="{Binding Snapshot.PendingIncrease}"/>
+                <DataGridTextColumn Header="Pending −" Binding="{Binding Snapshot.PendingReduce}"/>
+                <DataGridTextColumn Header="Режим" Binding="{Binding Snapshot.Regime}"/>
+                <DataGridTextColumn Header="Equity" Binding="{Binding Snapshot.Equity}"/>
+                <DataGridTextColumn Header="Просадка" Binding="{Binding Snapshot.MaximumDrawdown}"/>
+                <DataGridTextColumn Header="Net realized" Binding="{Binding Snapshot.RealizedNet}"/>
+                <DataGridTextColumn Header="Комиссии" Binding="{Binding Snapshot.Fees}"/>
+                <DataGridTextColumn Header="qmax" Binding="{Binding Snapshot.MaximumVolume}"/>
+                <DataGridTextColumn Header="Оборот" Binding="{Binding Snapshot.Turnover}"/>
+                <DataGridTextColumn Header="Причина выхода" Binding="{Binding Snapshot.ExitReason}"/>
+                <DataGridTextColumn Header="Ready" Binding="{Binding Snapshot.Market.Ready}"/>
+                <DataGridTextColumn Header="Quality" Binding="{Binding Snapshot.Market.Quality}"/>
+                <DataGridTextColumn Header="Причины" Binding="{Binding Reasons}"/>
+                <DataGridTextColumn Header="IntentId" Binding="{Binding IntentId}"/>
+                <DataGridTextColumn Header="BrokerId" Binding="{Binding Intent.BrokerId}"/>
+                <DataGridTextColumn Header="Side" Binding="{Binding Side}"/>
+                <DataGridTextColumn Header="Limit" Binding="{Binding Intent.IsLimit}"/>
+                <DataGridTextColumn Header="State" Binding="{Binding Intent.State}"/>
+                <DataGridTextColumn Header="Filled заявки" Binding="{Binding Intent.Filled}"/>
+                <DataGridTextColumn Header="Остаток заявки" Binding="{Binding Intent.Remaining}"/>
+                <DataGridTextColumn Header="Slippage, цена" Binding="{Binding Slippage}"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <WrapPanel Grid.Row="3">
+            <Button Name="ButtonSelect" Content="Показать snapshot на графике" Padding="7,4" Margin="3"/>
+            <Button Name="ButtonExport" Content="Экспорт фильтра CSV" Padding="7,4" Margin="3"/>
+            <TextBlock Name="TextBlockCount" Margin="6" Foreground="{DynamicResource ControlForegroundWhite}"/>
+        </WrapPanel>
+    </Grid>
+</Window>

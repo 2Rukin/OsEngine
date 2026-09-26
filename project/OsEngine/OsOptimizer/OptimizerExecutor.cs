@@ -36,6 +36,8 @@ namespace OsEngine.OsOptimizer
 
         private AsyncBotFactory _asyncBotFactory;
 
+        private IOptimizerResearchRun _researchRun;
+
         public bool Start(List<bool> parametersOn, List<IIStrategyParameter> parameters)
         {
             if (_primeThreadWorker != null)
@@ -43,6 +45,18 @@ namespace OsEngine.OsOptimizer
                 SendLogMessage(OsLocalization.Optimizer.Message1, LogMessageType.System);
                 return false;
             }
+            IOptimizerResearchRun research = _master.BotToTest as IOptimizerResearchRun;
+            try
+            {
+                research?.PrepareResearchRun(parameters, parametersOn, _master.Fazes,
+                    $"Profit={_master.FilterProfitIsOn}:{_master.FilterProfitValue};Drawdown={_master.FilterMaxDrawDownIsOn}:{_master.FilterMaxDrawDownValue};Middle={_master.FilterMiddleProfitIsOn}:{_master.FilterMiddleProfitValue};PF={_master.FilterProfitFactorIsOn}:{_master.FilterProfitFactorValue};Deals={_master.FilterDealsCountIsOn}:{_master.FilterDealsCountValue}");
+            }
+            catch (Exception error)
+            {
+                SendLogMessage(error.ToString(), LogMessageType.Error);
+                return false;
+            }
+            _researchRun = research;
             _parametersOn = parametersOn;
             _parameters = parameters;
 
@@ -99,6 +113,7 @@ namespace OsEngine.OsOptimizer
             {
                 if (_needToStop)
                 {
+                    CompleteResearchRun();
                     _primeThreadWorker = null;
                     TestReadyEvent?.Invoke(ReportsToFazes);
                     return;
@@ -142,10 +157,19 @@ namespace OsEngine.OsOptimizer
             SendLogMessage(OsLocalization.Optimizer.Message7, LogMessageType.System);
             SendLogMessage("Total test time = " + time.ToString(), LogMessageType.System);
 
+            CompleteResearchRun();
             TestReadyEvent?.Invoke(ReportsToFazes);
             _primeThreadWorker = null;
 
             return;
+        }
+
+        private void CompleteResearchRun()
+        {
+            IOptimizerResearchRun research = _researchRun;
+            _researchRun = null;
+            try { research?.CompleteResearchRun(ReportsToFazes); }
+            catch (Exception error) { SendLogMessage(error.ToString(), LogMessageType.Error); }
         }
 
         private void StartAsuncBotFactoryInSample(int botCount, string botType, bool isScript, string faze)
@@ -586,6 +610,9 @@ namespace OsEngine.OsOptimizer
                         }
                     }
 
+                    // Research studies publish one terminal event only after outer finalization.
+                    if (_researchRun != null) return;
+
                     TestReadyEvent?.Invoke(ReportsToFazes);
                     _primeThreadWorker = null;
                     return;
@@ -634,6 +661,9 @@ namespace OsEngine.OsOptimizer
                             break;
                         }
                     }
+
+                    // Preserve legacy stop behavior; research hooks finish in the outer loop.
+                    if (_researchRun != null) return;
 
                     if (TestReadyEvent != null)
                     {
@@ -1408,6 +1438,7 @@ namespace OsEngine.OsOptimizer
                     {
                         try
                         {
+                            (bot as IOptimizerResearchRun)?.FinalizeResearchPass();
                             ReportsToFazes[ReportsToFazes.Count - 1].Load(bot);
                         }
                         catch (Exception ex)

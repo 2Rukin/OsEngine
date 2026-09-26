@@ -425,6 +425,27 @@ namespace OsEngine.Market.Servers.Optimizer
 
         private List<DataStorage> _storages = new List<DataStorage>();
 
+        /// <summary>
+        /// Read the actual loaded native replay bounds for one security. Returns false when no source
+        /// exists or its timeframes disagree. Does not extend data loading or change replay ordering.
+        /// </summary>
+        public bool TryGetReplayInterval(string securityName, out DateTime start, out DateTime end)
+        {
+            start = DateTime.MinValue;
+            end = DateTime.MinValue;
+            bool found = false;
+            for (int i = 0; i < _candleSeriesTesterActivate.Count; i++)
+            {
+                SecurityOptimizer source = _candleSeriesTesterActivate[i];
+                if (source.Security.Name != securityName) continue;
+                if (found && (start != source.TimeStart || end != source.TimeEnd)) return false;
+                start = source.TimeStart;
+                end = source.TimeEnd;
+                found = true;
+            }
+            return found;
+        }
+
         public void GetDataToSecurity(Security security, TimeFrame timeFrame, DateTime timeStart, DateTime timeEnd)
         {
             if(security == null)
@@ -575,6 +596,8 @@ namespace OsEngine.Market.Servers.Optimizer
                 _candleSeriesTesterActivate[i].Load(TimeNow);
             }
 
+            ReplayTimeAdvancedEvent?.Invoke(TimeNow);
+
             if (EndNextMinuteWithCandlesEvent != null
                  && (_timeAddType == TimeAddInTestType.Minute || _timeAddType == TimeAddInTestType.FiveMinute)
                 && _timeLastCandle == TimeNow)
@@ -584,6 +607,14 @@ namespace OsEngine.Market.Servers.Optimizer
         }
 
         public event Action EndNextMinuteWithCandlesEvent;
+
+        /// <summary>
+        /// Optional event-time heartbeat after all pass sources are loaded through TimeNow, including empty
+        /// iterations. Resolution is the native replay step. Subscribers must not interpret it as a new quote
+        /// or guaranteed execution and must not block the pass thread.
+        /// </summary>
+        /// <remarks>APM-INTEGRATION-001. Unsubscribed legacy passes retain their existing behavior.</remarks>
+        public event Action<DateTime> ReplayTimeAdvancedEvent;
 
         private DateTime _timeLastCandle;
 

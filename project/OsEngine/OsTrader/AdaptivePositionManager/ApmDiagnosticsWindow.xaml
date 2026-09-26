@@ -1,0 +1,43 @@
+<Window x:Class="OsEngine.OsTrader.AdaptivePositionManager.ApmDiagnosticsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Adaptive Position Manager — ResearchOnly" Width="1050" Height="650"
+        MinWidth="520" MinHeight="320" WindowStartupLocation="CenterScreen"
+        Style="{DynamicResource WindowStyleCanResize}" UseLayoutRounding="True">
+    <Grid Margin="8" Background="{DynamicResource ControlBackgroundNormalLight}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <ScrollViewer MaxHeight="120" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <TextBlock Name="TextBlockStatus" TextWrapping="Wrap"
+                       Foreground="{DynamicResource ControlForegroundWhite}"/>
+        </ScrollViewer>
+        <Grid Grid.Row="1">
+            <Grid.RowDefinitions><RowDefinition Height="3*"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+            <Canvas Name="CanvasPrice" Background="#151B23" ClipToBounds="True"/>
+            <Canvas Name="CanvasVolume" Grid.Row="1" Background="#202831" ClipToBounds="True"/>
+        </Grid>
+        <WrapPanel Grid.Row="2">
+            <Button Name="ButtonStart" Content="Начать сценарий" Padding="7,4" Margin="2"/>
+            <Button Name="ButtonPause" Content="Пауза набора" Padding="7,4" Margin="2"/>
+            <Button Name="ButtonResume" Content="Продолжить" Padding="7,4" Margin="2"/>
+            <Button Name="ButtonClose" Content="Закрыть кампанию" Padding="7,4" Margin="2"/>
+            <Button Name="ButtonEmergency" Content="Аварийное закрытие" Padding="7,4" Margin="2" Background="#D25A50"/>
+        </WrapPanel>
+        <WrapPanel Grid.Row="3">
+            <Button Name="ButtonDecisions" Content="Решения" Tag="Решения" Padding="7,4" Margin="2"/>
+            <Button Name="ButtonOrders" Content="Заявки и исполнения" Tag="Заявки и исполнения" Padding="7,4" Margin="2"/>
+            <Button Name="ButtonCampaigns" Content="Кампании" Tag="Кампании" Padding="7,4" Margin="2"/>
+            <Button Name="ButtonQuality" Content="Качество данных" Tag="Качество данных" Padding="7,4" Margin="2"/>
+            <Button Name="ButtonParameters" Content="Параметры" Padding="7,4" Margin="2"/>
+            <Button Name="ButtonReport" Content="Отчёт" Tag="Отчёт" Padding="7,4" Margin="2"/>
+            <Button Name="ButtonNext" Content="Следующее решение" Padding="7,4" Margin="2"/>
+            <Button Name="ButtonNow" Content="Текущий момент" Padding="7,4" Margin="2"/>
+            <CheckBox Name="CheckBoxDetails" Content="Подробная диагностика / preview" IsChecked="True" Margin="5" VerticalAlignment="Center"
+                      Foreground="{DynamicResource ControlForegroundWhite}"/>
+        </WrapPanel>
+    </Grid>
+</Window>

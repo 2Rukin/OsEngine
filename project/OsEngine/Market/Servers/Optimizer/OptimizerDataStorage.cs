@@ -1786,7 +1786,7 @@ namespace OsEngine.Market.Servers.Optimizer
                         }
                         if (array[i].Length > 6)
                         {
-                            goSell = Convert.ToInt32(array[i][6]);
+                            goSell = array[i][6].ToDecimal();
                         }
 
                         if (lot != 0)
@@ -1811,6 +1811,13 @@ namespace OsEngine.Market.Servers.Optimizer
                         
                         secu.DecimalsVolume = volDecimals;
                         secu.MarginSell = goSell;
+                        // Optional Tester-compatible metadata. Legacy rows retain native defaults.
+                        if (array[i].Length > 7 && !string.IsNullOrWhiteSpace(array[i][7]))
+                            secu.Expiration = DateTime.Parse(array[i][7], CultureInfo.InvariantCulture);
+                        if (array[i].Length > 8) secu.MinTradeAmount = array[i][8].ToDecimal();
+                        if (array[i].Length > 9) secu.VolumeStep = array[i][9].ToDecimal();
+                        if (array[i].Length > 10 && Enum.TryParse(array[i][10], out SecurityType securityType))
+                            secu.SecurityType = securityType;
                     }
                 }
             }
@@ -1866,6 +1873,11 @@ namespace OsEngine.Market.Servers.Optimizer
             return null;
         }
 
+        /// <summary>
+        /// Save explicit instrument metadata using the optional Tester-compatible eleven-field format.
+        /// Existing rows for other securities retain their complete field sequence. Legacy short rows
+        /// remain readable; a missing volume step is not inferred from decimal precision.
+        /// </summary>
         public void SaveSecurityDopSettings(Security securityToSave)
         {
             if (SecuritiesTester.Count == 0)
@@ -1937,7 +1949,11 @@ namespace OsEngine.Market.Servers.Optimizer
                     securityToSave.PriceStepCost.ToString(culture),
                     securityToSave.PriceStep.ToString(culture),
                     securityToSave.DecimalsVolume.ToString(culture),
-                    securityToSave.MarginSell.ToString(culture)
+                    securityToSave.MarginSell.ToString(culture),
+                    securityToSave.Expiration.ToString(culture),
+                    securityToSave.MinTradeAmount.ToString(culture),
+                    securityToSave.VolumeStep.ToString(culture),
+                    securityToSave.SecurityType.ToString()
                 });
             }
 
@@ -1961,7 +1977,11 @@ namespace OsEngine.Market.Servers.Optimizer
                     securityToSave.PriceStepCost.ToString(culture),
                     securityToSave.PriceStep.ToString(culture),
                     securityToSave.DecimalsVolume.ToString(culture),
-                    securityToSave.MarginSell.ToString(culture)
+                    securityToSave.MarginSell.ToString(culture),
+                    securityToSave.Expiration.ToString(culture),
+                    securityToSave.MinTradeAmount.ToString(culture),
+                    securityToSave.VolumeStep.ToString(culture),
+                    securityToSave.SecurityType.ToString()
                 });
             }
 
@@ -1972,15 +1992,8 @@ namespace OsEngine.Market.Servers.Optimizer
                     // name, lot, GO, price step, cost of price step / Имя, Лот, ГО, Цена шага, стоимость цены шага
                     for (int i = 0; i < saves.Count; i++)
                     {
-                        writer.WriteLine(
-                            saves[i][0] + "$" +
-                            saves[i][1] + "$" +
-                            saves[i][2] + "$" +
-                            saves[i][3] + "$" +
-                            saves[i][4] + "$" +
-                            saves[i][5] + "$" +
-                            saves[i][6]
-                            );
+                        // Preserve all fields of unrelated instruments, including future optional tails.
+                        writer.WriteLine(string.Join("$", saves[i]));
                     }
 
                     writer.Close();

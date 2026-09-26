@@ -1,0 +1,379 @@
+{
+  "SchemaVersion": "APM-LocalRelease-v1",
+  "Status": "BLOCKED_RESEARCH_ONLY",
+  "BaselineHead": "06d2630c693e3ed76c5c43502d59d1a44de2b4ac",
+  "Branch": "docs/order-flow-production-roadmap",
+  "Commit": "CONTAINING_GIT_COMMIT",
+  "Push": "AUTHORIZED_VERIFY_REMOTE_REF_AFTER_PUSH",
+  "Checkpoint": "CP14",
+  "MutableGateAuthority": "implementation.md#состояние-заданий",
+  "Build": {
+    "Command": "dotnet build OsEngine.sln --no-restore -m:1 -p:OutputPath=C:/Users/Mi/AppData/Local/Temp/OsEngine-APM-release-build/ -p:CustomAfterMicrosoftCommonTargets=C:/Users/Mi/source/repos/project/Tests/AdaptivePositionManager/IsolatedBuild.targets -v:quiet",
+    "Exit": 0,
+    "Errors": 0,
+    "Warnings": 1,
+    "WarningBoundary": "NU1900 neighboring OrderFlowResearch NuGet audit unavailable; prior production recompile 16 legacy warnings",
+    "Directory": "C:\\Users\\Mi\\AppData\\Local\\Temp\\OsEngine-APM-release-build",
+    "EngineSHA256": "6373692E6B8063E3F6F152F9D704EFEA47C1E55223FA981A362144F03DD1005C",
+    "TestsSHA256": "F1B96B13CEA40854C954AE8399407E6A85799EC5826B13F75381D0864E6DE743"
+  },
+  "Offline": {
+    "Passed": 8559,
+    "Total": 8559,
+    "Exit": 0
+  },
+  "Coverage": {
+    "Tool": "coverlet.console 10.0.1",
+    "CoreFiles": {
+      "ApmCampaign.cs": {
+        "Hit": 456,
+        "Total": 506
+      },
+      "ApmContracts.cs": {
+        "Hit": 158,
+        "Total": 158
+      },
+      "ApmMathematics.cs": {
+        "Hit": 35,
+        "Total": 36
+      },
+      "ApmMarketData.cs": {
+        "Hit": 95,
+        "Total": 120
+      }
+    },
+    "CoreHit": 744,
+    "CoreTotal": 820,
+    "CorePercent": 90.73170731707317,
+    "WholeModuleHit": 1291,
+    "WholeModuleTotal": 1985,
+    "RawPath": "C:\\Users\\Mi\\AppData\\Local\\Temp\\OsEngine-APM-release-coverage\\coverage.json",
+    "RawSHA256": "A472D955BD89EBC71CB7E6B8E2BCCD8F6624A9F12D2D98EEB8E9B3C4CCA03542",
+    "Boundary": "Offline component suite only; core set fixed before T08, whole module not claimed >=90%"
+  },
+  "Reviews": {
+    "T08Production": "VALIDATION_1_CLEAN",
+    "T08Docs": "VALIDATION_1_CLEAN",
+    "T09T10Production": "VALIDATION_1_CLEAN",
+    "T11Production": "VALIDATION_1_CLEAN",
+    "NativeUiStudyLifecycle": "VALIDATION_1_CLEAN",
+    "FinalTestEvidence": "PRIMARY_CLEAN",
+    "FinalDocsXml": "VALIDATION_1_TERMINAL_CLEAN"
+  },
+  "OpenEvidence": [
+    "Physical DPI100/125/200 and owner walkthrough NOT_RUN",
+    "Owner-selected historical interval/timezone/holdout and economic profile BLOCKED_DATA",
+    "Native synchronized book/calibration/A4 BLOCKED_DATA_CAPABILITY",
+    "Native-session/live recovery and native/UI real-peak load BLOCKED_CAPABILITY_DATA",
+    "Shadow/paper/live NOT_RUN; exact authorization and capability work required",
+    "Publication authorized after CP14; remote ref checked after push"
+  ],
+  "DividendsUpdater": {
+    "Classification": "4 tracked output files (dll/exe/deps/runtimeconfig); 1 ignored pdb. Only dll/exe Git-modified. No tracked source file edited.",
+    "BackupsDirectory": "C:\\Users\\Mi\\AppData\\Local\\Temp\\OsEngine-APM-output-recovery",
+    "VerifiedBackupFiles": 10,
+    "CurrentOutputAndEarlierTestMatchTheirSavedSet": true,
+    "ExactBeforeImage": "UNKNOWN",
+    "Action": "Preserve both sets and current bytes; no guessed restore/reset/rebase. Exclude all five outputs from APM commit."
+  },
+  "Traceability": {
+    "R01": {
+      "Tests": [
+        "Tests/AdaptivePositionManager/CoreTests.cs",
+        "Tests/AdaptivePositionManager/LifecycleTests.cs",
+        "Tests/AdaptivePositionManager/NativeTesterRun.cs"
+      ],
+      "Boundary": "Native full-volume; partial fills component only"
+    },
+    "R02": {
+      "Tests": [
+        "Tests/AdaptivePositionManager/CoreTests.cs",
+        "Tests/AdaptivePositionManager/NativeTesterRun.cs"
+      ],
+      "Boundary": "S01 native/reference"
+    },
+    "R03": {
+      "Tests": [
+        "Tests/AdaptivePositionManager/CoreTests.cs",
+        "Tests/AdaptivePositionManager/NativeTesterRun.cs"
+      ],
+      "Boundary": "Re-add after reduction; S01/S02"
+    },
+    "R04": {
+      "Tests": [
+        "Tests/AdaptivePositionManager/CoreTests.cs",
+        "Tests/AdaptivePositionManager/NativeTesterRun.cs"
+      ],
+      "Boundary": "Mirrored core; native S02"
+    },
+    "R05": {
+      "Tests": [
+        "Tests/AdaptivePositionManager/LifecycleTests.cs",
+        "Tests/AdaptivePositionManager/NativeTesterRun.cs",
+        "Tests/AdaptivePositionManager/OperationsTests.cs"
+      ],
+      "Boundary": "Native cutoff heartbeat; no guarantee of fill time/liquidity"
+    },
+    "R06": {
+      "Tests": [
+        "Tests/AdaptivePositionManager/ContractTests.cs",
+        "Tests/AdaptivePositionManager/CoreTests.cs"
+      ],
+      "Boundary": "Immutable risk locks"
+    },
+    "R07": {
+      "Tests": [
+        "Tests/AdaptivePositionManager/CoreTests.cs",
+        "Tests/AdaptivePositionManager/NativeTesterRun.cs"
+      ],
+      "Boundary": "NoAddZone with permitted protective exit"
+    },
+    "R08": {
+      "Tests": [
+        "Tests/AdaptivePositionManager/LifecycleTests.cs",
+        "Tests/AdaptivePositionManager/ControllerTests.cs",
+        "Tests/AdaptivePositionManager/NativeExecutionTests.cs"
+      ],
+      "Boundary": "Pending reservations; live/external interference unqualified"
+    },
+    "R09": {
+      "Tests": [
+        "Tests/AdaptivePositionManager/CoreTests.cs",
+        "Tests/AdaptivePositionManager/NativeTesterRun.cs"
+      ],
+      "Boundary": "FAST favorable synthetic scenario"
+    },
+    "R10": {
+      "Tests": [
+        "Tests/AdaptivePositionManager/CoreTests.cs",
+        "Tests/AdaptivePositionManager/NativeTesterRun.cs"
+      ],
+      "Boundary": "FAST adverse synthetic scenario"
+    },
+    "R11": {
+      "Tests": [
+        "Tests/AdaptivePositionManager/CoreTests.cs",
+        "Tests/AdaptivePositionManager/LifecycleTests.cs"
+      ],
+      "Boundary": "One current target proposal; no crossed-level queue"
+    },
+    "R12": {
+      "Tests": [
+        "Tests/AdaptivePositionManager/DataTests.cs",
+        "Tests/AdaptivePositionManager/CoreTests.cs",
+        "Tests/AdaptivePositionManager/OptimizerStudyTests.cs"
+      ],
+      "Boundary": "Causal feature/hysteresis/reference; empirical profile unselected"
+    },
+    "R13": {
+      "Tests": [
+        "Tests/AdaptivePositionManager/DiagnosticsTests.cs",
+        "Tests/AdaptivePositionManager/UiSmoke.cs",
+        "Tests/AdaptivePositionManager/NativeTesterRun.cs"
+      ],
+      "Boundary": "Recorded explanations/volumes; owner walkthrough NOT_RUN"
+    },
+    "R14": {
+      "Tests": [
+        "Tests/AdaptivePositionManager/NativeTesterRun.cs",
+        "Tests/AdaptivePositionManager/NativeOptimizerRun.cs"
+      ],
+      "Boundary": "Shared core; explicit native fill-time difference; live adapter absent"
+    },
+    "R15": {
+      "Tests": [
+        "Tests/AdaptivePositionManager/OptimizerStudyTests.cs",
+        "Tests/AdaptivePositionManager/NativeOptimizerRun.cs"
+      ],
+      "Boundary": "Native fixed/grid/all-trials/filter/stop/WFO"
+    },
+    "R16": {
+      "Tests": [
+        "Tests/AdaptivePositionManager/DataTests.cs",
+        "Tests/AdaptivePositionManager/ScheduleTests.cs",
+        "Tests/AdaptivePositionManager/ResearchModelTests.cs",
+        "Tests/AdaptivePositionManager/NativeOptimizerRun.cs"
+      ],
+      "Boundary": "Synthetic repeats/thread parity and causal calibration; untouched historical data NOT_RUN"
+    },
+    "R17": {
+      "Tests": [
+        "Tests/AdaptivePositionManager/ResearchModelTests.cs",
+        "Tests/AdaptivePositionManager/NativeExecutionTests.cs"
+      ],
+      "Boundary": "TradeOnly guards; event/sample OFI component only, native book unavailable"
+    },
+    "R18": {
+      "Tests": [
+        "Tests/AdaptivePositionManager/DiagnosticsTests.cs",
+        "Tests/AdaptivePositionManager/UiSmoke.cs",
+        "Tests/AdaptivePositionManager/NativeTesterRun.cs"
+      ],
+      "Boundary": "Actual physical150%; physical100/125/200 and owner walkthrough NOT_RUN"
+    },
+    "R19": {
+      "Tests": [
+        "Tests/AdaptivePositionManager/ControllerTests.cs",
+        "Tests/AdaptivePositionManager/LifecycleTests.cs",
+        "Tests/AdaptivePositionManager/OperationsTests.cs"
+      ],
+      "Boundary": "Offline recovery/unknown send; native-session/broker restart BLOCKED_CAPABILITY"
+    },
+    "R20": {
+      "Tests": [
+        "Tests/AdaptivePositionManager/CoreTests.cs",
+        "Tests/AdaptivePositionManager/NativeTesterRun.cs",
+        "Tests/AdaptivePositionManager/OperationsTests.cs",
+        "Tests/AdaptivePositionManager/LoadQualification.cs"
+      ],
+      "Boundary": "Event-time cutoff and budgets; real-hours/native/UI load NOT_RUN"
+    },
+    "R21": {
+      "Tests": [
+        "Tests/AdaptivePositionManager/CoreTests.cs",
+        "Tests/AdaptivePositionManager/OptimizerStudyTests.cs",
+        "Tests/AdaptivePositionManager/ResearchModelTests.cs",
+        "Tests/AdaptivePositionManager/NativeOptimizerRun.cs"
+      ],
+      "Boundary": "Whole-campaign metrics, costs/ablations; no economic GO"
+    },
+    "R22": {
+      "Tests": [
+        "Tests/AdaptivePositionManager/NativeTesterRun.cs"
+      ],
+      "Boundary": "Bounded UnsafeLimitsClosingSample Off + saved Volume7; not all-robot regression"
+    }
+  },
+  "SourceFiles": {
+    "OsEngine/Market/Servers/Optimizer/OptimizerDataStorage.cs": "98071CBED72B7A5ACEAD01673DA31087E770A1E424B2AF275D73BD3543941EB7",
+    "OsEngine/Market/Servers/Optimizer/OptimizerServer.cs": "113EDAC5D29296E961AFF4F9CBC1CCFE273B01C5B563702600E99B1CF5E539B6",
+    "OsEngine/Market/Servers/Tester/TesterServer.cs": "77C1B328C4945A46728A4D0B4D591CA7785C2703B4F274B5BC336C6B08F48A77",
+    "OsEngine/OsOptimizer/IOptimizerResearchRun.cs": "F16EA6E75228486952DA1813076A41C006F135B42E702C9C11B9848D5E5B7DC3",
+    "OsEngine/OsOptimizer/OptimizerExecutor.cs": "EF7B3E868F5BC86ABCEF4F34E9B1C5C1D7A6506396EA99F96802F48DAC2D299B",
+    "OsEngine/OsTrader/AdaptivePositionManager/ApmArtifacts.cs": "D39A7946DC75EE6D97C0E3EBC4E04226AB98D3B288B63F1A9B1CF186D3B62204",
+    "OsEngine/OsTrader/AdaptivePositionManager/ApmCampaign.cs": "4C8B6358B073121FE89FFD5307FD0C6848284CE5671424F3084354600241507D",
+    "OsEngine/OsTrader/AdaptivePositionManager/ApmCampaignMetrics.cs": "EB13FA0D87404B85142659CEB091A0BA8E3BEDC7300CC6E0C9EA0007D168489D",
+    "OsEngine/OsTrader/AdaptivePositionManager/ApmContracts.cs": "CE67BC1A6F1C7547C31B3823626741AE3C4241A42933C9EECDD1373F87D0EAD3",
+    "OsEngine/OsTrader/AdaptivePositionManager/ApmDiagnosticsWindow.xaml": "215E12705AD1766BFB652AC71B86902142893C21D5F74BBCAD4B4DD7E28C5C88",
+    "OsEngine/OsTrader/AdaptivePositionManager/ApmDiagnosticsWindow.xaml.cs": "2AB2DA58736D7B18B684989E32014D12B19D338701FEC7593628214FDF624F13",
+    "OsEngine/OsTrader/AdaptivePositionManager/ApmDisplayText.cs": "446B49AD1DEF1A1837CF706928AC2A2D7B6D4093E54B0289021971E58E2D9725",
+    "OsEngine/OsTrader/AdaptivePositionManager/ApmExecutionController.cs": "7360C7BB64C73DB6177C7075851026B074214FD5C098BB2CCDE1823AA8A4EBF4",
+    "OsEngine/OsTrader/AdaptivePositionManager/ApmMarketData.cs": "6A871081FA44CCF75F9CD310C6A2CEB00EEB31F3E1BAB55732ECEB1EDA99E11E",
+    "OsEngine/OsTrader/AdaptivePositionManager/ApmMathematics.cs": "1F850776C2FBF52B16B857424FF223B3028CBD00DA652EAC6088547586820ED9",
+    "OsEngine/OsTrader/AdaptivePositionManager/ApmOperationalLimits.cs": "C9F0D5A4A09DC1C94EF926A2F9AC68AD70056A7982AA54DB016473AB539CF964",
+    "OsEngine/OsTrader/AdaptivePositionManager/ApmOptimizerStudy.cs": "43788D5565C131D720F8DEEAB990CB09E049B9B0B2AA8ADEF0FA8B0C4A38D871",
+    "OsEngine/OsTrader/AdaptivePositionManager/ApmOrderBookResearch.cs": "44AEB2F3AAB75AADB1192542E1D45898028F8B55A012BAB9418A88236138DD7A",
+    "OsEngine/OsTrader/AdaptivePositionManager/ApmOsEngineAdapter.cs": "713DC9D4019EF409E8567AB11E9CB474ADBB0210406824C3258EBA9055BB5402",
+    "OsEngine/OsTrader/AdaptivePositionManager/ApmResearchExecution.cs": "412506454D8F377AC38D657A21B698D9B9E6DD1426CEDE46490D852A9587F7DE",
+    "OsEngine/OsTrader/AdaptivePositionManager/ApmSchedule.cs": "DED5E486BC1F27F990000AA8B6D757DFE24D148C8DB96F27E77E015227851785",
+    "OsEngine/OsTrader/AdaptivePositionManager/ApmStudyReportWindow.cs": "EE3732EEBCB1DFA8C36D07F1584FF72FFC1BD1CD08EFD7BFA85DFE3846B7674A",
+    "OsEngine/OsTrader/AdaptivePositionManager/ApmTableWindow.xaml": "F1C9B6DF462CDBECAF2486875308A5C61017DC777A7BE916204C3A0F695FD132",
+    "OsEngine/OsTrader/AdaptivePositionManager/ApmTableWindow.xaml.cs": "ED3D0B7BBD70785CD9BD0121067BA8999A50048A18172E92B6467C6BA20264CB",
+    "OsEngine/Robots/MyBots/AdaptivePositionResearchBot/AdaptivePositionResearchBot.cs": "01EB3C11655EB717ACBA58BA0AB1C03C1BDA5C6C4214D837BC70CB9097D1B53C",
+    "OsEngine.sln": "9BF6AE49C4D1B514D6535B4DEC486D6BFFE2AD036EF321261F636A97709F88C3",
+    "Tests/AdaptivePositionManager/ContractTests.cs": "A0A1AC01497E5A74E5F4C4CB96D5FF079E1CAA340F3EFA15F467F9B6F89DF396",
+    "Tests/AdaptivePositionManager/ControllerTests.cs": "62796914602FAB2F34747C75B022FFCF9711DF00E0BBFB74EEDF082D32745FDA",
+    "Tests/AdaptivePositionManager/CoreTests.cs": "8627484643B75CD17B2E519FD198C6DC2143FBAB9422B92E352111760102A047",
+    "Tests/AdaptivePositionManager/DataTests.cs": "ABC8D9A48D3DB229DD7D4FD27254ABACBF9D9A2A270FE8C7637EF6C1B4C6412F",
+    "Tests/AdaptivePositionManager/DiagnosticsTests.cs": "77C57DF12835A81F0473ECBE31E178D40DEC4ACD4F27E98A169823F7068F6BE5",
+    "Tests/AdaptivePositionManager/Fixtures/S01/schedule.json": "24877E65B494EA421ED636EC656436588298B8E8F4D73B7D7169D30B0232FEDF",
+    "Tests/AdaptivePositionManager/Fixtures/S01/ticks/APM_SYNTH.txt": "100C4BB6F3B6716D746F45D1F3C470FC6C23AC4A6FD91BECD512A147C3784097",
+    "Tests/AdaptivePositionManager/Fixtures/S02/schedule.json": "261D3A09F5BFE8892798F022941792BFE983C947128A56B5BCEAC7ACC395E8C5",
+    "Tests/AdaptivePositionManager/Fixtures/S02/ticks/APM_SYNTH.txt": "208DBFE91508AC39BC4532C0705AAD0F5166E877E3CAC58D0F6C733B327A84B0",
+    "Tests/AdaptivePositionManager/IsolatedBuild.targets": "021390262366ECBD437133BE5A6D06F40E59F588073D328376127C0A78EB3A32",
+    "Tests/AdaptivePositionManager/LifecycleTests.cs": "A9EB44D435FE2F8CA3C3F8074DC3DA24B310C5F44D4B18955C50DEF230DD5F61",
+    "Tests/AdaptivePositionManager/LoadQualification.cs": "C9A275CB9155D21C092DE55287F33A9B19CCDC0F13FB7F28EAA01486FB9544BF",
+    "Tests/AdaptivePositionManager/NativeExecutionTests.cs": "20234F6F6A4B2D6402FE99B196ACFD52081F0E6EB7E754522E78B248C57767CC",
+    "Tests/AdaptivePositionManager/NativeOptimizerRun.cs": "E40D41A14DAA625FE7C87885981F812ED7C3351B598CF11FA68003BFAE24AA51",
+    "Tests/AdaptivePositionManager/NativeTesterRun.cs": "793F8153E2E97889708D4E7B9BE7B88CAC23D2F124B0B71E488D5C5FA0E521C0",
+    "Tests/AdaptivePositionManager/OperationsTests.cs": "0082D9D524CA425CC09F76B5181BFF5F9F83F479E2C85EF5C2C6BFA4EEAA5A1A",
+    "Tests/AdaptivePositionManager/OptimizerStudyTests.cs": "9583A427935487B7E74EADF80863D74D99B97BE917A59D2EF1C6C5817E2E4D29",
+    "Tests/AdaptivePositionManager/OsEngine.AdaptivePositionManager.Tests.csproj": "B345C628B1BAA87724BF443F6F2EF41B4B4811D64153E618BE542BBA00C96571",
+    "Tests/AdaptivePositionManager/Program.cs": "ED3F5D44C3FB0B071749D964F83E3A7780C9E91BD689C1009B305828233891F7",
+    "Tests/AdaptivePositionManager/ResearchModelTests.cs": "6B2F17E65A27902ED1E3915C4717B05CB8B8FC1616B246F8F863F0A0E8692570",
+    "Tests/AdaptivePositionManager/RobotLifecycleTests.cs": "9888ABEEB46432BDFA45F65ABD632AF4879FB278A46E6CA7FFC488D0CF2FD6DF",
+    "Tests/AdaptivePositionManager/ScheduleTests.cs": "3C347F4EBD19909281F86AA41DD64DC353CCB4DB80FA8EE183851CEA8595BC65",
+    "Tests/AdaptivePositionManager/UiSmoke.cs": "09AE4A93BE3B13573E4A80E87DD40C3377E7592B31FFD017F3D2CC6AA9E2122F"
+  },
+  "EvidenceFiles": {
+    "native-tester/diagnostics-150.png": "75A60E0A20FDD7B2532099C474A06AC3327381FC27BF5F7584A0E298C79E863E",
+    "native-tester/native-tester-150.png": "8B860F6CC069EB71BF98947C070582A1FB13D27CC89C6F9D0A49CAAA2FB155AE",
+    "native-tester/qualification.json": "0D00A6022A79ED502145933DBC433583E2B61E634B2BADCCE56B13BF9989B3DE",
+    "native-tester/release-regression.json": "66E39C1DA116C7637A0FC1E8AE8BF4D5397F59B5B989CA1EEC95149AC080F0F1",
+    "native-tester/S01-manifest.json": "8CA422521573950A449BB8190D7DA7B3171F9E0F729F510B2EC730BFA375EDA2",
+    "native-tester/S01-trace.csv": "50042FED56F3C37DB3228BA2118B51BE9E1E07ED375D5421A800568068565062",
+    "native-tester/S02-manifest.json": "5A586DA0CE99031A8BD15D8A824B806410B6E14C1963A204921DE4CEF2ACA38B",
+    "native-tester/S02-trace.csv": "EDB7CCB5CEE3DF66B26EB063E4A1B106C2C894364954E176C1AC908D8E10C33D",
+    "native-optimizer/A1-all-trials.json": "294C1C40A8550C8135D55EEC26FCA4BCB1F22E6C51F65F980E46BE4BB6142FFF",
+    "native-optimizer/A1-experiment.json": "3E84CF0FEBC2B6DBF4898CE9AC05C2820F4144FA2D60AE10C8B738804E201912",
+    "native-optimizer/A2-all-trials.json": "E6098A7C6C66596FDB14032E4125EA758DB5E665684B592375C86E0A5A2F41CE",
+    "native-optimizer/A2-experiment.json": "FF604F513578429933F8DEFACDE60E889C4BFB9490AD086F8A9AFE312FFEC993",
+    "native-optimizer/A3-all-trials.json": "896F5CB8EC778EDCDEAFBF1D2BC1FB1FB395C58B66F13FF3D2B18E99B558441D",
+    "native-optimizer/A3-experiment.json": "C776C1C2629AAA625D5BF3C5B13DD43A27FF28E6B0397F608458DB445B945571",
+    "native-optimizer/B0-all-trials.json": "ABF20CBDAF30183EC85FC4AB0F803F9118AEF47AF898D3836D422E2F6F001A9B",
+    "native-optimizer/B0-experiment.json": "2B872B93BFA6B0239FBB93EA04F0975ACCAD008590CC8E9D00F8212ACAFB33C0",
+    "native-optimizer/B1-all-trials.json": "C90EA4679D27E878698FE02EF08077B71B5EED5D975A9D1B458D05362AF4756A",
+    "native-optimizer/B1-experiment.json": "52977DB143644D450B188FAC8293159CA13DD61DE32D0A07A3F703DB6499571A",
+    "native-optimizer/cost1-all-trials.json": "31B99C949578A824F917AEAA2CCB505C2D79A561AD0ABB4D3071FD437FDB0AC7",
+    "native-optimizer/cost1-experiment.json": "67D3FD4E897317C220EC7E3A4DC3A00A1E3EDE39EBC6C4B6CF5759CD55DB38AE",
+    "native-optimizer/cost1.5-all-trials.json": "F74C44FB48662F5BCAEA56C401DE53FEC096983806EB551208504FFDF4E322CE",
+    "native-optimizer/cost1.5-experiment.json": "D2DC7E8D4DE15CC49905943EBC81128A99F723E12B47A84A0B483C0F13CB9CE8",
+    "native-optimizer/cost2-all-trials.json": "5BC8ECDEA0E08BECF5C02062F4BFDC03438FB5E659849C01FCBAC410494FB4BC",
+    "native-optimizer/cost2-experiment.json": "AB0F7F1226CF46C7B15A7825C3BB6A54A88BA5A5110B42103CFEAE8F0BD3337F",
+    "native-optimizer/filtered-all-trials.json": "A0B1F9B936380AAFECA388347B279BF91DBB7A4EE1991A53247C79742166C352",
+    "native-optimizer/filtered-experiment.json": "57C51A59629CECCE0FBD231297672ECDE9DA4597071F1EEED9F0A2789FB16A9E",
+    "native-optimizer/fixed-all-trials.json": "290EA50148F66CE4C116133558B5FB8654B215AD25C731D0471FE5006C925BC4",
+    "native-optimizer/fixed-experiment.json": "914C50E492A0A8024B765BDCCBA559340ABC24005F2276BDEB049F65AC6FBCCE",
+    "native-optimizer/grid-all-trials.json": "D96139C42B20FD2B4897543CB07D3A5A2A6E0B2A62089C9320108A754721545A",
+    "native-optimizer/grid-experiment.json": "1B74684EB45800ED0E07611233C28D06AFC5B479826ABC354EF446E1087B3DB5",
+    "native-optimizer/lifecycle-qualification.json": "01EE9BAC8A691F91B0213F1E421D7F361A4C269DDE1A082FC7C648CE6B564DDA",
+    "native-optimizer/qualification.json": "B2D12CF4DBE5664BFE4540B2993DDF2EB796A2E37878EF4AA7949556F1608DF0",
+    "native-optimizer/release-A5-all-trials.json": "9AA178E7C91DC8A70B937627318089C4B6B4376D5A6D78C0DA40DD3A0A5A761A",
+    "native-optimizer/release-A5-experiment.json": "3543688EDC83B0BBBF9FD90914E1C1ED2CC266FCF15DE0AF4F02BA8A1C011DEE",
+    "native-optimizer/release-A5-native-selection.json": "B845CD7D3A236668837099273533886B82E3A527F78223FC8B454E54829DB36C",
+    "native-optimizer/release-B1-all-trials.json": "B7E1DD999A4700D1C47095A33F4C63962F7A997870B3EE3F625C86D81208D2E4",
+    "native-optimizer/release-B1-experiment.json": "F5305557061559F4BD9A47206123ABAEF13C39B1095DA329B304CC92D0327639",
+    "native-optimizer/release-B1-native-selection.json": "B845CD7D3A236668837099273533886B82E3A527F78223FC8B454E54829DB36C",
+    "native-optimizer/release-filtered-all-trials.json": "966D146884DE2DE7BA53818C58AF43263D4C1B34723919C2E9A8190AB6192F57",
+    "native-optimizer/release-filtered-experiment.json": "F13247616A8B09F3469CD16D87021DF61502EFC16D443E05D24889EEA063061C",
+    "native-optimizer/release-filtered-native-selection.json": "349533ABC6741D22207E7C6ED0B8703E271755CB1053D5D0AB98756891AF581D",
+    "native-optimizer/release-fixed-all-trials.json": "5120F7ACAFC18F7F6AAACE55C9CDB78108C96548F1DD8CD902760B78799ABEE5",
+    "native-optimizer/release-fixed-experiment.json": "CBFFA06473BA70127986570FBBB4A7BFE517619934D70466E622CC00821A5D1A",
+    "native-optimizer/release-fixed-native-selection.json": "B845CD7D3A236668837099273533886B82E3A527F78223FC8B454E54829DB36C",
+    "native-optimizer/release-grid-all-trials.json": "15F59270253C2C10E7F24BCF32196DE1AA3CF777F400E763852998BFC57F24CB",
+    "native-optimizer/release-grid-experiment.json": "57C04E8775CA6EC90051616AFBB2765B795D36E8C46F7B087CCD26FFCA60BBE8",
+    "native-optimizer/release-grid-native-selection.json": "BD9AE049CD317F397CD77624F6964E960DB170CDE1CD84BDA3651D476C3AEDEB",
+    "native-optimizer/release-grid1-all-trials.json": "C8C590F3AF6F5FD07EF11FDBAF467125F30E998886D6EC074066B1B76F33BEB6",
+    "native-optimizer/release-grid1-experiment.json": "57C04E8775CA6EC90051616AFBB2765B795D36E8C46F7B087CCD26FFCA60BBE8",
+    "native-optimizer/release-grid1-native-selection.json": "16940B1E2965B05EFC818DE460A7ECAFFB93363F1E4875C6C967FFEC88B0003F",
+    "native-optimizer/release-stop-is-all-trials.json": "7D3ECC8BE86C868D85D0FA23C857F2A5B64E17B70B96F69668EF0637F8B6042D",
+    "native-optimizer/release-stop-is-experiment.json": "57C04E8775CA6EC90051616AFBB2765B795D36E8C46F7B087CCD26FFCA60BBE8",
+    "native-optimizer/release-stop-is-native-selection.json": "2322B98673E8C044D6C6B14182BD0016E889A721D35AD2666FD21C8B8712CBC8",
+    "native-optimizer/release-stop-oos-all-trials.json": "AA80A69BB087CE8FB790E97A2AB4CE8F0DB803CECB998091A26EC3CC7D6F8E5C",
+    "native-optimizer/release-stop-oos-experiment.json": "57C04E8775CA6EC90051616AFBB2765B795D36E8C46F7B087CCD26FFCA60BBE8",
+    "native-optimizer/release-stop-oos-native-selection.json": "FBAB7CCBAAC38E2961444AD4FFABB7E7BE06E91FF9F1B9E6590C00530C894848",
+    "native-optimizer/release-wfo-all-trials.json": "EE0E95BF04B486A43A0516AF95B6B4A3A2E8553A40CBACCAD4E9DA2251EC4B52",
+    "native-optimizer/release-wfo-experiment.json": "7E3A4615DEF0780E87048153B9757F4E591DCFB7C0B0872FDDFD181D3F23473E",
+    "native-optimizer/release-wfo-native-selection.json": "6E19F914D571379245DD04BF5EF77AE08A308A111F09B40AD719937A08EF3664",
+    "native-optimizer/report-ui-all-trials.json": "EE3437FE821A47E1B7645FB319B66695D382757F63C57DCECA889F04B37B644B",
+    "native-optimizer/report-ui-experiment.json": "F5305557061559F4BD9A47206123ABAEF13C39B1095DA329B304CC92D0327639",
+    "native-optimizer/report-ui-native-selection.json": "B845CD7D3A236668837099273533886B82E3A527F78223FC8B454E54829DB36C",
+    "native-optimizer/study-report.png": "5D76B97DA66117E6340130863D2DE6E4251688378EE89962912FB8C5E142CA9C",
+    "operations/load.json": "49CE23D24B8B3AFEF02C4B522B5100217937AAE2DFEBA1CA5D2858FAAABAD0F3",
+    "operations/native-regression.json": "EF87A16F585AF2F30A79B479A527F365FFA96BFED80B8FC0395050EDA475840F"
+  },
+  "Checks": {
+    "AgentValidator": {
+      "Passed": 109,
+      "Total": 109
+    },
+    "LocalMarkdownLinks": {
+      "Passed": 149,
+      "Total": 149
+    },
+    "XmlSyntaxBlocks": 255,
+    "GitDiffWhitespace": "PASS",
+    "ScopeSourceWhitespace": "PASS"
+  },
+  "VerifiedPrePublicationHead": "06d2630c693e3ed76c5c43502d59d1a44de2b4ac"
+}

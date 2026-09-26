@@ -1,0 +1,194 @@
+{
+  "SchemaVersion": "APM-Load-v1",
+  "Status": "PASS_SYNTHETIC_COMPONENT_ONLY",
+  "DatasetHash": "C3018F2EFD90A422D5556FE6808279587F2172073CF87948B99312670B93B59D",
+  "InputEvents": 20000,
+  "MeasuredPeakPerSecond": 200,
+  "Machine": "OM-BOOK",
+  "Cpu": "Intel64 Family 6 Model 170 Stepping 4, GenuineIntel",
+  "LogicalProcessors": 22,
+  "Runtime": ".NET 10.0.12",
+  "OS": "Microsoft Windows 10.0.26200",
+  "BuildHash": "45444D14FF604EEE9D38103F4D3E6FE81724D782B529E809FE72B4B54EBDB180",
+  "Plain": {
+    "ElapsedSeconds": 1.0206813,
+    "EventsPerSecond": 19594.75499355186,
+    "ReplayFactor": 97.9737749677593,
+    "ProcessedPrice": 20000,
+    "Sends": 33,
+    "Fills": 33,
+    "Orders": 33,
+    "PeakQueue": 512,
+    "RetainedIntents": 33,
+    "RecentRows": 2000,
+    "CoreMilliseconds": {
+      "P50": 0.0233,
+      "P95": 0.0521,
+      "P99": 0.0954,
+      "Samples": 18000
+    },
+    "QueueWaitMilliseconds": {
+      "P50": 16.9101,
+      "P95": 57.3587,
+      "P99": 67.9625,
+      "Samples": 18000
+    },
+    "EndToEndMilliseconds": {
+      "P50": 16.9407,
+      "P95": 57.3862,
+      "P99": 68.0161,
+      "Samples": 18000
+    },
+    "ManagedBytesAfterForcedGC": [
+      6542976,
+      7308768,
+      8104456,
+      8179368,
+      8572264
+    ],
+    "Final": {
+      "CampaignId": "synthetic",
+      "State": 7,
+      "ExitLatch": true,
+      "ExitReason": "RESOURCE_LIMIT",
+      "Anchor": 104,
+      "FilledVolume": 0,
+      "AverageEntry": 0,
+      "RealizedNet": 439.99999999999999999999999988,
+      "Fees": 0,
+      "Equity": 439.99999999999999999999999988,
+      "MaximumDrawdown": 40.00000000000000000000000008,
+      "MaximumVolume": 18,
+      "Turnover": 276,
+      "PendingIncrease": 0,
+      "PendingReduce": 0,
+      "Regime": 0,
+      "Decision": {
+        "Id": 20000,
+        "Time": "2026-09-25T10:01:39",
+        "Sequence": 20066,
+        "Price": 104,
+        "CurveTarget": 18.0,
+        "RawTarget": 18.0,
+        "PolicyTarget": 18,
+        "RiskAllowedTarget": 18,
+        "FilledVolume": 0,
+        "PendingIncrease": 0,
+        "PendingReduce": 0,
+        "Action": 0,
+        "Volume": 0,
+        "IntentId": "",
+        "Reasons": [
+          "RESOURCE_LIMIT"
+        ],
+        "Regime": 0,
+        "Kappa": 0,
+        "AddScale": 5,
+        "ReduceScale": 10
+      },
+      "Market": {
+        "Time": "2026-09-25T10:01:39",
+        "Sequence": 20066,
+        "Price": 104,
+        "Ready": true,
+        "SlowVariance": 8.449005498546419930409491792,
+        "FastVariance": 15.823223304703363315713181201,
+        "Speed": 0,
+        "Quality": "OK",
+        "Profile": 0
+      }
+    },
+    "DecisionRows": 20000
+  },
+  "Detailed": {
+    "ElapsedSeconds": 1.5555708,
+    "EventsPerSecond": 12857.016858377645,
+    "ReplayFactor": 64.28508429188823,
+    "ProcessedPrice": 20000,
+    "Sends": 33,
+    "Fills": 33,
+    "Orders": 33,
+    "PeakQueue": 512,
+    "RetainedIntents": 33,
+    "RecentRows": 2000,
+    "CoreMilliseconds": {
+      "P50": 0.05,
+      "P95": 0.0889,
+      "P99": 0.1536,
+      "Samples": 18000
+    },
+    "QueueWaitMilliseconds": {
+      "P50": 31.9906,
+      "P95": 72.5683,
+      "P99": 81.119,
+      "Samples": 18000
+    },
+    "EndToEndMilliseconds": {
+      "P50": 32.0452,
+      "P95": 72.639,
+      "P99": 81.215,
+      "Samples": 18000
+    },
+    "ManagedBytesAfterForcedGC": [
+      18826640,
+      20021176,
+      22041096,
+      22070024,
+      22462744
+    ],
+    "Final": {
+      "CampaignId": "synthetic",
+      "State": 7,
+      "ExitLatch": true,
+      "ExitReason": "RESOURCE_LIMIT",
+      "Anchor": 104,
+      "FilledVolume": 0,
+      "AverageEntry": 0,
+      "RealizedNet": 439.99999999999999999999999988,
+      "Fees": 0,
+      "Equity": 439.99999999999999999999999988,
+      "MaximumDrawdown": 40.00000000000000000000000008,
+      "MaximumVolume": 18,
+      "Turnover": 276,
+      "PendingIncrease": 0,
+      "PendingReduce": 0,
+      "Regime": 0,
+      "Decision": {
+        "Id": 20000,
+        "Time": "2026-09-25T10:01:39",
+        "Sequence": 20066,
+        "Price": 104,
+        "CurveTarget": 18.0,
+        "RawTarget": 18.0,
+        "PolicyTarget": 18,
+        "RiskAllowedTarget": 18,
+        "FilledVolume": 0,
+        "PendingIncrease": 0,
+        "PendingReduce": 0,
+        "Action": 0,
+        "Volume": 0,
+        "IntentId": "",
+        "Reasons": [
+          "RESOURCE_LIMIT"
+        ],
+        "Regime": 0,
+        "Kappa": 0,
+        "AddScale": 5,
+        "ReduceScale": 10
+      },
+      "Market": {
+        "Time": "2026-09-25T10:01:39",
+        "Sequence": 20066,
+        "Price": 104,
+        "Ready": true,
+        "SlowVariance": 8.449005498546419930409491792,
+        "FastVariance": 15.823223304703363315713181201,
+        "Speed": 0,
+        "Quality": "OK",
+        "Profile": 0
+      }
+    },
+    "DecisionRows": 20000
+  },
+  "Limitations": "Fixture full fills, bounded test queue; native/UI/real-data peak throughput NOT_RUN"
+}

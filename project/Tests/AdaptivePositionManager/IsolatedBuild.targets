@@ -1,0 +1,11 @@
+<Project>
+  <!-- Test-build import only: override the legacy updater copy target after Microsoft.Common.targets.
+       Passing OutputPath alone does not redirect that target's hard-coded application destination. -->
+  <Target Name="CopyDividendsUpdaterToOsEngineBin" AfterTargets="Build"
+          Condition="'$(MSBuildProjectName)' == 'DividendsUpdater'">
+    <ItemGroup>
+      <ApmUpdaterArtifacts Include="$(TargetDir)$(TargetName).exe;$(TargetDir)$(TargetName).dll;$(TargetDir)$(TargetName).runtimeconfig.json;$(TargetDir)$(TargetName).deps.json;$(TargetDir)$(TargetName).pdb" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ApmUpdaterArtifacts)" DestinationFolder="$(TargetDir)updater-aux" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

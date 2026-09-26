@@ -1,6 +1,8 @@
 # Задания агенту — Adaptive Position Manager
 
-**Состояние всех T01–T12: NOT_STARTED.** Этот коммит поставляет постановку, а не реализацию. Начало: [основной индекс](../README.md). Обязательны [правила проекта](../../../AGENTS.md) и [quality gates](../10-quality-gates.md).
+**Текущие состояния T01–T12:** [единый work record](../evidence/implementation.md#состояние-заданий).
+Эти задания задают acceptance criteria, а не утверждают их выполнение.
+Начало: [основной индекс](../README.md). Обязательны [правила проекта](../../../AGENTS.md) и [quality gates](../10-quality-gates.md).
 
 ## Порядок
 

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <AssemblyName>OsEngine.AdaptivePositionManager.Tests</AssemblyName>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <PlatformTarget>x64</PlatformTarget>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../OsEngine/OsEngine.csproj" />
+    <!-- Native TesterUi uses this entry-assembly-relative icon URI. Keep the real resource in the test host. -->
+    <Resource Include="../../OsEngine/Images/OsLogo.ico" Link="Images/OsLogo.ico" />
+  </ItemGroup>
+</Project>

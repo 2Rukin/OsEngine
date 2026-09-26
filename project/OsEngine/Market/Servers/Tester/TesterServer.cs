@@ -1199,6 +1199,8 @@ namespace OsEngine.Market.Servers.Tester
                 _candleSeriesTesterActivate[i].Load(TimeNow);
             }
 
+            ReplayTimeAdvancedEvent?.Invoke(TimeNow);
+
             if (EndNextMinuteWithCandlesEvent != null
                 && _timeAddType == TimeAddInTestType.Minute
                 && _timeLastCandle == TimeNow)
@@ -1208,6 +1210,14 @@ namespace OsEngine.Market.Servers.Tester
         }
 
         private DateTime _timeLastCandle;
+
+        /// <summary>
+        /// Optional replay-clock notification after all sources have loaded through TimeNow, including
+        /// iterations without ticks. Subscribers must return promptly and must not infer fresh prices or fills.
+        /// Resolution is the selected native replay step; no wall-clock or live timing guarantee is implied.
+        /// </summary>
+        /// <remarks>APM-INTEGRATION-001. No existing strategy behavior changes without an explicit subscriber.</remarks>
+        public event Action<DateTime> ReplayTimeAdvancedEvent;
 
         public event Action EndNextMinuteWithCandlesEvent;
 

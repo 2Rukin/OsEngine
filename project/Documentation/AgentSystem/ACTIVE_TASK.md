@@ -1,108 +1,110 @@
 # Authoritative active task state
 
-**ID:** `TASK-CLOUD-CALIBRATION-BOUNDED-MEMORY-001`
-**Статус:** `COMPLETE`
-**Фаза:** `TERMINAL — implemented, verified, reviewed and published`
+**ID:** `TASK-ADAPTIVE-POSITION-MANAGER-001`
+**Статус:** `BLOCKED`
+**Фаза:** `Local ResearchOnly implementation/evidence complete; owner/data/capability gates remain open; checkpoint CP14`
 **Ветка:** `docs/order-flow-production-roadmap`
-**Baseline HEAD:** `e3ec754aa1880143a9763b150f67df3f74a3523e`
-**Implementation commit:** `07d32623a9484185766d6161a640802662dbf6ef`
-**Completed transition IDs:** `SCOPE_ENTRY`, `CONTRACT_READ`, `BOUNDED_STATISTICS_FIX`, `REGRESSION_SUITE`, `SOLUTION_BUILD`, `PRIMARY_REVIEWS`, `OWNER_RUN_TERMINAL`, `GIT_PUBLICATION`
-**Next transition ID:** `OWNER_RUN_OPTIONAL`
+**Baseline HEAD:** `06d2630c693e3ed76c5c43502d59d1a44de2b4ac`
+**Verified pre-publication HEAD:** `06d2630c693e3ed76c5c43502d59d1a44de2b4ac`
+**Specification baseline:** `f54de33961d45f73319ae1c7313f2854bcb27398`
+**Completed transition IDs:** `SCOPE_ENTRY`, `WORKFLOW_READ`, `T01_CAPABILITY_PROOF`, `CORE_INITIAL_TESTS`, `MATH_CONTRACT_VALIDATION`, `CORE_VALIDATION_1_CLEAN`, `SOLUTION_BUILD_CP02`, `T05_ADAPTER_VALIDATION_2_CLEAN`, `T06_FEATURE_REVIEW_CLEAN`, `T07_REGISTERED_ROBOT_NATIVE_TESTER`, `T07_ROBOT_VALIDATION_1_CLEAN`, `T07_NATIVE_EVIDENCE_VALIDATION_1_CLEAN`, `T07_CURRENT_DOCS_VALIDATION`, `BUILD_OUTPUT_ISOLATION_VERIFIED`, `T08_REVIEWS_CLEAN`, `T09_T10_MODELS_VALIDATION_1_CLEAN`, `T11_OPERATIONS_VALIDATION_1_CLEAN`, `T12_NATIVE_UI_STUDY_VALIDATION_1_CLEAN`, `T12_FINAL_BUILD_OFFLINE_COVERAGE`, `T12_FINAL_DOCS_AND_EVIDENCE_REVIEW`
+**Next transition ID:** `OWNER_DPI_WALKTHROUGH_EVIDENCE`
 
-## Frozen scope and authority
+## Frozen scope
 
-Memory fix inside existing OsData Order Flow calibration, not a new module.
-User explicitly authorized full SRU6 offline run, FORTS Main, threshold12,
-PriceStep1, default57, no date restriction, tests/build/reviews and normal
-fast-forward commit/push to this branch. Preserve default1024MiB limit,
-Chain/Delta/Diagonal/Cloud algorithms and streaming/atomic artifacts.
-Previous A–H iteration remains complete; do not reimplement it.
+User requested T01–T12, including T08–T11 and feasible T12 without waiting for
+physical DPI 100/125/200 or owner walkthrough. Do not simulate those manual checks.
+Approved robot: OsEngine/Robots/MyBots/AdaptivePositionResearchBot/.
+Main sole writer; independent reviewers read-only. Changed APM core/adapter/UI,
+robot, Tests/AdaptivePositionManager, solution, opt-in native replay heartbeat,
+Optimizer metadata/research lifecycle, APM docs/routers/DOCMAP.
+Synthetic native Tester/Optimizer runs authorized and completed. User explicitly
+authorized APM commit and ordinary fast-forward push on 2026-09-26. No reset/rebase/
+merge/force, MCP/StopOrders/live/broker/paper, secrets or real credentials.
+Historical dataset/interval/timezone/economic profile remain unselected.
 
-Changed scope: CalibrationDistribution.cs(new), CalibrationEngine.cs,
-CalibrationMetrics.cs; CalibrationMemoryTests.cs(new), CalibrationTests.cs,
-Program.cs; CLOUD_CALIBRATION_SPEC.md section16.1 and this checkpoint.
-Do not stage unrelated tracked binaries or user untracked
-DetachedTables/README.md and Verification/. No app/connector/trading launch.
+## Dirty boundary and safe build
 
-## Implementation and diagnosis
+CP14 baseline verified; APM-only staging/publication authorized. Entry had 16 dirty DLL/EXE outputs; user DetachedTables/
+README.md and Verification/ remain excluded. Existing DividendsUpdater AfterBuild
+previously copied five artifacts into app output despite OutputPath; original
+before-image unknown. Four tracked outputs: DLL/EXE/deps/runtimeconfig; one ignored
+PDB. Only DLL/EXE Git-modified; updater source untouched.
+Owner requires all five excluded from APM commit and both saved sets retained:
+TEMP/OsEngine-APM-output-recovery/{current-app-output,earlier-test-output},inventory.json.
+CP14: 10/10 backup hashes match; current sources equal their respective saved set.
+Safe proposal: preserve bytes and both backups; exact undo needs proven before-image.
+HEAD or older test output would be a replacement, not proven rollback. No restoration.
+Every build must use explicit Tests/AdaptivePositionManager/IsolatedBuild.targets
+via CustomAfterMicrosoftCommonTargets plus TEMP OutputPath. It redirects updater
+copy to TargetDir/updater-aux; default build/updater csproj unchanged.
 
-Each metric previously retained both an AVL and sorted dictionary per distinct
-decimal; now fixed4096-value buffers plus exact counted binary disk runs.
-All14 buffers total at most57344 decimals (896KiB at defaults), no value trees.
-Per-cell method/disposal closes scratch and releases buffers before next cell.
-Only immutable summaries and date/time maps remain. Nearest-rank and histogram
-semantics are unchanged. Scratch shares the artifact budget and rolls back.
-The process-wide guard now reclaims collectible garbage under pressure before
-enforcing the same live-memory cap; it does not ignore other live app objects.
+## Implemented boundary
 
-Original isolated SRU6 runs also passed57/57 (workstation and ServerGC).
-Actual host-state root cause remains NOT_DETERMINED; hosting code can retain
-previous main results and run other jobs concurrently. This does not establish
-which roots existed in the owner's failed session. Do not claim reproduction
-of the original host failure or a measured427MiB SRU6 distribution heap.
+- Core: immutable locks, reversible decimal sizing, single-owner ledger, pending/
+  unknown reservations, irreversible ExitLatch and durable intent before send.
+- Native TradeOnly: strict saved ticks/hash/metadata, flat dedicated tab, actual
+  fills; live/Candle/depth/native automatic protection rejected. Replay timer after
+  source.Load handles silent intervals but does not refresh price.
+- UI: compact recorded preview, five ownerless tables, sorting/filter/CSV,
+  passive watchdog. Study report opens separately, never inside optimizer passes.
+- T08: native fixed/grid/filter/IS/OOS/rolling WFO/all-trials; optional research
+  lifecycle saves plan before native counting and results before terminal event.
+  Stop during IS/OOS finalizes exactly once and restores the original output root.
+- T09: event/sample OFI, bounded window/reset, causal calibration components;
+  synchronized native trades+quotes adapter/A4 absent. No fake OFI in TradeOnly.
+- T10: AS/AC/ADAPT references, default-off ordinary AC pacing; protective EXIT
+  bypasses pacing. Explicit settings and past cutoff; full ADAPT controls/phi absent.
+- T11: native lifetime ordinary/exit budgets 256/257, retained identities/fills;
+  partial capability violation accounts actual volume and requires reconciliation.
+  Recover input is 16,777,216 UTF-16 code units; envelope file limit 32 MiB.
+  Generic partial model does not claim bounded full ledger; native restart adoption absent.
+
+## Closed independent reviews
+
+Earlier T01–T07/build identities remain closed. T08 production/docs VALIDATION_1 CLEAN;
+T09/T10 models 001/002 VALIDATION_1 CLEAN; T11 operations 001 VALIDATION_1 CLEAN;
+Native UI study 001 VALIDATION_1 CLEAN. T12 additional test/evidence PRIMARY CLEAN.
+T09–T12 final docs/XML 001/002 fixed without runtime change; VALIDATION_1 TERMINAL CLEAN.
+No pending reviewer. Do not reopen closed identities on state-only updates.
 
 ## Verification status
 
-- Exact current-code suite:198/198 PASS, exit0, session84084 collected;
-  executable under temp OsEngine-calibration-memory-final-bin/.
-- Canonical no-build suite from normal output:198/198 PASS, exit0,
-  session7480 collected.
-- Normal solution: dotnet build OsEngine.sln --no-restore -v:minimal:
-  PASS0errors/1NU1900 vulnerability-feed warning. Earlier output-lock failure
-  resolved after owner closed OsEngine; successful normal build log below.
-- Git Bash agent validator109/109 PASS; diff whitespace PASS.
-- Production memory_production PRIMARY CLEAN -> TERMINAL.
-- Documentation calibration_documentation_review PRIMARY CLEAN -> TERMINAL.
-  No findings/fix-validation cycle; do not repeat completed reviews.
-- Frozen production SHA256 Engine:
-  ADEFA3724D49EBE2FA4D1ABC33BDD2EB9FB2AB73B861A4E0DB65E1EF690EC85D.
-  Distribution:A4946F3162A05268B598FC6B5A73824E0B82A1B4A3CDD52347451AD875888EE5.
-  Later formatting changed only mixed line endings in spec/Program, no semantics.
-- Four new regression groups:60000-observation sorted oracle/exact histogram;
-  six40000-event high-cardinality cells, fixed buffers, unreachable collectors
-  and no inter-cell live-memory accumulation; scratch cancel/budget cleanup;
-  garbage reclamation and rejection of genuinely live over-budget memory.
-
-## Full owner-file evidence
-
-Input project/OsEngine/bin/Debug/Data/Set_SRTicks/SRU6/Tick/SRU6.txt:
-158316586bytes,3130667rows,174source dates,134active FORTS Main dates.
-SHA256:435ea400ffcc45cd3215be0806f660368a024d1c2942b8eed8aa8e3d2fed1f7b.
-Final exact-code session45520 collected exit0, terminal PASS57/57.
-ServerGC=true,22processors, default bounds; P95=12 confirmed before pin/grid.
-Grid707.6323415s; full scenario765.274585s.
-Whole-scenario peak managed535046368bytes (510.26MiB,20ms/progress sampling);
-OS peak working set574607360bytes (547.99MiB).
-Tuner21770 passed; context diagonal stack>=2 filter8266; chart2000markers;
-saved rule/reopen and Anatomy tick/level conservation PASS.
-Final manifest JsonElement.DeepEquals baseline PASS: all57cell summaries,
-neighbors, provenance and all artifact checksums match exactly.
-A first fixed run (before guard anti-repeat refinement) also passed57/57/fullflow.
-
-Logs/artifacts survive under C:/Users/Mi/AppData/Local/Temp/:
-- OsEngine-calibration-memory-final-owner.log and same-name output root;
-- OsEngine-calibration-memory-normal-build.log;
-- OsEngine-calibration-memory-suite-final.log;
-- OsEngine-calibration-memory-normal-suite.log;
-- baseline roots/logs OsEngine-calibration-memory-baseline-e3ec754 and
-  OsEngine-calibration-server-baseline-e3ec754;
-- first fixed run OsEngine-calibration-memory-fixed-owner-1.
-Final bundle suffix:
-cloud-calibration-9cdb89952a1f095d78fcf03ea9145834d32c2fb9608f325a7dfc2a8169d75b0d.
-These are explicit owner offline outputs, not committed market data.
-
-Implementation commit was pushed normally to the same branch; remote SHA
-07d32623a9484185766d6161a640802662dbf6ef verified via ls-remote.
-This terminal metadata-only checkpoint has its final HEAD/upstream in Git.
+Commands/hashes/22-requirement traceability: docs/adaptive-position-manager/evidence/release-manifest.json.
+Final solution build with isolated import: 0 errors / 1 NU1900 warning in neighboring
+OrderFlowResearch (NuGet audit unavailable); prior production compile had 16 legacy warnings.
+Offline 8559/8559 PASS. Coverlet 10.0.1 core files: 744/820 branches = 90.73%; whole
+module 1291/1985 = 65.04%, not claimed >=90%. Raw: TEMP/OsEngine-APM-release-coverage.
+Build: TEMP/OsEngine-APM-release-build. Production SHA256:
+6373692E6B8063E3F6F152F9D704EFEA47C1E55223FA981A362144F03DD1005C.
+Final native Tester S01 full-ui, S02 controls, legacy Off/saved Volume7 PASS.
+Final native Optimizer B1/A5/fixed/filtered/grid PASS; six grid hashes match at 1/3 threads.
+IS stop: 6 planned/1 completed/5 NotObserved; OOS stop: 6/4/2; one terminal event each.
+Four-phase rolling WFO PASS; second IS includes three whole past campaigns.
+Actual study report screenshot retained. Prior 26 Tester/11 Optimizer studies,
+10 repeats and cost/FAST evidence retained with checkpoint-specific boundaries.
+Component load: two 20,000-event runs, 19,594/12,857 events/sec vs measured peak200;
+queue512, retained33 intents/history2000. Send/quantity projection parity only;
+finite GC growth is not memory plateau, native/UI or real-data load qualification.
+Independent hashes: 49/49 source,65/65 evidence, two DLLs and raw coverage PASS.
+Agent validator109/109; local links149/149; XML syntax255 blocks; whitespace PASS.
 
 ## Blockers
 
-No implementation/review/verification blocker. Physical Windows/DPI/focus
-remains OWNER-RUN; no physical UI or actual prior host-state reproduction claimed.
+QG06 only physical DPI100/125/200 and owner walkthrough NOT_RUN; actual150% exists.
+QG08 historical untouched data/economic profile BLOCKED_DATA. Native Tester and
+Optimizer fill timing differs; silent-market fill may use previous tick timestamp.
+QG09 native book/calibration/A4 BLOCKED_DATA_CAPABILITY. Default QG10 N/A (AC off);
+opt-in A5 empirical qualification BLOCKED_DATA. QG11 native-session/live recovery,
+real-peak native/UI load and shadow/paper remain BLOCKED. Full QG12 BLOCKED.
+No overall Engineering PASS, Research GO or live authorization. Commit/push
+authorized after CP14; the containing Git commit identifies this publication.
 
 ## Next action
 
-No implementation, review or computation remains. On restart inspect Git and
-this checkpoint; do not repeat implemented fixes, clean reviews or completed
-owner runs. Physical UI checks remain owner-run. Do not launch application,
-connector, test stand or trading session without scenario-specific authority.
+Receive actual DPI/walkthrough evidence; then select historical data/intervals and
+predeclared economic profile for separately scoped research. Book and native/live
+recovery require capability implementation/qualification, not just credentials.
+Do not rerun closed reviews or launch external sessions without new relevant scope.
+Current task/gates: docs/adaptive-position-manager/evidence/implementation.md.
+Owner runbook/rollback: docs/adaptive-position-manager/16-release-readiness.md.

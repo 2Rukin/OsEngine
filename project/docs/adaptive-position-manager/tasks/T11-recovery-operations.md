@@ -1,6 +1,6 @@
 # T11. Recovery, watchdog и эксплуатационная устойчивость
 
-Статус: NOT_STARTED. Зависимости: T05,T07. Gate: QG11. Требования: R05,R08,R19,R20.
+Текущий статус: [work record](../evidence/implementation.md#состояние-заданий). Зависимости: T05,T07. Gate: QG11. Требования: R05,R08,R19,R20.
 
 ## Цель
 

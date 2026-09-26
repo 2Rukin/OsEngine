@@ -1,0 +1,34 @@
+{
+  "SchemaVersion": "APM-Schedule-v1",
+  "DatasetName": "SyntheticNative-S02",
+  "DatasetHash": "208DBFE91508AC39BC4532C0705AAD0F5166E877E3CAC58D0F6C733B327A84B0",
+  "Profile": 0,
+  "Campaigns": [
+    {
+      "CampaignId": "S02",
+      "EntrySignalId": "signal-S02",
+      "Instrument": "APM_SYNTH.txt",
+      "Account": "GodMode",
+      "Direction": 1,
+      "EntryTime": "2026-09-25T00:00:35",
+      "SessionExitTime": "2026-09-25T00:02:00",
+      "EntryReference": 100,
+      "InitialVolume": 10,
+      "MaxVolume": 20,
+      "HardStopPrice": 90,
+      "FinalTargetPrice": 110,
+      "RiskBudgetCurrency": 1000,
+      "PriceStep": 1,
+      "VolumeStep": 1,
+      "PriceStepCost": 1,
+      "RiskCurrency": "SYN",
+      "ValuationCurrency": "SYN",
+      "Timezone": "UTC",
+      "StopSlippageReserveTicks": 0,
+      "FeePerContract": 0,
+      "EntrySlippageReserveTicks": 0,
+      "SchemaVersion": "APM-Schema-v1",
+      "MoneyPerPriceUnit": 1
+    }
+  ]
+}

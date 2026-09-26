@@ -108,7 +108,33 @@ Conditional workflow fragments, `.codex/agents/*.toml`,
   если он governed, регистрируется здесь в том же diff.
 - Chat/subagent result не становится project document автоматически.
 
-## 6. Правила обновления карты
+## 6. Adaptive Position Manager
+
+| ID | Путь | Статус | Назначение |
+|---|---|---|---|
+| `APM-INDEX-001` | `project/docs/adaptive-position-manager/README.md` | TARGET INDEX — IMPLEMENTATION IN PROGRESS | Продукт, последовательность T01–T12 и границы доказательств |
+| `APM-PRODUCT-001` | `project/docs/adaptive-position-manager/01-product.md` | ACCEPTED PRODUCT CONTRACT | Пользовательские требования R01–R22 |
+| `APM-DECISIONS-001` | `project/docs/adaptive-position-manager/02-decisions.md` | TARGET ARCHITECTURE | Реестр ADR-APM-001–010; уточнения реализации отдельно |
+| `APM-MATH-001` | `project/docs/adaptive-position-manager/03-mathematics.md` | TARGET MATHEMATICAL CONTRACT | APM-Target-v0.1, единицы, кривая, риск и hysteresis |
+| `APM-DATA-001` | `project/docs/adaptive-position-manager/04-data-contracts.md` | TARGET DATA CONTRACT | Профили, причинность, качество и manifest |
+| `APM-EXECUTION-001` | `project/docs/adaptive-position-manager/05-state-execution.md` | TARGET EXECUTION CONTRACT | Кампания, intents/fills, ledger, отмена и recovery |
+| `APM-INTEGRATION-001` | `project/docs/adaptive-position-manager/06-osengine-integration.md` | HISTORICAL BASELINE / TARGET INTEGRATION | Аудит исходной базы и требования к нативным адаптерам |
+| `APM-SCENARIOS-001` | `project/docs/adaptive-position-manager/07-tester-scenarios.md` | TARGET QUALIFICATION | Эталоны S01–S26; не результаты прогона |
+| `APM-RESEARCH-001` | `project/docs/adaptive-position-manager/08-optimization.md` | TARGET RESEARCH PROTOCOL | Baseline, OOS, cost stress и locks |
+| `APM-UI-001` | `project/docs/adaptive-position-manager/09-interface.md` | TARGET UI CONTRACT | График, отдельные таблицы и физическая приёмка |
+| `APM-GATES-001` | `project/docs/adaptive-position-manager/10-quality-gates.md` | TARGET QUALIFICATION CONTRACT | QG00–QG12 и границы engineering/research/live |
+| `APM-TRACEABILITY-001` | `project/docs/adaptive-position-manager/11-traceability.md` | TARGET COVERAGE INDEX | R/S/T/QG |
+| `APM-OPERATIONS-001` | `project/docs/adaptive-position-manager/12-operations.md` | TARGET RUNBOOK | Preflight, аварии, эксплуатационная приёмка |
+| `APM-SOURCES-001` | `project/docs/adaptive-position-manager/13-sources.md` | RESEARCH REFERENCE | Первоисточники и пределы переноса формул |
+| `APM-IMPLEMENTATION-001` | `project/docs/adaptive-position-manager/evidence/implementation.md` | CURRENT WORK RECORD — RESEARCH ONLY / GATES OPEN | Фактический scope, решения неоднозначностей, capability/evidence и blockers текущего diff |
+| `APM-NATIVE-EVIDENCE-001` | `project/docs/adaptive-position-manager/evidence/native-tester/qualification.json` | CURRENT SYNTHETIC NATIVE TESTER EVIDENCE | Результаты отдельных native runs, hashes, fill traces и границы GUI/ResearchOnly; release-regression.json и сопутствующие CSV/manifest/screenshots в том же каталоге |
+| `APM-OPTIMIZER-EVIDENCE-001` | `project/docs/adaptive-position-manager/evidence/native-optimizer/qualification.json` | CURRENT SYNTHETIC NATIVE OPTIMIZER EVIDENCE | IS/OOS, baseline, all-trials, fixed values, native filters и thread parity; lifecycle-qualification.json, companion experiment/all-trials/native-selection JSON и study-report screenshot в том же каталоге; не historical GO |
+| `APM-RESEARCH-IMPLEMENTATION-001` | `project/docs/adaptive-position-manager/14-research-implementation.md` | CURRENT IMPLEMENTATION DESIGN — RESEARCH ONLY | T09/T10 formula mapping, causal calibration, units, default-off AC pacing и BLOCKED book/native-data boundary |
+| `APM-OPERATIONS-IMPLEMENTATION-001` | `project/docs/adaptive-position-manager/15-operations-implementation.md` | CURRENT IMPLEMENTATION DESIGN — RESEARCH ONLY | T11 native full-fill lifetime budgets, checkpoint compatibility, watchdog, load/recovery evidence boundary |
+| `APM-OPERATIONS-EVIDENCE-001` | `project/docs/adaptive-position-manager/evidence/operations/` | CURRENT SYNTHETIC COMPONENT/NATIVE EVIDENCE | load.json и native-regression.json с raw results/hashes; не native/live recovery или real-data peak qualification |
+| `APM-RELEASE-READINESS-001` | `project/docs/adaptive-position-manager/16-release-readiness.md` | CURRENT RUNBOOK — RESEARCH ONLY / GATES OPEN | Реальная история, штатный Optimizer, ручная приёмка, ограничения и rollback; evidence/release-manifest.json — checkpoint hashes/traceability, не опубликованный release |
+
+## 7. Правила обновления карты
 
 - Новый ADR, binding architecture contract, runbook, qualification report,
   общий skill/native adapter или governed review registry добавляется сюда в

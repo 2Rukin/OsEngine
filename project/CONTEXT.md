@@ -31,7 +31,7 @@
 | HFT / стакан | `CONTEXT_ROBOTS_ARCHITECTURE.md` + `CONTEXT_HIGH_FREQUENCY.md` |
 | Order Flow / тики, дельта, цена и Cloud | `Documentation/OrderFlow/README.md` — current Research MVP runbook и target contracts |
 | Стопы / риск | `CONTEXT_ROBOTS_ARCHITECTURE.md` + `CONTEXT_POSITIONS_AND_RISK.md` |
-| Адаптивное управление позицией | [CONTEXT_ADAPTIVE_POSITION_MANAGER.md](CONTEXT_ADAPTIVE_POSITION_MANAGER.md) |
+| Адаптивное управление позицией | [CONTEXT_ADAPTIVE_POSITION_MANAGER.md](CONTEXT_ADAPTIVE_POSITION_MANAGER.md) + [текущий research runbook](docs/adaptive-position-manager/16-release-readiness.md) |
 | Мониторы | `CONTEXT_ROBOTS_ARCHITECTURE.md` + `CONTEXT_MONITORS.md` |
 | Code style | `CONTEXT_CODING_GUIDELINES.md` |
 | Коннекторы | `CONTEXT_CONNECTORS.md` |
