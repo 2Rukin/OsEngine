@@ -1,0 +1,7 @@
+<Project>
+  <PropertyGroup>
+    <!-- Keep the nested offline harness outputs outside the production compile tree. -->
+    <BaseIntermediateOutputPath>$(TEMP)\OsEngine-OrderFlow-DetachedChecks\obj\</BaseIntermediateOutputPath>
+    <OutputPath>$(TEMP)\OsEngine-OrderFlow-DetachedChecks\bin\</OutputPath>
+  </PropertyGroup>
+</Project>

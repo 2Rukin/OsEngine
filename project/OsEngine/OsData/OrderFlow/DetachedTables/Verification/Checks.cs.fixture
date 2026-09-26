@@ -1,0 +1,214 @@
+using OsEngine.OsData.OrderFlow;
+using OsEngine.OsData.OrderFlow.DetachedTables;
+using OsEngine.OsData.OrderFlow.Explorer;
+using System;
+using System.Collections;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Markup;
+using System.Windows.Media;
+using System.Windows.Threading;
+using System.Xml.Linq;
+
+// Explicit Compile item only: the .fixture suffix excludes this harness from the production SDK glob.
+internal static class Checks
+{
+    private static int _passed;
+    private static Application _app;
+
+    [STAThread]
+    private static int Main()
+    {
+        try
+        {
+            _app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+            Resources("DarkOrange");
+            Transfer();
+            Proxies();
+            InventoryAndLayout();
+            Console.WriteLine("DETACHED TABLES PASS " + _passed + " assertions; no connector, market input or trading commands.");
+            return 0;
+        }
+        catch (Exception error) { Console.WriteLine("DETACHED TABLES FAIL " + error); return 1; }
+        finally { _app?.Shutdown(); }
+    }
+
+    private static void Resources(string theme)
+    {
+        XNamespace ns = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+        using Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Checks.App.xaml");
+        XDocument app = XDocument.Load(stream);
+        XElement[] styles = app.Descendants(ns + "Style").Where(e => e.Attribute(x + "Key") == null &&
+            ((string)e.Attribute("TargetType") == "Button" || (string)e.Attribute("TargetType") == "{x:Type TextBox}")).ToArray();
+        ResourceDictionary dictionary = (ResourceDictionary)XamlReader.Parse(new XElement(ns + "ResourceDictionary",
+            new XAttribute(XNamespace.Xmlns + "x", x), styles.Select(s => new XElement(s))).ToString());
+        dictionary.MergedDictionaries.Add((ResourceDictionary)Application.LoadComponent(new Uri("/OsEngine;component/Themes/Theme" + theme + ".xaml", UriKind.Relative)));
+        dictionary["WindowStyleCanResize"] = new Style(typeof(Window));
+        _app.Resources = dictionary;
+    }
+
+    private static T Field<T>(object source, string name) => (T)source.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic).GetValue(source);
+    private static void Pump() => Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
+    private static void Assert(bool value, string message) { if (!value) { throw new InvalidOperationException(message); } _passed++; }
+    private static Window Source(FrameworkElement content) => new Window { Content = content, Width = 1000, Height = 700, Opacity = 0, ShowInTaskbar = false };
+
+    private static void Transfer()
+    {
+        ObservableCollection<Row> rows = new ObservableCollection<Row> { new Row { Value = 1 } };
+        DataGrid grid = new DataGrid { AutoGenerateColumns = false, CanUserAddRows = false, ItemsSource = rows };
+        grid.Columns.Add(new DataGridTextColumn { Header = "Значение", Binding = new Binding("Value") { UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged, ValidatesOnExceptions = true } });
+        Grid panel = new Grid { DataContext = rows }; panel.Children.Add(grid);
+        Window source = Source(panel);
+        int focused = 0; string context = "run A";
+        using DetachedTableSet set = new DetachedTableSet(panel, e => throw new InvalidOperationException("Unexpected UI error", e));
+        DetachedTableRegistration registration = set.Add(grid, "Проверка", () => context, () => focused++);
+        Assert(panel.Children.Contains(registration.Launcher) && !panel.Children.Contains(grid), "Compact launcher replaces embedded table");
+        try { set.Add(grid, "Duplicate"); throw new Exception("Duplicate was accepted"); }
+        catch (InvalidOperationException) { Assert(true, "Duplicate registration rejected before mutation"); }
+        ContentControl occupied = new ContentControl { Content = new TextBlock() };
+        object precedingParent = grid.Parent;
+        try { registration.MoveTo(occupied); throw new Exception("Occupied target accepted"); }
+        catch (InvalidOperationException) { Assert(ReferenceEquals(grid.Parent, precedingParent), "Failed transfer preserves original parent"); }
+        source.Show(); Pump(); registration.Open(); Pump();
+        DetachedTableWindow first = Field<DetachedTableWindow>(registration, "_window");
+        Assert(first != null && first.Owner == null && !first.Topmost, "Nonmodal unowned non-topmost table");
+        Assert(ReferenceEquals(first.ContentControlTable.Content, grid) && source.IsEnabled, "Same grid; source input remains enabled");
+        Assert(ReferenceEquals(first.ContentControlTable.DataContext, rows), "Source inherited context preserved");
+        registration.Open(); Assert(ReferenceEquals(first, Field<DetachedTableWindow>(registration, "_window")), "Repeat activates same window");
+        grid.SelectedItem = rows[0]; rows.Add(new Row { Value = 2 }); Pump();
+        Assert(grid.Items.Count == 2 && ReferenceEquals(grid.SelectedItem, rows[0]), "Live rows and selection retained");
+        panel.IsEnabled = false; Pump();
+        Assert(!grid.IsEnabled && !first.ContentControlTools.IsEnabled && first.ContentControlTable.Visibility != Visibility.Visible, "Replay/source lock also hides future rows and tools");
+        registration.FocusSource(); Assert(focused == 0, "Blocked source cannot be focused/mutated");
+        panel.IsEnabled = true; Pump(); Assert(grid.IsEnabled, "Source unlock restores table");
+        grid.Visibility = Visibility.Hidden; Pump();
+        Assert(first.ContentControlTable.Visibility == Visibility.Collapsed && first.ContentControlTools.Visibility == Visibility.Collapsed && first.TextBlockStatus.Visibility == Visibility.Collapsed, "Historical scenario visibility masks rows, actions and row count");
+        grid.Visibility = Visibility.Visible; Pump();
+        grid.CurrentCell = new DataGridCellInfo(rows[0], grid.Columns[0]); grid.Focus();
+        Assert(grid.BeginEdit(), "Cell edit starts in detached window"); Pump();
+        TextBox editor = grid.Columns[0].GetCellContent(rows[0]) as TextBox;
+        Assert(editor != null, "Original editing control retained"); editor.Text = "invalid integer"; Pump();
+        first.Close(); Assert(ReferenceEquals(first, Field<DetachedTableWindow>(registration, "_window")), "Invalid edit blocks close");
+        context = "run B"; typeof(DetachedTableRegistration).GetMethod("UpdateStatus", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(registration, null);
+        Assert(first.TextBlockStatus.Text.Contains("Исправьте") && first.TextBlockContext.Text.Contains("run B"), "Validation persists while context refreshes");
+        grid.CancelEdit(DataGridEditingUnit.Cell); grid.CancelEdit(DataGridEditingUnit.Row); first.Close();
+        Assert(Field<DetachedTableWindow>(registration, "_window") == null, "Presentation closes without clearing data");
+        rows.Add(new Row { Value = 3 }); registration.Open(); Pump();
+        DetachedTableWindow second = Field<DetachedTableWindow>(registration, "_window");
+        Assert(!ReferenceEquals(first, second) && ReferenceEquals(second.ContentControlTable.Content, grid) && grid.Items.Count == 3, "Reopen uses current original model");
+        source.Close(); Pump();
+        Assert(!second.IsVisible && !Field<DispatcherTimer>(registration, "_statusTimer").IsEnabled, "Source close releases window and timer");
+        set.Dispose(); Assert(grid.Parent == null, "Idempotent disposal releases surface without model destruction");
+    }
+
+    private static void Proxies()
+    {
+        Grid owner = new Grid(); using DetachedTableSet set = new DetachedTableSet(owner, e => throw e);
+        Button source = new Button { Content = "Применить" }; object senderSeen = null; int clicks = 0;
+        source.Click += (sender, e) => { senderSeen = sender; clicks++; };
+        Button proxy = set.Command(source); proxy.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Assert(clicks == 1 && ReferenceEquals(senderSeen, source), "Cloud 2 original sender identity preserved");
+        source.IsEnabled = false; Pump(); proxy.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Assert(clicks == 1 && !proxy.IsEnabled, "Recommendation gate cannot be bypassed");
+        TextBox input = new TextBox { Text = "A", IsReadOnly = true, IsEnabled = false, Visibility = Visibility.Hidden };
+        TextBox copy = DetachedTableSet.Search(input); Pump();
+        Assert(copy.IsReadOnly && !copy.IsEnabled && copy.Visibility == Visibility.Hidden, "Search restrictions preserved");
+        input.IsReadOnly = false; input.IsEnabled = true; input.Visibility = Visibility.Visible; copy.Text = "B"; Pump();
+        Assert(input.Text == "B", "Text edits update original filter");
+        ComboBox choice = new ComboBox { ItemsSource = new[] { "First", "Second" }, SelectedIndex = 0 };
+        ComboBox mirror = DetachedTableSet.Choice(choice); mirror.SelectedIndex = 1; Pump();
+        Assert(choice.SelectedIndex == 1, "Profile choice updates original selector");
+    }
+
+    private static void InventoryAndLayout()
+    {
+        foreach (string theme in new[] { "DarkOrange", "Tiffany" })
+        {
+            Resources(theme);
+            using CloudExplorerControl cloud = new CloudExplorerControl();
+            OrderFlowResearchUi research = new OrderFlowResearchUi();
+            try
+            {
+                VerifyInventory(cloud, 15); VerifyInventory(research, 5);
+                cloud.TabControlOptions.SelectedIndex = 5;
+                foreach (Size size in new[] { new Size(1366, 650), new Size(1092, 520), new Size(1280, 640), new Size(800, 420) })
+                {
+                    cloud.Measure(size); cloud.Arrange(new Rect(size)); cloud.UpdateLayout(); Pump();
+                    foreach (Button button in new[] { cloud.ButtonPatternSearch, cloud.ButtonPatternOpen, cloud.ButtonCalculate, cloud.ButtonCancel })
+                    {
+                        Assert(double.IsNaN(button.Height) && button.ActualHeight >= 30, "Button auto height in " + theme + ": " + button.Name + " height=" + button.Height + " actual=" + button.ActualHeight + " viewport=" + size);
+                        ContentPresenter caption = Visuals(button).OfType<ContentPresenter>().First();
+                        Assert(caption.ActualHeight >= button.FontSize, "Caption not reduced to one clipped strip");
+                    }
+                    FrameworkElement workspace = (FrameworkElement)cloud.ScrollViewerWorkspace.Content;
+                    foreach (Button button in new[] { cloud.ButtonPatternSearch, cloud.ButtonPatternOpen, cloud.ButtonCalculate, cloud.ButtonCancel })
+                    {
+                        Rect bounds = button.TransformToAncestor(workspace).TransformBounds(new Rect(button.RenderSize));
+                        Assert(bounds.Top >= 0 && bounds.Bottom <= workspace.ActualHeight && bounds.Right <= workspace.ActualWidth, "Commands stay inside scrollable extent");
+                    }
+                    if (size.Height <= 420) { Assert(cloud.ScrollViewerWorkspace.ScrollableHeight > 0, "Small viewport genuinely exposes vertical scrolling"); }
+                }
+                research.TabItemClouds.IsEnabled = false; Pump();
+                DetachedTableSet researchSet = Field<DetachedTableSet>(research, "_tableWindows");
+                DetachedTableRegistration cloudRegistration = (DetachedTableRegistration)Field<IDictionary>(researchSet, "_tables")[research.DataGridClouds];
+                Assert(!cloudRegistration.Launcher.IsEnabled && !Field<ContentControl>(cloudRegistration, "_parking").IsEnabled, "Unselected TabItem locks launcher and parked wrapper");
+                research.TabItemClouds.IsEnabled = true;
+                if (theme == "DarkOrange") { OpenInventory(cloud, research); }
+            }
+            finally { research.Close(); }
+        }
+    }
+
+    private static void VerifyInventory(object screen, int expected)
+    {
+        DetachedTableSet set = Field<DetachedTableSet>(screen, "_tableWindows");
+        IDictionary registrations = Field<IDictionary>(set, "_tables");
+        DataGrid[] grids = screen.GetType().GetFields(BindingFlags.Instance | BindingFlags.NonPublic).Where(f => f.FieldType == typeof(DataGrid)).Select(f => (DataGrid)f.GetValue(screen)).ToArray();
+        Assert(grids.Length == expected && registrations.Count == expected, "Exact registered inventory " + expected);
+        foreach (DataGrid grid in grids)
+        {
+            Assert(registrations.Contains(grid) && grid.Parent is ContentControl, "Every named table moved to its presentation host: " + grid.Name);
+            Assert(((DetachedTableRegistration)registrations[grid]).OpenButton.Content.ToString().StartsWith("Открыть таблицу:"), "Explicit launcher title");
+        }
+    }
+
+    private static void OpenInventory(CloudExplorerControl cloud, OrderFlowResearchUi research)
+    {
+        Window source = Source(cloud); source.Show(); research.Opacity = 0; research.ShowInTaskbar = false; research.Show(); Pump();
+        foreach (object screen in new object[] { cloud, research })
+        {
+            DetachedTableSet set = Field<DetachedTableSet>(screen, "_tableWindows");
+            IDictionary registrations = Field<IDictionary>(set, "_tables");
+            foreach (DictionaryEntry entry in registrations)
+            {
+                DetachedTableRegistration registration = (DetachedTableRegistration)entry.Value;
+                registration.Open(); Pump(); DetachedTableWindow window = Field<DetachedTableWindow>(registration, "_window");
+                Assert(window != null && ReferenceEquals(window.ContentControlTable.Content, entry.Key), "Actual registered table opens: " + ((DataGrid)entry.Key).Name);
+                window.Close(); Assert(Field<DetachedTableWindow>(registration, "_window") == null, "Actual registered table closes");
+            }
+        }
+        DetachedTableSet researchSet = Field<DetachedTableSet>(research, "_tableWindows");
+        IDictionary researchRegistrations = Field<IDictionary>(researchSet, "_tables");
+        DetachedTableRegistration candidates = (DetachedTableRegistration)researchRegistrations[research.DataGridCandidates];
+        research.TabControlResults.SelectedItem = research.TabItemCandidates; candidates.Open();
+        research.TabControlResults.SelectedItem = research.TabItemChart; research.TabItemCandidates.IsEnabled = false; Pump();
+        DetachedTableWindow candidatesWindow = Field<DetachedTableWindow>(candidates, "_window");
+        Assert(!research.DataGridCandidates.IsEnabled && candidatesWindow.ContentControlTable.Visibility == Visibility.Collapsed, "Unselected replay tab cannot leak full-result rows");
+        research.TabItemCandidates.IsEnabled = true; Pump(); candidatesWindow.Close();
+        source.Content = null; source.Close(); // Keep the control alive for size checks, then its explicit Dispose releases registrations.
+    }
+
+    private static System.Collections.Generic.IEnumerable<DependencyObject> Visuals(DependencyObject root)
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        { DependencyObject child = VisualTreeHelper.GetChild(root, i); yield return child; foreach (DependencyObject nested in Visuals(child)) { yield return nested; } }
+    }
+
+    public sealed class Row { public int Value { get; set; } }
+}
