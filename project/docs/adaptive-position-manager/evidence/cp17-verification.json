@@ -1,0 +1,184 @@
+{
+  "Checkpoint": "CP17",
+  "Status": "VERIFIED_UX_FIXES_RESEARCH_ONLY_GATES_OPEN",
+  "BaselineHead": "1a6163b59ec80b084da50d2edf560f4171cad829",
+  "Branch": "docs/order-flow-production-roadmap",
+  "Commit": "CONTAINING_GIT_COMMIT",
+  "SourceBoundary": "BaselineHead plus the 14 exact source/test files below; documentation/state updates do not change execution.",
+  "Build": {
+    "Command": "dotnet build OsEngine.sln -p:OutputPath=C:/Users/Mi/AppData/Local/Temp/OsEngine-APM-cp17-final/ -p:CustomAfterMicrosoftCommonTargets=C:/Users/Mi/source/repos/project/Tests/AdaptivePositionManager/IsolatedBuild.targets --no-restore -v:q",
+    "Exit": 0,
+    "Errors": 0,
+    "Warnings": 17,
+    "WarningBoundary": "16 existing production warnings and one OrderFlowResearch NU1900 vulnerability-source warning"
+  },
+  "Executable": "C:/Users/Mi/AppData/Local/Temp/OsEngine-APM-cp17-final/OsEngine.AdaptivePositionManager.Tests.exe",
+  "Runs": [
+    {
+      "Arguments": "",
+      "Exit": 0,
+      "Result": "PASS 8580/8580"
+    },
+    {
+      "Arguments": "--ui-smoke C:/Users/Mi/AppData/Local/Temp/OsEngine-APM-cp17-ui-final",
+      "Exit": 0,
+      "Result": "UI_SMOKE_PASS",
+      "ActualMonitorDpi": 144,
+      "Scope": "S01/S02/S08/S09/S19; Pause historical selection both ways; manual/emergency button clicks; min size 520x320 DIP; 1280x720 physical viewport; tables/cleanup. Two campaign rows are synthetic projections, not native multi-campaign evidence."
+    },
+    {
+      "Arguments": "--native-tester S01 C:/Users/Mi/AppData/Local/Temp/OsEngine-APM-cp17-native-S01 path-crlf",
+      "Exit": 0,
+      "Result": "NATIVE_TESTER_PASS",
+      "Quantities": "10,8,6,8,10,6,8,0"
+    },
+    {
+      "Arguments": "--native-tester S02 C:/Users/Mi/AppData/Local/Temp/OsEngine-APM-cp17-native-S02 plain",
+      "Exit": 0,
+      "Result": "NATIVE_TESTER_PASS",
+      "Quantities": "10,14,18,14,18,14,0"
+    }
+  ],
+  "NotRun": [
+    "Physical DPI 100/125/200%",
+    "Owner walkthrough of fixed UI",
+    "Real historical dataset qualification",
+    "Live/paper/broker connectors"
+  ],
+  "Sources": [
+    {
+      "Path": "OsEngine/OsTrader/AdaptivePositionManager/ApmArtifacts.cs",
+      "GitBlob": "fe12546b6af7ab1f9046e471ed22dfa80eea050d",
+      "Sha256": "BB2EFBB7E8EAEA9455D166BEAAEEDA3F17B7FBC9DD5A22D2D7254A874ED32292"
+    },
+    {
+      "Path": "OsEngine/OsTrader/AdaptivePositionManager/ApmCampaignMetrics.cs",
+      "GitBlob": "8a666b64931b620e06dfa1eefc5fae5a95e5c240",
+      "Sha256": "259C7864D22972D0A51E818CC10BE93F270C125AE12F1D6B328B0F5A1D206A84"
+    },
+    {
+      "Path": "OsEngine/OsTrader/AdaptivePositionManager/ApmDiagnosticProjection.cs",
+      "GitBlob": "e78e0548c7c1603037c77abb85697ea946679491",
+      "Sha256": "A7B976A08C7D742E454FFED954FC4131E2A431C70130D9FB4920558637ADF357"
+    },
+    {
+      "Path": "OsEngine/OsTrader/AdaptivePositionManager/ApmDiagnosticsWindow.xaml",
+      "GitBlob": "e9f195fc36fc12b3caf68b2e4ad9b342f58867bb",
+      "Sha256": "3FAE791A381D9436F0BF715235CC60E0CB9AD441CBF058E157F8FD6E1B8C3F66"
+    },
+    {
+      "Path": "OsEngine/OsTrader/AdaptivePositionManager/ApmDiagnosticsWindow.xaml.cs",
+      "GitBlob": "71404e560eeccf370d3c65e49ee43b2486f6475c",
+      "Sha256": "34ADFBD9F52ECA1D25AA49455FEE2E84F41A6BED42A5DBF7149DCE5AD2FFB75B"
+    },
+    {
+      "Path": "OsEngine/OsTrader/AdaptivePositionManager/ApmExecutionController.cs",
+      "GitBlob": "d627b228c253dd210d118dc8faea4115b2b2bf1c",
+      "Sha256": "B7D8025E2D5564FFBB0733D8D7AD49FE2D5656E00CE48AEC8802E81328982CF8"
+    },
+    {
+      "Path": "OsEngine/OsTrader/AdaptivePositionManager/ApmOsEngineAdapter.cs",
+      "GitBlob": "a224a5de2caeab5b09e4ac15fc7c01adb22db4a1",
+      "Sha256": "6B10DE51B15D209F67941DE5F06DD3FDC221C3DB1C84A54270C6AB31F5C3468F"
+    },
+    {
+      "Path": "OsEngine/OsTrader/AdaptivePositionManager/ApmTableWindow.xaml",
+      "GitBlob": "fcb9160180c461e39cab9f2801701c1296c66135",
+      "Sha256": "BE42AFCEDC75D395C0F766E99B10E9DD54EE042F53E6211F2D6948BB75EBDCAC"
+    },
+    {
+      "Path": "OsEngine/OsTrader/AdaptivePositionManager/ApmTableWindow.xaml.cs",
+      "GitBlob": "67e6031cf727edebd9c5899df558a3dbb8edbcb4",
+      "Sha256": "9ABFE2BC3E2C1974D47F4391C26C9B16BE1687363A94C7868F14809A2DAB0AC7"
+    },
+    {
+      "Path": "OsEngine/Robots/MyBots/AdaptivePositionResearchBot/AdaptivePositionResearchBot.cs",
+      "GitBlob": "f0e66989ea10f348ead0d7adbced6353f3399eef",
+      "Sha256": "BDE713A7AC026DDABF9ABF12FC86E93E7C6FD3D68912B9E0CEA469B875B3E567"
+    },
+    {
+      "Path": "Tests/AdaptivePositionManager/DataTests.cs",
+      "GitBlob": "03e28fdfe2d7bb19dbbb74aa1ba4978a763e322b",
+      "Sha256": "2AE02367A9B835A1131524F7D08D268ACD13B9FCF3C63501DFA5A2622733DFA6"
+    },
+    {
+      "Path": "Tests/AdaptivePositionManager/DiagnosticsTests.cs",
+      "GitBlob": "9a865586fedde46d119b52c395e32daaa3955674",
+      "Sha256": "25B6E8BE94C360D3856D8B06876A4C279BCD509D9489929C79E659A47200062D"
+    },
+    {
+      "Path": "Tests/AdaptivePositionManager/NativeTesterRun.cs",
+      "GitBlob": "aa72313ebe715ac5a23d48e3d1b89845439eae2a",
+      "Sha256": "E0BA0B0E446187E8EF5B06F86FE3058121DD805C1C16022FFD50A2C8E7B9C6D3"
+    },
+    {
+      "Path": "Tests/AdaptivePositionManager/UiSmoke.cs",
+      "GitBlob": "c8bcaa8a0fee8cb72a5bd38032daa46543b70adf",
+      "Sha256": "7E4EB28C3257A90B2CB7FED222D6574F9BA13BF5D4B727B357C0B94AEAA9C20B"
+    }
+  ],
+  "LocalArtifacts": [
+    {
+      "LocalTempRelativePath": "OsEngine-APM-cp17-final/OsEngine.dll",
+      "Sha256": "FAE2B2FD48614E45A529962BF9A72F23B6F892B8E181CE8949A9E2C4A866E595"
+    },
+    {
+      "LocalTempRelativePath": "OsEngine-APM-cp17-final/OsEngine.AdaptivePositionManager.Tests.dll",
+      "Sha256": "BCB997EDA2C1135751182A8A0F00EFE79ACBA7EFBD6BF38ABD8409F51B5406C5"
+    },
+    {
+      "LocalTempRelativePath": "OsEngine-APM-cp17-c39ec605eb5c4a00a9f6055bf26f054a/build.log",
+      "Sha256": "2DCEAD3A15AEBABA7CBEF6737283AFF8734383765BE5D7564B0F2E1F1E0F52DD"
+    },
+    {
+      "LocalTempRelativePath": "OsEngine-APM-cp17-c39ec605eb5c4a00a9f6055bf26f054a/offline.log",
+      "Sha256": "2C4462E41FC56AC0755E466DD2CDED68385CE275956665BA45C66F56F15EFB07"
+    },
+    {
+      "LocalTempRelativePath": "OsEngine-APM-cp17-probe-work/ui.log",
+      "Sha256": "D18F7EA7B4345AEF81BCFC66ED995EB879221A93A33014DE709918B8A1D7D6E9"
+    },
+    {
+      "LocalTempRelativePath": "OsEngine-APM-cp17-ui-final/ui-evidence.json",
+      "Sha256": "0135BD51FD07AE61210940D5A7CEC68D45E271A1E731FA6618A79D331568E8F9"
+    },
+    {
+      "LocalTempRelativePath": "OsEngine-APM-cp17-ui-final/S01-viewport.png",
+      "Sha256": "904CE9BE1F6355221DAEB3503ADC11BE8595754ACC40FE884D6E79984DE7D1C2"
+    },
+    {
+      "LocalTempRelativePath": "OsEngine-APM-cp17-ui-final/S01-minimum.png",
+      "Sha256": "A98134F7F344C854A7E3A05364DC0BF66F91DC24246A084AB2898F2042F55F76"
+    },
+    {
+      "LocalTempRelativePath": "OsEngine-APM-cp17-native-S01/result.json",
+      "Sha256": "6547A2B22BDE76A2B018025312F013FACB8B44F4D8FF1CC0DFB10BDE6F197632"
+    },
+    {
+      "LocalTempRelativePath": "OsEngine-APM-cp17-native-S01/canonical.json",
+      "Sha256": "D8E397EE65EB3F3D2E4929C9926FAB028ED52177F63D337213EA7B0A58A09D6D"
+    },
+    {
+      "LocalTempRelativePath": "OsEngine-APM-cp17-native-S01/trace.csv",
+      "Sha256": "2AE66D84E5D1B2242EC5382C5A0397D6D7E1404422F7E4776DB20F6E0DB0433F"
+    },
+    {
+      "LocalTempRelativePath": "OsEngine-APM-cp17-native-S02/result.json",
+      "Sha256": "5ED9803D071396EE0C0E453943A7EF848B597FF4EF34D925EBF9B9A029256A52"
+    },
+    {
+      "LocalTempRelativePath": "OsEngine-APM-cp17-native-S02/canonical.json",
+      "Sha256": "EB3F0D22190AFD0594C96F03D7F6F14A25B83C9C8A275E894DF8B46018B23CCC"
+    },
+    {
+      "LocalTempRelativePath": "OsEngine-APM-cp17-native-S02/trace.csv",
+      "Sha256": "912C49833DF8ADD07A4F691D607281159C61B8D46B19ECC63F445C01EA0B5F53"
+    }
+  ],
+  "ExcludedBoundary": {
+    "Files": 19,
+    "HashesUnchanged": 19,
+    "LocalTempManifest": "OsEngine-APM-cp17-c39ec605eb5c4a00a9f6055bf26f054a/excluded-before.json",
+    "Backups": "OsEngine-APM-output-recovery/current-app-output and earlier-test-output retained untouched"
+  }
+}

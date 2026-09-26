@@ -83,8 +83,11 @@ namespace OsEngine.Robots.MyBots
             {
                 string Text(string name) => ((StrategyParameterString)parameters.Single(p => p.Name == name)).ValueString;
                 if (Text("Regime") != "On") throw new ArgumentException("APM native optimization requires explicit Regime On.");
-                ApmSchedule schedule = ApmSchedule.Load(Text("Schedule file"));
-                schedule.VerifyDataset(Text("Dataset file"));
+                string schedulePath = ApmPathInput.ExistingFile("Schedule file", Text("Schedule file"));
+                string datasetPath = ApmPathInput.ExistingFile("Dataset file", Text("Dataset file"));
+                string outputRoot = ApmPathInput.DirectoryRoot("Artifacts root", Text("Artifacts root"));
+                ApmSchedule schedule = ApmSchedule.Load(schedulePath);
+                schedule.VerifyDataset(datasetPath);
                 // Native UI stores its fixed column in Defolt; its preview count may already reset current to Start.
                 for (int i = 0; i < parameters.Count; i++)
                     if (!selected[i] && parameters[i] is StrategyParameterDecimal fixedValue)
@@ -92,7 +95,7 @@ namespace OsEngine.Robots.MyBots
                 ApmStudyPhase[] studyPhases = phases.Select((phase, index) => new ApmStudyPhase(index + "-" + phase.TypeFaze,
                     phase.TimeStart, phase.TimeEnd, phase.TypeFaze == OptimizerFazeType.OutOfSample)).ToArray();
                 ApmOptimizerStudy study = new ApmOptimizerStudy(schedule, studyPhases, parameters, selected);
-                string directory = Path.GetFullPath(Path.Combine(Text("Artifacts root"), "study-" + Guid.NewGuid().ToString("N")));
+                string directory = Path.Combine(outputRoot, "study-" + Guid.NewGuid().ToString("N"));
                 Directory.CreateDirectory(directory);
                 study.SavePlan(Path.Combine(directory, "experiment.json"), "Owner-selected data; historical economic qualification NOT_VERIFIED", nativeFilters);
                 _studyOutputParameter = (StrategyParameterString)parameters.Single(p => p.Name == "Artifacts root");
@@ -190,7 +193,7 @@ namespace OsEngine.Robots.MyBots
                         if (_window.WindowState == WindowState.Minimized) _window.WindowState = WindowState.Normal;
                         _window.Activate(); return;
                     }
-                    _window = new ApmDiagnosticsWindow(_adapter.Controller, ShowParameterDialog);
+                    _window = new ApmDiagnosticsWindow(_adapter.Controller, ShowParameterDialog, CaptureRunDiagnostics);
                     _window.Closed += Diagnostics_Closed;
                     _window.Show();
                 }
@@ -248,22 +251,26 @@ namespace OsEngine.Robots.MyBots
 
         private void LoadRun()
         {
-            _schedule = ApmSchedule.Load(_scheduleFile.ValueString);
-            _schedule.VerifyDataset(_datasetFile.ValueString);
+            string schedulePath = ApmPathInput.ExistingFile("Schedule file", _scheduleFile.ValueString);
+            string datasetPath = ApmPathInput.ExistingFile("Dataset file", _datasetFile.ValueString);
+            string outputRoot = ApmPathInput.DirectoryRoot("Artifacts root", _outputRoot.ValueString);
+            _schedule = ApmSchedule.Load(schedulePath);
+            _schedule.VerifyDataset(datasetPath);
             List<SecurityTester> sources = _connector.MyServer is TesterServer tester ? tester.SecuritiesTester
                 : _connector.MyServer is OptimizerServer optimizer ? optimizer.SecuritiesTester : null;
             SecurityTester[] matching = sources?.Where(s => s.Security.Name == _schedule.Campaigns[0].Instrument
                 && s.DataType == SecurityTesterDataType.Tick).ToArray();
             if (matching == null || matching.Length != 1 || string.IsNullOrWhiteSpace(matching[0].FileAddress)
-                || !string.Equals(Path.GetFullPath(matching[0].FileAddress), Path.GetFullPath(_datasetFile.ValueString), StringComparison.OrdinalIgnoreCase))
+                || !string.Equals(Path.GetFullPath(matching[0].FileAddress), datasetPath, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidDataException("Native tick source must be the exact file declared by the saved schedule.");
-            ApmDatasetReport report = ApmDatasetValidation.Inspect(_datasetFile.ValueString, "NativeResearch", _schedule.Campaigns[0].Instrument, false);
+            ApmDatasetReport report = ApmDatasetValidation.Inspect(datasetPath, "NativeResearch", _schedule.Campaigns[0].Instrument, false);
             if (report.Status != "ValidatedTradeOnly") throw new InvalidDataException("Selected native research input failed source-order validation.");
             _policy = new ApmPolicy { ConstantInventory = _constant.ValueBool, FixedScales = !_adaptive.ValueBool,
                 AddScale = _addScale.ValueDecimal, ReduceScale = _reduceScale.ValueDecimal,
                 InventoryPenalty = _penalty.ValueDecimal, FastEnabled = _fast.ValueBool,
                 RearmVolatilityFactor = _rearm.ValueDecimal,
-                ResearchExecution = _researchExecution.ValueBool ? ApmAcSettings.Load(_researchSettings.ValueString) : null };
+                ResearchExecution = _researchExecution.ValueBool
+                    ? ApmAcSettings.Load(ApmPathInput.ExistingFile("Research AC settings file", _researchSettings.ValueString)) : null };
             _sourceScheduleHash = _schedule.Hash;
             if (_connector.MyServer is OptimizerServer phaseServer)
             {
@@ -273,10 +280,39 @@ namespace OsEngine.Robots.MyBots
             }
             foreach (ApmCampaignSpec spec in _schedule.Campaigns) _policy.Validate(spec);
             _runId = "run-" + Guid.NewGuid().ToString("N");
-            _runDirectory = Path.GetFullPath(Path.Combine(_outputRoot.ValueString, _runId));
+            _runDirectory = Path.Combine(outputRoot, _runId);
             _optimizer = _connector.MyServer as OptimizerServer;
             if (_optimizer != null) _optimizer.TestingEndEvent += Optimizer_TestingEndEvent;
             WriteRunSummary("Running");
+        }
+
+        private ApmRunDiagnosticView CaptureRunDiagnostics()
+        {
+            lock (_lifecycle)
+            {
+                List<ApmCampaignSummaryRow> campaigns = new List<ApmCampaignSummaryRow>();
+                List<ApmReportSummaryRow> reports = new List<ApmReportSummaryRow>();
+                string execution = StartProgram == StartProgram.IsTester
+                    ? "NativeTester — full volume, no queue" : "NativeOptimizer — full volume, no queue";
+                if (_schedule != null)
+                {
+                    int completed = Math.Min(_results.Count, Math.Min(_metrics.Count, _schedule.Campaigns.Count));
+                    for (int i = 0; i < completed; i++)
+                    {
+                        ApmCampaignSpec spec = _schedule.Campaigns[i];
+                        campaigns.Add(ApmDiagnosticProjection.Campaign(spec, _results[i], _metrics[i]));
+                        reports.Add(ApmDiagnosticProjection.Report(spec, _results[i], _metrics[i], execution));
+                    }
+                    if (_adapter != null && !_archived && _index < _schedule.Campaigns.Count)
+                    {
+                        ApmDiagnosticView current = _adapter.Controller.CaptureView();
+                        ApmCampaignSpec spec = _schedule.Campaigns[_index];
+                        campaigns.Add(ApmDiagnosticProjection.Campaign(spec, current.Snapshot, current.Metrics));
+                        reports.Add(ApmDiagnosticProjection.Report(spec, current.Snapshot, current.Metrics, execution));
+                    }
+                }
+                return new ApmRunDiagnosticView(campaigns.ToArray(), reports.ToArray());
+            }
         }
 
         private void ArchiveCompleted()

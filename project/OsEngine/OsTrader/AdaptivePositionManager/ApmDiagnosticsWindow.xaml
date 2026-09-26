@@ -4,16 +4,72 @@
         Title="Adaptive Position Manager — ResearchOnly" Width="1050" Height="650"
         MinWidth="520" MinHeight="320" WindowStartupLocation="CenterScreen"
         Style="{DynamicResource WindowStyleCanResize}" UseLayoutRounding="True">
+    <Window.Resources>
+        <Style x:Key="StatusLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#AEB8C4"/><Setter Property="Margin" Value="5,3"/>
+        </Style>
+        <Style x:Key="StatusValue" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="White"/><Setter Property="Margin" Value="5,3"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+        <Style x:Key="StatusCell" TargetType="Border">
+            <Setter Property="Background" Value="#17202A"/><Setter Property="Margin" Value="1"/>
+            <Setter Property="CornerRadius" Value="2"/>
+        </Style>
+    </Window.Resources>
     <Grid Margin="8" Background="{DynamicResource ControlBackgroundNormalLight}">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*" MaxHeight="220"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <ScrollViewer MaxHeight="120" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-            <TextBlock Name="TextBlockStatus" TextWrapping="Wrap"
-                       Foreground="{DynamicResource ControlForegroundWhite}"/>
+        <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <WrapPanel Name="StatusGroups" SizeChanged="StatusGroups_SizeChanged">
+                <GroupBox Name="GroupCampaign" Header="Кампания" Foreground="White" Margin="2">
+                    <Grid Width="Auto">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+                        <TextBlock Text="CampaignId" Style="{StaticResource StatusLabel}"/><TextBlock Name="StatusCampaignId" Grid.Column="1" Style="{StaticResource StatusValue}"/>
+                        <TextBlock Grid.Column="2" Text="Direction" Style="{StaticResource StatusLabel}"/><TextBlock Name="StatusDirection" Grid.Column="3" Style="{StaticResource StatusValue}"/>
+                        <TextBlock Grid.Row="1" Text="Профиль" Style="{StaticResource StatusLabel}"/><TextBlock Name="StatusProfile" Grid.Row="1" Grid.Column="1" Style="{StaticResource StatusValue}"/>
+                        <TextBlock Grid.Row="1" Grid.Column="2" Text="Момент" Style="{StaticResource StatusLabel}"/><TextBlock Name="StatusMoment" Grid.Row="1" Grid.Column="3" Style="{StaticResource StatusValue}"/>
+                    </Grid>
+                </GroupBox>
+                <GroupBox Name="GroupPosition" Header="Позиция" Foreground="White" Margin="2">
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+                        <TextBlock Text="Filled" Style="{StaticResource StatusLabel}"/><TextBlock Name="StatusFilled" Grid.Column="1" Style="{StaticResource StatusValue}"/>
+                        <TextBlock Grid.Column="2" Text="Raw / Allowed" Style="{StaticResource StatusLabel}"/><TextBlock Name="StatusTargets" Grid.Column="3" Style="{StaticResource StatusValue}"/>
+                        <TextBlock Grid.Row="1" Text="Средняя" Style="{StaticResource StatusLabel}"/><TextBlock Name="StatusAverage" Grid.Row="1" Grid.Column="1" Style="{StaticResource StatusValue}"/>
+                        <TextBlock Grid.Row="1" Grid.Column="2" Text="Equity" Style="{StaticResource StatusLabel}"/><TextBlock Name="StatusEquity" Grid.Row="1" Grid.Column="3" Style="{StaticResource StatusValue}"/>
+                    </Grid>
+                </GroupBox>
+                <GroupBox Name="GroupRisk" Header="Риск" Foreground="White" Margin="2">
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+                        <TextBlock Text="Бюджет" Style="{StaticResource StatusLabel}"/><TextBlock Name="StatusBudget" Grid.Column="1" Style="{StaticResource StatusValue}"/>
+                        <TextBlock Grid.Column="2" Text="Просадка" Style="{StaticResource StatusLabel}"/><TextBlock Name="StatusDrawdown" Grid.Column="3" Style="{StaticResource StatusValue}"/>
+                        <TextBlock Grid.Row="1" Text="Стресс остатка" Style="{StaticResource StatusLabel}"/><TextBlock Name="StatusStress" Grid.Row="1" Grid.Column="1" Style="{StaticResource StatusValue}"/>
+                        <TextBlock Grid.Row="1" Grid.Column="2" Text="Preview" Style="{StaticResource StatusLabel}"/><TextBlock Name="StatusPreview" Grid.Row="1" Grid.Column="3" Style="{StaticResource StatusValue}"/>
+                    </Grid>
+                </GroupBox>
+                <GroupBox Name="GroupExecution" Header="Исполнение / состояние" Foreground="White" Margin="2">
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+                        <TextBlock Text="State" Style="{StaticResource StatusLabel}"/><Border Name="StateCell" Grid.Column="1" Style="{StaticResource StatusCell}"><TextBlock Name="StatusState" Style="{StaticResource StatusValue}"/></Border>
+                        <TextBlock Grid.Column="2" Text="Pause / no-increase" Style="{StaticResource StatusLabel}"/><Border Name="PauseCell" Grid.Column="3" Style="{StaticResource StatusCell}"><TextBlock Name="StatusPause" Style="{StaticResource StatusValue}"/></Border>
+                        <TextBlock Grid.Row="1" Text="ExitLatch" Style="{StaticResource StatusLabel}"/><Border Name="ExitLatchCell" Grid.Row="1" Grid.Column="1" Style="{StaticResource StatusCell}"><TextBlock Name="StatusExitLatch" Style="{StaticResource StatusValue}"/></Border>
+                        <TextBlock Grid.Row="1" Grid.Column="2" Text="Exit reason" Style="{StaticResource StatusLabel}"/><Border Name="ExitReasonCell" Grid.Row="1" Grid.Column="3" Style="{StaticResource StatusCell}"><TextBlock Name="StatusExitReason" Style="{StaticResource StatusValue}"/></Border>
+                        <TextBlock Grid.Row="2" Text="Pending + / −" Style="{StaticResource StatusLabel}"/><Border Name="PendingCell" Grid.Row="2" Grid.Column="1" Style="{StaticResource StatusCell}"><TextBlock Name="StatusPending" Style="{StaticResource StatusValue}"/></Border>
+                        <TextBlock Grid.Row="2" Grid.Column="2" Text="Replay / data" Style="{StaticResource StatusLabel}"/><TextBlock Name="StatusReplay" Grid.Row="2" Grid.Column="3" Style="{StaticResource StatusValue}"/>
+                        <TextBlock Grid.Row="3" Text="Причины" Style="{StaticResource StatusLabel}"/><TextBlock Name="StatusReasons" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" Style="{StaticResource StatusValue}"/>
+                    </Grid>
+                </GroupBox>
+            </WrapPanel>
         </ScrollViewer>
         <Grid Grid.Row="1">
             <Grid.RowDefinitions><RowDefinition Height="3*"/><RowDefinition Height="*"/></Grid.RowDefinitions>
@@ -21,7 +77,9 @@
             <Canvas Name="CanvasVolume" Grid.Row="1" Background="#202831" ClipToBounds="True"/>
         </Grid>
         <WrapPanel Grid.Row="2">
-            <Button Name="ButtonStart" Content="Начать сценарий" Padding="7,4" Margin="2"/>
+            <Button Name="ButtonStart" Content="Старт: schedule / Tester" Padding="7,4" Margin="2" IsEnabled="False"
+                    ToolTip="Ручной старт недоступен: новую кампанию начинает сохранённый schedule при новом прогоне Tester."
+                    ToolTipService.ShowOnDisabled="True"/>
             <Button Name="ButtonPause" Content="Пауза набора" Padding="7,4" Margin="2"/>
             <Button Name="ButtonResume" Content="Продолжить" Padding="7,4" Margin="2"/>
             <Button Name="ButtonClose" Content="Закрыть кампанию" Padding="7,4" Margin="2"/>

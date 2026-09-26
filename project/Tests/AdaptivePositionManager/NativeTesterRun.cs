@@ -113,9 +113,10 @@ namespace OsEngine.AdaptivePositionManager.Tests
                 _robot = (AdaptivePositionResearchBot)BotFactory.GetStrategyForName("AdaptivePositionResearchBot", "APM_native", StartProgram.IsTester, false);
                 _robot.LogMessageEvent += Log;
                 if (_variant == "full-ui") OsTraderMaster.Master.CreateNewBot(_robot);
-                SetString("Schedule file", Path.Combine(_output, "schedule.json"));
-                SetString("Dataset file", dataset);
-                SetString("Artifacts root", Path.Combine(_output, "artifacts"));
+                string pastedSuffix = _variant == "path-crlf" ? "\r\n" : "";
+                SetString("Schedule file", Path.Combine(_output, "schedule.json") + pastedSuffix);
+                SetString("Dataset file", dataset + pastedSuffix);
+                SetString("Artifacts root", Path.Combine(_output, "artifacts") + pastedSuffix);
                 SetString("Regime", "On");
                 if (_variant == "legacy")
                 {

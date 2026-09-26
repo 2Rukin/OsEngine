@@ -10,7 +10,11 @@ using System.Linq;
 namespace OsEngine.OsTrader.AdaptivePositionManager
 {
     /// <summary>One atomic diagnostic capture; preview and rows cannot come from a later market event than Snapshot.</summary>
-    public sealed record ApmDiagnosticView(ApmSnapshot Snapshot, ApmAuditRow[] Rows, string PreviewState);
+    public sealed record ApmDiagnosticView(ApmSnapshot Snapshot, ApmAuditRow[] Rows, string PreviewState)
+    {
+        /// <summary>Detached whole-campaign metrics at the same owner-monitor boundary.</summary>
+        public ApmCampaignMetrics Metrics { get; init; }
+    }
 
     /// <summary>A transport command may have reached its destination. Reservations remain intact; never resend on this exception.</summary>
     public sealed class ApmExecutionUncertainException : Exception
@@ -54,6 +58,7 @@ namespace OsEngine.OsTrader.AdaptivePositionManager
         private readonly IApmOrderGateway _gateway;
         private readonly ApmArtifacts _artifacts;
         private readonly Queue<ApmAuditRow> _recent = new Queue<ApmAuditRow>();
+        private readonly ApmMetricsAccumulator _diagnosticMetrics = new ApmMetricsAccumulator();
         private ApmMarket _market;
         private long _sequence;
         private bool _disposed;
@@ -105,18 +110,21 @@ namespace OsEngine.OsTrader.AdaptivePositionManager
         public ApmDiagnosticView CaptureView()
         {
             lock (_locker) return new ApmDiagnosticView(_campaign.Snapshot, _recent.ToArray(),
-                _detailedDiagnostics ? _campaign.ExportPreviewState() : null);
+                _detailedDiagnostics ? _campaign.ExportPreviewState() : null) { Metrics = _diagnosticMetrics.Snapshot };
         }
 
         /// <summary>Serialize one causal market/timer event and dispatch at most its single ordinary proposal.</summary>
-        public ApmDecision Process(ApmMarket market)
+        public ApmDecision Process(ApmMarket market) => Process(market, "component");
+
+        /// <summary>Serialize one causal event with an audit-only source label; source never changes decisions.</summary>
+        public ApmDecision Process(ApmMarket market, string source)
         {
             lock (_locker)
             {
                 ObjectDisposedException.ThrowIf(_disposed, this);
                 _market = market with { Sequence = ++_sequence };
                 _watchdog.Observe();
-                return Drive(false);
+                return Drive(false, source);
             }
         }
 
@@ -151,7 +159,7 @@ namespace OsEngine.OsTrader.AdaptivePositionManager
             _campaign.Pause(paused);
             if (paused)
             {
-                Exception error = CancelConflicts(false);
+                Exception error = CancelConflicts(false, "operator");
                 if (error != null) throw new ApmExecutionUncertainException(error);
             }
             Save();
@@ -165,7 +173,7 @@ namespace OsEngine.OsTrader.AdaptivePositionManager
                 ObjectDisposedException.ThrowIf(_disposed, this);
                 _campaign.RequestExit(reason);
                 Save();
-                if (_market != null) { NextSequence(); Drive(true); }
+                if (_market != null) { NextSequence(); Drive(true, "operator"); }
             }
         }
 
@@ -177,12 +185,12 @@ namespace OsEngine.OsTrader.AdaptivePositionManager
                 ObjectDisposedException.ThrowIf(_disposed, this);
                 _sequence++;
                 _campaign.ApplyFill(fill);
-                Audit("Fill", "FILL", fill.Price, fill.Volume, fill.IntentId, "ACTUAL_FILL", fill.Time);
+                Audit("Fill", "FILL", fill.Price, fill.Volume, fill.IntentId, "ACTUAL_FILL", fill.Time, "callback");
                 Save();
                 if (_campaign.Snapshot.ExitLatch)
                 {
                     _protectionDue = true;
-                    if (!_driving && _market != null) { NextSequence(); Drive(true); }
+                    if (!_driving && _market != null) { NextSequence(); Drive(true, "callback"); }
                 }
             }
         }
@@ -195,12 +203,12 @@ namespace OsEngine.OsTrader.AdaptivePositionManager
                 ObjectDisposedException.ThrowIf(_disposed, this);
                 _sequence++;
                 _campaign.ApplyOrder(intentId, state, filled, brokerId);
-                Audit("Order", state.ToString(), 0, filled, intentId, "ORDER_UPDATE", _market?.Time ?? Spec.EntryTime);
+                Audit("Order", state.ToString(), 0, filled, intentId, "ORDER_UPDATE", _market?.Time ?? Spec.EntryTime, "callback");
                 Save();
                 if (_campaign.Snapshot.ExitLatch)
                 {
                     _protectionDue = true;
-                    if (!_driving && _market != null) { NextSequence(); Drive(true); }
+                    if (!_driving && _market != null) { NextSequence(); Drive(true, "callback"); }
                 }
             }
         }
@@ -211,7 +219,7 @@ namespace OsEngine.OsTrader.AdaptivePositionManager
             lock (_locker)
             {
                 _campaign.RequireReconciliation(reason);
-                Audit("Fault", "QUERY_REQUIRED", 0, 0, "", reason, _market?.Time ?? Spec.EntryTime);
+                Audit("Fault", "QUERY_REQUIRED", 0, 0, "", reason, _market?.Time ?? Spec.EntryTime, "adapter");
             }
         }
 
@@ -221,7 +229,7 @@ namespace OsEngine.OsTrader.AdaptivePositionManager
             lock (_locker) return _campaign.Reconcile(actualQuantity, allOrdersKnown, ownershipMatches);
         }
 
-        private ApmDecision Drive(bool protectionOnly)
+        private ApmDecision Drive(bool protectionOnly, string source)
         {
             if (_driving) { _protectionDue = true; return _campaign.Snapshot.Decision; }
             _driving = true;
@@ -236,17 +244,18 @@ namespace OsEngine.OsTrader.AdaptivePositionManager
                         decision = _campaign.CapResearchExecution(decision, cap);
                 }
                 Audit("Decision", decision.Action.ToString(), decision.Price, decision.Volume,
-                    decision.IntentId, string.Join(";", decision.Reasons), decision.Time);
-                Exception cancelError = _campaign.Snapshot.ExitLatch ? CancelConflicts(true) : null;
+                    decision.IntentId, string.Join(";", decision.Reasons), decision.Time, source);
+                Exception cancelError = _campaign.Snapshot.ExitLatch ? CancelConflicts(true, source) : null;
                 if (decision.Action == ApmAction.Cancel)
                 {
-                    cancelError ??= Cancel(_campaign.Intents.First(i => i.Id == decision.IntentId));
+                    cancelError ??= Cancel(_campaign.Intents.First(i => i.Id == decision.IntentId), source);
                 }
                 else if (decision.Volume > 0 && (!protectionOnly || decision.Action == ApmAction.Exit))
                 {
                     ApmIntent intent = _campaign.Reserve(decision);
                     Save();
-                    Audit("Intent", intent.Action.ToString(), intent.PriceBound, intent.Volume, intent.Id, "PREPARED_BEFORE_SEND", intent.Time);
+                    Audit("Intent", intent.Action.ToString(), intent.PriceBound, intent.Volume, intent.Id,
+                        "PREPARED_BEFORE_SEND", intent.Time, source);
                     try
                     {
                         _gateway.Send(intent);
@@ -270,29 +279,30 @@ namespace OsEngine.OsTrader.AdaptivePositionManager
                 {
                     _protectionDue = false;
                     NextSequence();
-                    Drive(true);
+                    Drive(true, source);
                 }
             }
         }
 
-        private Exception CancelConflicts(bool terminal)
+        private Exception CancelConflicts(bool terminal, string source)
         {
             Exception failure = null;
             foreach (ApmIntent intent in _campaign.Intents)
                 if (intent.CanCancel && (intent.Increases || (terminal && intent.IsLimit)))
                 {
-                    Exception error = Cancel(intent);
+                    Exception error = Cancel(intent, source);
                     failure ??= error;
                 }
             return failure;
         }
 
-        private Exception Cancel(ApmIntent intent)
+        private Exception Cancel(ApmIntent intent, string source)
         {
             if (!intent.CanCancel) return null;
             _campaign.MarkCancelPending(intent.Id);
             Save();
-            Audit("Cancel", "CANCEL_PENDING", intent.PriceBound, intent.Remaining, intent.Id, "CANCEL_REQUEST", _market?.Time ?? intent.Time);
+            Audit("Cancel", "CANCEL_PENDING", intent.PriceBound, intent.Remaining, intent.Id,
+                "CANCEL_REQUEST", _market?.Time ?? intent.Time, source);
             try
             {
                 _gateway.Cancel(intent);
@@ -301,7 +311,8 @@ namespace OsEngine.OsTrader.AdaptivePositionManager
             {
                 _campaign.MarkUnknown(intent.Id);
                 Save();
-                Audit("Fault", "CANCEL_UNKNOWN", 0, 0, intent.Id, "EXECUTION_UNKNOWN", _market?.Time ?? intent.Time);
+                Audit("Fault", "CANCEL_UNKNOWN", 0, 0, intent.Id, "EXECUTION_UNKNOWN",
+                    _market?.Time ?? intent.Time, source);
                 return error;
             }
             return null;
@@ -319,7 +330,8 @@ namespace OsEngine.OsTrader.AdaptivePositionManager
 
         private void NextSequence() { _market = _market with { Sequence = ++_sequence }; }
 
-        private void Audit(string kind, string action, decimal price, decimal volume, string intent, string reason, DateTime time)
+        private void Audit(string kind, string action, decimal price, decimal volume, string intent, string reason,
+            DateTime time, string source)
         {
             ApmSnapshot snapshot = _campaign.Snapshot;
             ApmIntent child = string.IsNullOrEmpty(intent) ? null : _campaign.Intents.FirstOrDefault(i => i.Id == intent);
@@ -328,13 +340,14 @@ namespace OsEngine.OsTrader.AdaptivePositionManager
                 snapshot.FilledVolume, snapshot.Decision?.RawTarget ?? 0, snapshot.Decision?.RiskAllowedTarget ?? 0, reason, intent, snapshot,
                 child, side > 0 ? "Buy" : side < 0 ? "Sell" : "",
                 kind == "Fill" && child?.DecisionPrice != null ? side * (price - child.DecisionPrice.Value) : null,
-                _detailedDiagnostics ? _campaign.ExportPreviewState() : null);
+                _detailedDiagnostics ? _campaign.ExportPreviewState() : null) { Source = source };
             try { _artifacts?.Append(row); }
             catch (Exception error)
             {
                 _campaign.RequireReconciliation("PERSISTENCE_FAILURE");
                 throw new ApmPersistenceException(error);
             }
+            _diagnosticMetrics.Add(row);
             _recent.Enqueue(row);
             while (_recent.Count > 2000) _recent.Dequeue();
         }

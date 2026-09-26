@@ -4,7 +4,9 @@
 Основания: [T12](tasks/T12-release.md), [quality gates](10-quality-gates.md),
 [операционная граница](15-operations-implementation.md). Точные текущие статусы,
 totals и reviewers ведутся только в [work record](evidence/implementation.md).
-Запись о сборке и hashes — [release manifest](evidence/release-manifest.json).
+Историческая сборка CP14 и её hashes — [release manifest](evidence/release-manifest.json).
+Проверки исправлений owner walkthrough CP17 привязаны отдельно в work record;
+manifest CP14 не удостоверяет изменённый после него UI.
 Этот документ не даёт разрешения на live и не подтверждает доходность.
 
 ## Что можно проверять на реальных исторических данных
@@ -109,18 +111,18 @@ Core recovery сохраняет identities, fills, pending и ExitLatch; native
 
 ## Ручное участие и сохранение состояния
 
-Owner walkthrough выполнен частично и зафиксирован в [17 — ручная UX-приёмка](17-manual-ui-acceptance.md).
-S01/S02, Pause/Resume, manual/emergency close, Next/Current, сортировка/CSV,
-reopen и resize проверены вручную. Walkthrough выявил UX/functional findings,
-включая несоответствие «Начать сценарий», слабые «Кампании/Отчёт», отсутствие
-визуального состояния Pause, одинаковые CSV names и robustness path inputs.
-Поэтому QG06 остаётся BLOCKED до исправления/явного решения findings и
-физических DPI100/125/200%. HardStop и FAST manual walkthrough остаются NOT_RUN;
+Owner walkthrough и исправления зафиксированы в
+[17 — ручная UX-приёмка](17-manual-ui-acceptance.md). S01/S02, Pause/Resume,
+manual/emergency close, Next/Current, sorting/CSV, reopen и resize проверены
+владельцем; UX-01…UX-08 закрыты кодом и локальным regression evidence CP16.
+QG06 остаётся `BLOCKED/OWNER-RUN` только на повторный пользовательский walkthrough
+исправленного UI и физические DPI100/125/200%. HardStop и FAST manual walkthrough остаются NOT_RUN;
 их native automated evidence не заменяет ручную проверку. Layout simulation
 не засчитывается как physical DPI. Другие открытые gates требуют выбора исторического dataset/
 интервалов/economic profile, согласованной книги для A4 и отдельной operational
 квалификации. Shadow/paper/live не запускались и требуют точного разрешённого
-сценария. После CP14 пользователь отдельно разрешил commit/push APM; это не
+сценария. Ранее разрешённый commit/push публикации CP14 не считается автоматическим
+разрешением публиковать последующий CP16 fix; это не
 закрывает qualification gates и не даёт разрешения live.
 
 Для остановки текущего исследования использовать штатный Stop; в Tester APM Close

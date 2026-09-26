@@ -18,7 +18,7 @@ namespace OsEngine.AdaptivePositionManager.Tests
 {
     /// <summary>
     /// Explicit owner-authorized GUI smoke in a separate clean working directory. Captures only its own
-    /// HWND; scaled-layout images are labelled separately from the actual monitor DPI and are not physical-DPI certification.
+    /// HWND at the actual monitor DPI. Resizing does not certify other physical DPI settings.
     /// </summary>
     internal static class UiSmoke
     {
@@ -45,32 +45,43 @@ namespace OsEngine.AdaptivePositionManager.Tests
                         try { controller.Process(CoreTests.Market(prices[i], i, true, i == 0 ? 0 : scenario == "S08" ? 4 : scenario == "S09" ? -4 : 0)); }
                         catch (ApmExecutionUncertainException) { }
                     }
-                    string traceBefore = JsonSerializer.Serialize(controller.Recent);
-                    ApmDiagnosticsWindow window = new ApmDiagnosticsWindow(controller, null) { Left = 10, Top = 10 };
+                    Func<ApmRunDiagnosticView> runView = () => BuildRunView(controller, scenario == "S01");
+                    ApmDiagnosticsWindow window = new ApmDiagnosticsWindow(controller, null, runView) { Left = 10, Top = 10 };
                     window.Show();
                     Pump(400);
+                    if (scenario == "S01")
+                    {
+                        VerifyPauseHistory(window, controller);
+                    }
+                    string traceBefore = JsonSerializer.Serialize(controller.Recent);
                     int monitorDpi = (int)GetDpiForWindow(new WindowInteropHelper(window).Handle);
                     Console.WriteLine("UI_ACTUAL_DPI " + monitorDpi);
-                    foreach (double scale in scenario == "S01" ? new[] { 1.0, 1.25, 1.5, 2.0 } : new[] { 1.0 })
+                    foreach (bool minimumSize in scenario == "S01" ? new[] { false, true } : new[] { false })
                     {
-                        window.Width = Math.Min(1280 * 96.0 / monitorDpi, SystemParameters.WorkArea.Width);
-                        window.Height = Math.Min(720 * 96.0 / monitorDpi, SystemParameters.WorkArea.Height);
-                        double transform = scale * 96.0 / monitorDpi;
-                        ((FrameworkElement)window.Content).LayoutTransform = new ScaleTransform(transform, transform);
+                        window.Width = minimumSize ? window.MinWidth : Math.Min(1280 * 96.0 / monitorDpi, SystemParameters.WorkArea.Width);
+                        window.Height = minimumSize ? window.MinHeight : Math.Min(720 * 96.0 / monitorDpi, SystemParameters.WorkArea.Height);
                         Pump(200);
                         VerifyButtons(window);
-                        string file = Path.Combine(output, scenario + "-layout-" + (int)(scale * 100) + ".png");
+                        string file = Path.Combine(output, scenario + (minimumSize ? "-minimum" : "-viewport") + ".png");
                         NativeRect bounds = Capture(window, file);
-                        evidence.Add(new { scenario, requestedScale = scale, layoutTransform = transform, actualMonitorDpi = monitorDpi,
+                        evidence.Add(new { scenario, minimumSize, actualMonitorDpi = monitorDpi,
                             physicalWidth = bounds.Right - bounds.Left, physicalHeight = bounds.Bottom - bounds.Top,
-                            file = Path.GetFileName(file), physicalDpiQualification = Math.Abs(transform - 1) < 0.001 ? "ACTUAL_MONITOR_ONLY" : "NOT_RUN_LAYOUT_SIMULATION_ONLY" });
+                            file = Path.GetFileName(file), physicalDpiQualification = "ACTUAL_MONITOR_ONLY" });
                     }
-                    ((FrameworkElement)window.Content).LayoutTransform = Transform.Identity;
                     Click(window, "ButtonOrders"); Click(window, "ButtonDecisions");
                     Click(window, "ButtonCampaigns"); Click(window, "ButtonQuality"); Click(window, "ButtonReport");
                     Pump(100);
                     Program.Equal(5, application.Windows.OfType<ApmTableWindow>().Count(), "five independent table windows");
                     Program.Check(application.Windows.OfType<ApmTableWindow>().All(t => t.Owner == null), "tables have independent HWND ownership");
+                    if (scenario == "S01")
+                    {
+                        ApmTableWindow campaigns = application.Windows.OfType<ApmTableWindow>().Single(t => t.Title == "APM — Кампании");
+                        ApmTableWindow report = application.Windows.OfType<ApmTableWindow>().Single(t => t.Title == "APM — Отчёт");
+                        Program.Equal(2, ((DataGrid)campaigns.FindName("DataGridRows")).Items.Count,
+                            "campaign window renders one typed row per campaign");
+                        Program.Equal(2, ((DataGrid)report.FindName("DataGridRows")).Items.Count,
+                            "report window renders distinct campaign summaries");
+                    }
                     Click(window, "ButtonDecisions");
                     Program.Equal(5, application.Windows.OfType<ApmTableWindow>().Count(), "reopen activates existing table");
                     ApmTableWindow decisions = application.Windows.OfType<ApmTableWindow>().Single(t => t.Title == "APM — Решения");
@@ -82,6 +93,8 @@ namespace OsEngine.AdaptivePositionManager.Tests
                     Program.Equal(0, application.Windows.Count, "closing diagnostics cleans every child window");
                     Program.Equal(traceBefore, JsonSerializer.Serialize(controller.Recent), "GUI sorting/windows never change canonical trading trace");
                 }
+                VerifyCloseControl("ButtonClose", "MANUAL_EXIT");
+                VerifyCloseControl("ButtonEmergency", "EMERGENCY_EXIT");
                 File.WriteAllText(Path.Combine(output, "ui-evidence.json"), JsonSerializer.Serialize(evidence, new JsonSerializerOptions { WriteIndented = true }));
                 Console.WriteLine("UI_SMOKE_PASS " + output);
                 return 0;
@@ -102,16 +115,86 @@ namespace OsEngine.AdaptivePositionManager.Tests
         private static void Empty() { }
         private static void Click(Window window, string name) => ((Button)window.FindName(name)).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
 
+        private static void VerifyPauseHistory(ApmDiagnosticsWindow window, ApmExecutionController controller)
+        {
+            Click(window, "ButtonPause");
+            Program.Equal("АКТИВНА", ((TextBlock)window.FindName("StatusPause")).Text, "current pause is visible");
+            Click(window, "ButtonNext");
+            Program.Equal("Сохранённый snapshot", ((TextBlock)window.FindName("StatusMoment")).Text,
+                "next decision selects historical snapshot");
+            Program.Equal("нет", ((TextBlock)window.FindName("StatusPause")).Text, "historical running state remains visible");
+            Program.Equal(ApmState.PausedNoIncrease, controller.CaptureView().Snapshot.State, "history never resumes controller");
+            Program.Equal(FontWeights.Bold, ((Button)window.FindName("ButtonPause")).FontWeight,
+                "current pause button stays active while viewing pre-pause history");
+            controller.Process(CoreTests.Market(102, 7));
+            ApmAuditRow paused = controller.Recent.Last(r => r.Kind == "Decision" && r.Snapshot.State == ApmState.PausedNoIncrease);
+            Click(window, "ButtonResume");
+            ApmState resumed = controller.CaptureView().Snapshot.State;
+            Program.Check(resumed != ApmState.PausedNoIncrease, "resume clears current pause");
+            Click(window, "ButtonDecisions");
+            ApmTableWindow table = Application.Current.Windows.OfType<ApmTableWindow>().Single();
+            DataGrid grid = (DataGrid)table.FindName("DataGridRows");
+            grid.SelectedItem = grid.Items.Cast<ApmAuditRow>().Single(r => r.Sequence == paused.Sequence);
+            Click(table, "ButtonSelect");
+            Program.Equal("АКТИВНА", ((TextBlock)window.FindName("StatusPause")).Text, "historical paused state remains visible");
+            Program.Equal(resumed, controller.CaptureView().Snapshot.State, "history never pauses resumed controller");
+            Program.Check(((Button)window.FindName("ButtonPause")).FontWeight != FontWeights.Bold,
+                "current pause button stays inactive while viewing paused history");
+            table.Close();
+            Click(window, "ButtonNow");
+            Program.Equal("нет", ((TextBlock)window.FindName("StatusPause")).Text, "now restores current status");
+        }
+
+        private static void VerifyCloseControl(string button, string reason)
+        {
+            Gateway gateway = new Gateway();
+            using ApmExecutionController controller = new ApmExecutionController(new ApmCampaign(CoreTests.Spec(), new ApmPolicy()), gateway, null);
+            gateway.Controller = controller;
+            controller.Process(CoreTests.Market(100, 0));
+            Program.Check(controller.CaptureView().Snapshot.FilledVolume > 0, "close UI test starts with filled position");
+            ApmDiagnosticsWindow window = new ApmDiagnosticsWindow(controller, null);
+            window.Show(); Pump(50);
+            Click(window, button);
+            ApmSnapshot state = controller.CaptureView().Snapshot;
+            Program.Check(state.ExitLatch, button + " latches exit");
+            Program.Equal(reason, state.ExitReason, button + " preserves explicit exit reason");
+            Program.Equal(0m, state.FilledVolume, button + " closes synthetic position");
+            Program.Equal(reason, ((TextBlock)window.FindName("StatusExitReason")).Text, button + " paints reason");
+            window.Close();
+            controller.Process(CoreTests.Market(100, 1));
+            Program.Equal(0m, controller.CaptureView().Snapshot.FilledVolume, "closing diagnostics never clears exit latch");
+            Program.Equal(0, Application.Current.Windows.Count, "close-control smoke leaves no windows");
+        }
+
+        private static ApmRunDiagnosticView BuildRunView(ApmExecutionController controller, bool includeSecond)
+        {
+            ApmRunDiagnosticView current = ApmDiagnosticProjection.Capture(controller);
+            if (!includeSecond) return current;
+            ApmCampaignSummaryRow secondCampaign = current.Campaigns[0] with { CampaignId = "synthetic-second" };
+            ApmReportSummaryRow secondReport = current.Report[0] with { CampaignId = "synthetic-second" };
+            return new ApmRunDiagnosticView(new[] { current.Campaigns[0], secondCampaign },
+                new[] { current.Report[0], secondReport });
+        }
+
         private static void VerifyButtons(ApmDiagnosticsWindow window)
         {
             foreach (string name in new[] { "ButtonStart", "ButtonPause", "ButtonResume", "ButtonClose", "ButtonEmergency",
-                "ButtonDecisions", "ButtonOrders", "ButtonCampaigns", "ButtonQuality", "ButtonParameters", "ButtonReport" })
+                "ButtonDecisions", "ButtonOrders", "ButtonCampaigns", "ButtonQuality", "ButtonParameters", "ButtonReport",
+                "ButtonNext", "ButtonNow" })
             {
                 Button button = (Button)window.FindName(name);
-                Rect bounds = button.TransformToAncestor(window).TransformBounds(new Rect(button.RenderSize));
-                Program.Check(bounds.Top >= 0 && bounds.Bottom <= window.ActualHeight && bounds.Right <= window.ActualWidth,
-                    "critical control within current viewport: " + name);
+                FrameworkElement viewport = (FrameworkElement)window.Content;
+                Rect bounds = button.TransformToAncestor(viewport).TransformBounds(new Rect(button.RenderSize));
+                Program.Check(bounds.Top >= 0 && bounds.Left >= 0 && bounds.Bottom <= viewport.ActualHeight
+                    && bounds.Right <= viewport.ActualWidth,
+                    "critical control within " + window.Width + "x" + window.Height + " viewport: " + name);
             }
+            Button start = (Button)window.FindName("ButtonStart");
+            Program.Check(!start.IsEnabled && Convert.ToString(start.ToolTip).Contains("schedule"),
+                "manual start is disabled with schedule/Tester explanation");
+            Program.Check(window.FindName("GroupCampaign") != null && window.FindName("GroupPosition") != null
+                && window.FindName("GroupRisk") != null && window.FindName("GroupExecution") != null,
+                "status is split into campaign position risk and execution groups");
         }
 
         private static void VerifyTable(ApmTableWindow table, ApmExecutionController controller, string output, string scenario)

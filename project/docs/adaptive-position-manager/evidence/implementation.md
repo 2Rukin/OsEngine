@@ -1,8 +1,11 @@
 # APM-IMPLEMENTATION-001 — реализация и доказательства
 
-Статус: IN_PROGRESS. Это факты текущего diff, не PASS поставки.
-Baseline/current HEAD: `06d2630c693e3ed76c5c43502d59d1a44de2b4ac`;
-ветка `docs/order-flow-production-roadmap`. Commit/push не разрешены и не выполнены.
+Статус: ResearchOnly; полная поставка остаётся заблокированной ручными и research gates.
+Текущий review/fix checkpoint — CP17 поверх owner walkthrough HEAD
+`1a6163b59ec80b084da50d2edf560f4171cad829`, ветка `docs/order-flow-production-roadmap`.
+Пользователь явно разрешил review, исправления, commit и обычный push CP17.
+Предыдущие CP01–CP16 и их permissions/verdicts ниже — исторические записи.
+Точная проверенная граница CP17 и команды приведены в конце этого work record.
 
 ## Граница и источники
 
@@ -490,3 +493,112 @@ Walkthrough выявил открытые UX/functional findings: нечитае
 но и на исправление/явное решение этих находок. HardStop и FAST manual walkthrough
 не выполнялись; их ранее сохранённые native automated S06/S08/S09 PASS не
 переименовываются в ручной PASS.
+
+## CP16: исправление owner UX findings
+
+UX-01…UX-08 из [owner walkthrough](../17-manual-ui-acceptance.md) исправлены без
+изменения APM target/risk/order semantics. Status UI теперь состоит из четырёх
+адаптивно переносимых групп; управляющие state/pause/ExitLatch/reason/pending
+имеют устойчивые normal/paused/closing/emergency состояния и краткую рамку при
+изменении. Недоступный ручной start больше не вызывает Resume: disabled control
+объясняет schedule/новый Tester run.
+
+`Кампании` и `Отчёт` больше не используют последнюю audit row. Robot передаёт
+detached run-level projection со всеми завершёнными и активной кампаниями;
+campaign rows содержат direction, фактические fill entry/exit, entry signal/action,
+exit reason, net/drawdown/qmax/turnover/state. Report rows отдельно содержат
+fees, fee/slippage assumptions, TradeOnly profile, execution model, ResearchOnly
+status и явные `NOT_RUN` baseline/OOS/cost-stress. Пять CSV windows имеют разные
+default names. Audit/CSV получил additive `Source`; native `tick`, `timer` и
+`callback` различаются, а повторные Wait остаются в canonical `events.jsonl`.
+
+Schedule/Dataset/Artifacts root и optional AC settings проходят trim и полную
+нормализацию до File/Path API. Пустой input, internal control characters и
+отсутствующий файл дают ошибку с именем параметра; Dataset/Schedule SHA256 и exact
+native source comparison не ослаблены.
+
+Историческое verification CP16 (новый checkpoint CP17 проверяется отдельно):
+
+- isolated APM test build: 0 errors / 16 legacy production warnings;
+- offline component suite: `8580/8580 PASS`; actual flattening fill time остаётся
+  стабильным после более поздних order/timer rows и повторов старых entry/reduce
+  fills, а no-fill completion не получает выдуманный exit timestamp;
+- UI smoke: PASS, actual monitor DPI144; two typed campaign/report rows, disabled
+  start explanation, Pause active/Resume normal, five ownerless tables and cleanup;
+- native Tester S01 with pasted CR/LF in Schedule/Dataset/Artifacts paths: PASS,
+  `10,8,6,8,10,6,8,0`;
+- native Tester S02 plain: PASS, `10,14,18,14,18,14,0`; S02 controls: PASS,
+  `10,18,14,0` with independent Pause/Regime Off interval;
+- S01 native audit source counts: callback26, tick157, timer150; CSV header contains
+  Source and canonical decision hash excludes this presentation-only field;
+- isolated full solution build: 0 errors / 1 neighboring OrderFlowResearch NU1900
+  warning на конечном incremental checkpoint; отдельный clean-target APM build
+  сохранил 16 прежних production warnings;
+- `git diff --check`: PASS after documentation whitespace cleanup.
+
+`OBSERVABILITY: REQUIRED` выполнено additive source/error context полями; secrets
+и high-cardinality telemetry не добавлены. `MODE PARITY: NO CHANGE`: execution,
+sizing, risk и order dispatch не менялись; Tester/Optimizer используют одинаковую
+path normalization/projection, live остаётся отклонён. Physical DPI100/125/200 и
+повторный owner walkthrough исправленного UI — `OWNER-RUN/NOT_RUN`; layout
+simulation 100/125/150/200 не является physical PASS. Historical/OOS, book,
+native/live recovery и profitability gates остаются прежними BLOCKED/NOT_RUN.
+
+Independent review CP16: `APM_OWNER_UX_FIX_001` PRIMARY доказал перезапись actual
+ExitTime; FIX сохранил flattening fill и убрал market-time fallback. VALIDATION_1
+нашёл оставшийся duplicate-fill путь; адресный FIX потребовал перехода q>0→q0 и
+добавил повторы старых entry/reduce fills. Разрешённый VALIDATION_2 завершён
+`TERMINAL CLEAN`. `APM_OWNER_UX_DOCS_001` D01 закрыта в VALIDATION_1 `CLEAN`;
+DOCMAP, ResearchOnly/live и physical DPI `NOT_RUN` claims согласованы. Commit и
+push CP16 не выполнялись.
+
+## CP17: независимое review исправлений owner walkthrough
+
+Новая задача владельца явно разрешила review, исправления и commit/push.
+Baseline — `1a6163b59ec80b084da50d2edf560f4171cad829`; exact source/build
+checkpoint, команды, exit codes и SHA256 локальных артефактов зафиксированы в
+[CP17 verification](cp17-verification.json). Git blobs 14 изменённых source/test
+файлов вместе с baseline однозначно задают проверенный runtime diff.
+`release-manifest.json` остаётся историческим CP14; его hashes не относятся к CP17.
+
+| Finding | Решение и адресная проверка |
+|---|---|
+| `APM_CP17_F01` / `APM_CP17_DOCS-D01` | Подсветка действующей кнопки Pause теперь получает текущий controller snapshot; исторические поля сохраняют выбранное прошлое. UI проверяет Running history при текущей паузе и Paused history после Resume; просмотр не меняет controller state |
+| Main: минимальный размер окна | До fix UI probe падал на `ButtonDecisions` при 520×320 DIP. Auto status row вытеснял нижние кнопки; ограниченная star row теперь делит доступное место с графиками. Проверяются границы внутри content viewport для 13 кнопок, включая Next/Now; status прокручивается. SizeChanged использует штатный try/catch/log |
+| `APM_CP17_DOCS-D02` | Current preamble отделён от старых checkpoints; новый manifest связывает команды и результаты с source/build hashes; прежние CP16 outcomes не переписаны как CP17 |
+| `APM_CP17_DOCS-D03` | UX-07 различает обязательный существующий файл и создаваемый output root; ошибки пустых/control inputs называют параметр и причину без вывода скрытых символов |
+
+Verification на конечных code/test/build файлах CP17:
+
+- изолированный `dotnet build OsEngine.sln --no-restore`: exit 0, **0 errors / 17 warnings**
+  (16 прежних production warnings, один OrderFlowResearch NU1900);
+- offline suite: exit 0, **8580/8580 PASS**;
+- `--ui-smoke`: exit 0, **PASS**, S01/S02/S08/S09/S19, monitor **DPI144**;
+  физическая область 1280×720 и минимум 520×320 DIP (780×480 pixels).
+  LayoutTransform simulation в текущем smoke удалена. Реально нажаты Pause/Resume,
+  manual close и emergency close; проверены причина, irreversible latch и нулевой
+  synthetic остаток. Проверены пять окон, сортировка/фильтр/cleanup. Две campaign/
+  report rows здесь синтетические и не доказывают native multi-campaign lifecycle;
+- `--native-tester S01 ... path-crlf`: exit 0, **PASS**,
+  `10,8,6,8,10,6,8,0`; `--native-tester S02 ... plain`: exit 0, **PASS**,
+  `10,14,18,14,18,14,0`. Оба запуска — штатный Tester с синтетическими ticks,
+  зарегистрированным robot и отдельным временным workspace;
+- 19/19 исключённых generated/fixture файлов совпали по SHA256 с CP17 entry;
+  DividendsUpdater backup/evidence сохранены. Исходники updater не менялись.
+
+Review identities: `APM_CP17_REVIEW` и `APM_CP17_DOCS`; обе завершили
+VALIDATION_1 как **TERMINAL CLEAN**, findings F01/D01/D02/D03 закрыты.
+Независимо сверены 14/14 source SHA256, 14/14 Git blobs и 14/14 artifact SHA256;
+47 локальных Markdown-ссылок — 0 broken, scoped `git diff --check` — PASS.
+Agent-system offline validator — **109/109 PASS**; начальные пропущенные заголовки
+Verification status / Blockers в сокращённом ACTIVE_TASK исправлены до финального PASS.
+Предыдущие CP16 закрытые identities не переоткрывались.
+Commit CP17 определяется как содержащий этот checkpoint Git commit;
+обычный push разрешён владельцем, его результат проверяется по remote branch SHA.
+
+XML-doc описывает границу current controls / historical snapshot.
+Observability сохраняет additive Source и ошибки пути; sizing/risk/order dispatch
+не менялись. Build изолирован от штатного bin и updater AfterBuild.
+QG06 physical DPI100/125/200 и повторный owner walkthrough — **OWNER-RUN/NOT_RUN**.
+ResearchOnly, historical/OOS/book/recovery/profitability gates остаются открытыми;
+эта проверка не даёт live или economic readiness.

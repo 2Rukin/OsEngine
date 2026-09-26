@@ -1,7 +1,7 @@
 # 17. Ручная UX-приёмка APM
 
-Статус: OWNER WALKTHROUGH COMPLETE WITH FINDINGS.  
-База проверки: ветка `docs/order-flow-production-roadmap`, APM-кандидат начиная с commit `c8798732c8c984e0bf219393d9a4c86dc75dcce8`.  
+Статус: OWNER WALKTHROUGH COMPLETE; UX-01…UX-08 FIXED IN CP16; PHYSICAL DPI OWNER-RUN OPEN.
+База проверки: ветка `docs/order-flow-production-roadmap`, APM-кандидат начиная с commit `c8798732c8c984e0bf219393d9a4c86dc75dcce8`.
 Проверка выполнялась пользователем в штатном Tester/Tester Lite. Это не закрывает DPI 100/125/200%, исторический OOS, shadow/paper/live или экономическую квалификацию.
 
 ## Что проверено вручную
@@ -116,6 +116,38 @@
 - не удалять canonical audit evidence;
 - в UI либо различать источник события (`tick/timer/callback`), либо давать фильтр/режим скрытия повторяющихся no-op Wait;
 - экспорт полного журнала должен сохранять исходные события.
+
+## Статус исправлений CP16 с уточнениями CP17
+
+| Finding | Статус | Реализация и локальное evidence |
+|---|---|---|
+| UX-01 | `FIXED` | Верхняя область разбита на «Кампания», «Позиция», «Риск», «Исполнение / состояние»; две секции в ряд на широкой области, одна на узкой; поля используют пары label/value |
+| UX-02 | `FIXED` | Кнопка Pause отражает текущее состояние контроллера даже при просмотре истории; поля state/pause/ExitLatch/exit reason/pending показывают выбранный snapshot с normal, paused/pending, closing и emergency/fault семантикой; при изменении поля две секунды показывают светлую рамку |
+| UX-03 | `FIXED` | Кнопка переименована в `Старт: schedule / Tester`, disabled и имеет tooltip о новом прогоне; обработчик Resume удалён |
+| UX-04 | `FIXED` | «Кампании» получает run-level typed rows для всех завершённых и активной кампаний: direction, фактические fill entry/exit, причины, net, drawdown, qmax, turnover, state; без closing fill exit остаётся пустым; сортировка/фильтры/CSV остаются |
+| UX-05 | `FIXED` | «Отчёт» использует отдельные typed summary rows с fees/cost assumptions/profile/execution/ResearchOnly gates; baseline/OOS/cost stress равны `NOT_RUN` |
+| UX-06 | `FIXED` | Default names: `apm-decisions.csv`, `apm-orders-fills.csv`, `apm-campaigns.csv`, `apm-data-quality.csv`, `apm-report.csv` |
+| UX-07 | `FIXED` | Schedule/Dataset/Artifacts/AC-settings очищаются от внешних whitespace до Path/File API. Обязательные файлы должны существовать; новый Artifacts root допустим. Пустой input и внутренние control characters дают имя параметра и причину без вывода скрытых символов; отсутствующий файл — также нормализованный путь. Hash checks не менялись |
+| UX-08 | `FIXED` | Audit row и CSV получили `Source`; native events помечаются `tick`, `timer`, `callback`. Wait не удаляются, `events.jsonl` сохраняет canonical sequence полностью |
+
+```mermaid
+sequenceDiagram
+    participant N as Native tick/timer/callback
+    participant C as APM controller
+    participant J as events.jsonl
+    participant P as Typed UI projection
+    participant U as Campaigns/Report/audit tables
+    N->>C: Event + source
+    C->>J: Append canonical ApmAuditRow
+    C-->>P: Detached snapshot, metrics, bounded rows
+    P-->>U: Separate campaign/report rows or unchanged audit rows
+    Note over J,U: UI sorting/filtering never rewrites canonical evidence
+```
+
+Локальная ранняя проверка CP16: изолированная компиляция test project — 0 errors,
+16 известных warnings; offline component suite — `8580/8580`; UI smoke — PASS на
+фактическом monitor DPI144 (Windows 150%). Layout transforms 100/125/150/200%
+остаются только simulation evidence и не закрывают physical DPI gate.
 
 ## Что менять не нужно по итогам walkthrough
 

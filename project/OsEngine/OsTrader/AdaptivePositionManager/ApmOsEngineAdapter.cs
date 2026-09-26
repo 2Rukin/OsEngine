@@ -109,7 +109,7 @@ namespace OsEngine.OsTrader.AdaptivePositionManager
                     ApmMarket market = _features.OnTick(tick);
                     _hasPrice = true;
                     CheckOwnership();
-                    Controller.Process(market);
+                    Controller.Process(market, "tick");
                 }
             }
             catch (Exception error) { HandleError(error); }
@@ -123,7 +123,7 @@ namespace OsEngine.OsTrader.AdaptivePositionManager
                 {
                     if (_disposed || !_hasPrice) return;
                     ValidateSource(_mode, _tab.StartProgram, _tab.Connector.MyServer);
-                    Controller.Process(_features.OnTimer(time, ++_sourceSequence));
+                    Controller.Process(_features.OnTimer(time, ++_sourceSequence), "timer");
                 }
             }
             catch (Exception error) { HandleError(error); }

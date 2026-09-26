@@ -13,14 +13,18 @@ namespace OsEngine.OsTrader.AdaptivePositionManager
 {
     /// <summary>
     /// Nonmodal research diagnostics. Polls detached snapshots; closing this view never disposes the trading
-    /// controller. Historical selection renders stored snapshots without recalculating policy or orders.
+    /// controller. Historical selection renders stored snapshots without recalculating policy or orders;
+    /// command buttons always reflect the current controller snapshot.
     /// </summary>
     public partial class ApmDiagnosticsWindow : Window
     {
         private readonly ApmExecutionController _controller;
         private readonly Action _parameters;
+        private readonly Func<ApmRunDiagnosticView> _runDiagnostics;
         private readonly DispatcherTimer _timer;
         private readonly Dictionary<string, ApmTableWindow> _tables = new Dictionary<string, ApmTableWindow>();
+        private readonly Dictionary<Border, string> _visualValues = new Dictionary<Border, string>();
+        private readonly Dictionary<Border, DateTime> _highlightUntil = new Dictionary<Border, DateTime>();
         private ApmAuditRow _selected;
         private string _previewState;
         private decimal? _nextAdd;
@@ -28,9 +32,15 @@ namespace OsEngine.OsTrader.AdaptivePositionManager
 
         /// <summary>Construct on the WPF dispatcher. The controller remains owned by the robot.</summary>
         public ApmDiagnosticsWindow(ApmExecutionController controller, Action parameters)
+            : this(controller, parameters, () => ApmDiagnosticProjection.Capture(controller)) { }
+
+        /// <summary>Construct with a detached run-level provider so completed and active campaigns remain separate.</summary>
+        public ApmDiagnosticsWindow(ApmExecutionController controller, Action parameters,
+            Func<ApmRunDiagnosticView> runDiagnostics)
         {
             InitializeComponent();
-            _controller = controller;
+            _controller = controller ?? throw new ArgumentNullException(nameof(controller));
+            _runDiagnostics = runDiagnostics ?? throw new ArgumentNullException(nameof(runDiagnostics));
             _controller.DetailedDiagnostics = true;
             Width = Math.Min(Width, SystemParameters.WorkArea.Width);
             Height = Math.Min(Height, SystemParameters.WorkArea.Height);
@@ -39,7 +49,6 @@ namespace OsEngine.OsTrader.AdaptivePositionManager
             _timer.Tick += Timer_Tick;
             CheckBoxDetails.Checked += CheckBoxDetails_Changed;
             CheckBoxDetails.Unchecked += CheckBoxDetails_Changed;
-            ButtonStart.Click += ButtonResume_Click;
             ButtonResume.Click += ButtonResume_Click;
             ButtonPause.Click += ButtonPause_Click;
             ButtonClose.Click += ButtonClose_Click;
@@ -50,6 +59,7 @@ namespace OsEngine.OsTrader.AdaptivePositionManager
             foreach (Button button in TableButtons()) button.Click += ButtonTable_Click;
             Closed += Window_Closed;
             _timer.Start();
+            ResizeStatusGroups();
         }
 
         private Button[] TableButtons() => new[] { ButtonDecisions, ButtonOrders, ButtonCampaigns, ButtonQuality, ButtonReport };
@@ -73,23 +83,88 @@ namespace OsEngine.OsTrader.AdaptivePositionManager
                 _nextAdd = _previewState == null ? null : ApmCampaign.PreviewRecorded(_previewState, ApmAction.Add);
                 _nextReduce = _previewState == null ? null : ApmCampaign.PreviewRecorded(_previewState, ApmAction.Reduce);
             }
-            TextBlockStatus.Text = "ResearchOnly · TradeOnly · " + _controller.ExecutionModel + " · " + (_selected == null ? "Текущий момент" : "Сохранённый snapshot")
-                + "\n" + state.CampaignId + " · " + _controller.Spec.Direction + " · " + state.State + " · " + state.Regime
-                + " · Filled " + state.FilledVolume + " · Raw " + state.Decision?.RawTarget
-                + " · Allowed " + state.Decision?.RiskAllowedTarget + " · Pending +" + state.PendingIncrease + "/−" + state.PendingReduce
-                + "\nСредняя " + state.AverageEntry + " · Equity " + state.Equity + " · Просадка " + state.MaximumDrawdown
-                + " · ExitLatch " + state.ExitLatch
-                + " · Replay callbacks " + (_controller.ReplayHealth.Stalled ? "пауза/задержка" : "идут")
-                + " · Готовность " + state.Market?.Ready + " / " + state.Market?.Quality
-                + "\nБюджет " + _controller.Spec.RiskBudgetCurrency + " " + _controller.Spec.RiskCurrency
-                + " · Стресс-риск открытого остатка " + state.FilledVolume * (ApmMathematics.UnitStopRisk(_controller.Spec, state.AverageEntry) + _controller.Spec.FeePerContract)
-                + "\nQcurve " + state.Decision?.CurveTarget + " → κ " + state.Decision?.Kappa
-                + " → Raw " + state.Decision?.RawTarget + " → Policy " + state.Decision?.PolicyTarget
-                + " → Allowed " + state.Decision?.RiskAllowedTarget
-                + " · Preview ADD " + (_nextAdd?.ToString() ?? "нет") + " / REDUCE " + (_nextReduce?.ToString() ?? "нет")
-                + "\n" + string.Join("; ", (state.Decision?.Reasons ?? Array.Empty<string>()).Select(ApmDisplayText.Reason));
+            StatusCampaignId.Text = state.CampaignId;
+            StatusDirection.Text = _controller.Spec.Direction.ToString();
+            StatusProfile.Text = "ResearchOnly · TradeOnly · " + _controller.ExecutionModel;
+            StatusMoment.Text = _selected == null ? "Текущий момент" : "Сохранённый snapshot";
+            StatusFilled.Text = state.FilledVolume.ToString();
+            StatusTargets.Text = (state.Decision?.RawTarget.ToString() ?? "—") + " / "
+                + (state.Decision?.RiskAllowedTarget.ToString() ?? "—");
+            StatusAverage.Text = state.AverageEntry.ToString();
+            StatusEquity.Text = state.Equity.ToString();
+            StatusBudget.Text = _controller.Spec.RiskBudgetCurrency + " " + _controller.Spec.RiskCurrency;
+            StatusDrawdown.Text = state.MaximumDrawdown.ToString();
+            StatusStress.Text = (state.FilledVolume * (ApmMathematics.UnitStopRisk(_controller.Spec, state.AverageEntry)
+                + _controller.Spec.FeePerContract)).ToString();
+            StatusPreview.Text = "ADD " + (_nextAdd?.ToString() ?? "нет") + " / REDUCE " + (_nextReduce?.ToString() ?? "нет");
+            StatusState.Text = state.State + " / " + state.Regime;
+            StatusPause.Text = state.State == ApmState.PausedNoIncrease ? "АКТИВНА" : "нет";
+            StatusExitLatch.Text = state.ExitLatch ? "ДА" : "нет";
+            StatusExitReason.Text = string.IsNullOrWhiteSpace(state.ExitReason) ? "—" : state.ExitReason;
+            StatusPending.Text = "+" + state.PendingIncrease + " / −" + state.PendingReduce;
+            StatusReplay.Text = (_controller.ReplayHealth.Stalled ? "пауза/задержка" : "callbacks идут")
+                + " · " + state.Market?.Ready + " / " + state.Market?.Quality;
+            StatusReasons.Text = string.Join("; ", (state.Decision?.Reasons ?? Array.Empty<string>()).Select(ApmDisplayText.Reason));
+            UpdateControlVisuals(state, view.Snapshot);
             DrawPrice(rows, state);
             DrawVolume(rows);
+        }
+
+        private void StatusGroups_SizeChanged(object sender, SizeChangedEventArgs args)
+        {
+            try { ResizeStatusGroups(); }
+            catch (Exception error) { Log(error); }
+        }
+
+        private void ResizeStatusGroups()
+        {
+            if (StatusGroups == null) return;
+            double available = Math.Max(260, StatusGroups.ActualWidth);
+            double width = available < 820 ? available - 8 : available / 2 - 8;
+            foreach (GroupBox group in new[] { GroupCampaign, GroupPosition, GroupRisk, GroupExecution })
+                group.Width = Math.Max(250, width);
+        }
+
+        private void UpdateControlVisuals(ApmSnapshot state, ApmSnapshot current)
+        {
+            bool paused = state.State == ApmState.PausedNoIncrease;
+            bool closing = state.State == ApmState.Closing;
+            bool emergency = state.State == ApmState.FaultedClosing || state.State == ApmState.Reconciling
+                || state.ExitReason == "EMERGENCY_EXIT";
+            Brush normal = new SolidColorBrush(Color.FromRgb(28, 65, 45));
+            Brush pending = new SolidColorBrush(Color.FromRgb(112, 82, 20));
+            Brush warning = new SolidColorBrush(Color.FromRgb(128, 68, 18));
+            Brush error = new SolidColorBrush(Color.FromRgb(125, 38, 38));
+            Brush neutral = new SolidColorBrush(Color.FromRgb(23, 32, 42));
+            SetVisual(StateCell, StatusState.Text, emergency ? error : closing ? warning : paused ? pending : normal);
+            SetVisual(PauseCell, StatusPause.Text, paused ? pending : neutral);
+            SetVisual(ExitLatchCell, StatusExitLatch.Text, state.ExitLatch ? emergency ? error : warning : neutral);
+            SetVisual(ExitReasonCell, StatusExitReason.Text,
+                state.ExitReason == "EMERGENCY_EXIT" ? error : string.IsNullOrWhiteSpace(state.ExitReason) ? neutral : warning);
+            SetVisual(PendingCell, StatusPending.Text,
+                state.PendingIncrease > 0 || state.PendingReduce > 0 ? pending : neutral);
+            if (current.State == ApmState.PausedNoIncrease)
+            {
+                ButtonPause.Background = pending;
+                ButtonPause.FontWeight = FontWeights.Bold;
+                ButtonResume.Background = normal;
+            }
+            else
+            {
+                ButtonPause.ClearValue(BackgroundProperty); ButtonPause.ClearValue(FontWeightProperty);
+                ButtonResume.ClearValue(BackgroundProperty);
+            }
+        }
+
+        private void SetVisual(Border cell, string value, Brush background)
+        {
+            if (_visualValues.TryGetValue(cell, out string previous) && previous != value)
+                _highlightUntil[cell] = DateTime.UtcNow.AddSeconds(2);
+            _visualValues[cell] = value;
+            cell.Background = background;
+            bool highlighted = _highlightUntil.TryGetValue(cell, out DateTime until) && until > DateTime.UtcNow;
+            cell.BorderBrush = highlighted ? Brushes.White : Brushes.Transparent;
+            cell.BorderThickness = highlighted ? new Thickness(1) : new Thickness(0);
         }
 
         private void DrawPrice(ApmAuditRow[] rows, ApmSnapshot state)
@@ -162,7 +237,7 @@ namespace OsEngine.OsTrader.AdaptivePositionManager
                 string name = (string)((Button)sender).Tag;
                 if (_tables.TryGetValue(name, out ApmTableWindow existing))
                 { if (existing.WindowState == WindowState.Minimized) existing.WindowState = WindowState.Normal; existing.Activate(); return; }
-                ApmTableWindow window = new ApmTableWindow(_controller, name);
+                ApmTableWindow window = new ApmTableWindow(_controller, name, _runDiagnostics);
                 window.SelectedEvent += Table_SelectedEvent;
                 window.Closed += Table_Closed;
                 _tables.Add(name, window);
@@ -183,15 +258,19 @@ namespace OsEngine.OsTrader.AdaptivePositionManager
             }
             catch (Exception error) { Log(error); }
         }
-        private void ButtonResume_Click(object sender, RoutedEventArgs args) { try { _controller.Pause(false); } catch (Exception error) { Log(error); } }
+        private void ButtonResume_Click(object sender, RoutedEventArgs args)
+        { try { _selected = null; _controller.Pause(false); Paint(); } catch (Exception error) { Log(error); } }
         private void CheckBoxDetails_Changed(object sender, RoutedEventArgs args)
         {
             try { _controller.DetailedDiagnostics = CheckBoxDetails.IsChecked == true; }
             catch (Exception error) { Log(error); }
         }
-        private void ButtonPause_Click(object sender, RoutedEventArgs args) { try { _controller.Pause(true); } catch (Exception error) { Log(error); } }
-        private void ButtonClose_Click(object sender, RoutedEventArgs args) { try { _controller.Close(); } catch (Exception error) { Log(error); } }
-        private void ButtonEmergency_Click(object sender, RoutedEventArgs args) { try { _controller.Close("EMERGENCY_EXIT"); } catch (Exception error) { Log(error); } }
+        private void ButtonPause_Click(object sender, RoutedEventArgs args)
+        { try { _selected = null; _controller.Pause(true); Paint(); } catch (Exception error) { Log(error); } }
+        private void ButtonClose_Click(object sender, RoutedEventArgs args)
+        { try { _selected = null; _controller.Close(); Paint(); } catch (Exception error) { Log(error); } }
+        private void ButtonEmergency_Click(object sender, RoutedEventArgs args)
+        { try { _selected = null; _controller.Close("EMERGENCY_EXIT"); Paint(); } catch (Exception error) { Log(error); } }
         private void ButtonParameters_Click(object sender, RoutedEventArgs args) { try { _parameters?.Invoke(); } catch (Exception error) { Log(error); } }
         private void ButtonNow_Click(object sender, RoutedEventArgs args) { try { _selected = null; Paint(); } catch (Exception error) { Log(error); } }
         private void ButtonNext_Click(object sender, RoutedEventArgs args)
@@ -210,7 +289,7 @@ namespace OsEngine.OsTrader.AdaptivePositionManager
                 _timer.Stop(); _timer.Tick -= Timer_Tick;
                 _controller.DetailedDiagnostics = false;
                 CheckBoxDetails.Checked -= CheckBoxDetails_Changed; CheckBoxDetails.Unchecked -= CheckBoxDetails_Changed;
-                ButtonStart.Click -= ButtonResume_Click; ButtonResume.Click -= ButtonResume_Click;
+                ButtonResume.Click -= ButtonResume_Click;
                 ButtonPause.Click -= ButtonPause_Click; ButtonClose.Click -= ButtonClose_Click;
                 ButtonEmergency.Click -= ButtonEmergency_Click; ButtonParameters.Click -= ButtonParameters_Click;
                 ButtonNext.Click -= ButtonNext_Click; ButtonNow.Click -= ButtonNow_Click;

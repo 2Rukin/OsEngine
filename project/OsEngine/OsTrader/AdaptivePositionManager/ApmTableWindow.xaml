@@ -21,6 +21,7 @@
                 <DataGridTextColumn Header="Sequence" Binding="{Binding Sequence}"/>
                 <DataGridTextColumn Header="Время" Binding="{Binding Time, StringFormat=yyyy-MM-dd HH:mm:ss.fff}"/>
                 <DataGridTextColumn Header="CampaignId" Binding="{Binding CampaignId}"/>
+                <DataGridTextColumn Header="Source" Binding="{Binding Source}"/>
                 <DataGridTextColumn Header="Тип события" Binding="{Binding Kind}"/>
                 <DataGridTextColumn Header="Action" Binding="{Binding Action}"/>
                 <DataGridTextColumn Header="Цена" Binding="{Binding Price}"/>

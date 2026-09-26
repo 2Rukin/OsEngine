@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -28,7 +29,38 @@ namespace OsEngine.OsTrader.AdaptivePositionManager
     public sealed record ApmAuditRow(long Sequence, DateTime Time, string CampaignId, string Kind,
         string Action, decimal Price, decimal Volume, decimal Filled, decimal Raw, decimal Allowed,
         string Reasons, string IntentId, ApmSnapshot Snapshot = null, ApmIntent Intent = null,
-        string Side = "", decimal? Slippage = null, string PreviewState = null);
+        string Side = "", decimal? Slippage = null, string PreviewState = null)
+    {
+        /// <summary>Audit-only origin such as tick, timer or callback; it never affects decisions.</summary>
+        public string Source { get; init; } = "component";
+    }
+
+    /// <summary>Normalizes operator-entered paths before any file API and rejects hidden control characters.</summary>
+    public static class ApmPathInput
+    {
+        /// <summary>Return one existing absolute file path or an error naming the affected parameter.</summary>
+        public static string ExistingFile(string parameterName, string value)
+        {
+            string path = Normalize(parameterName, value);
+            if (!File.Exists(path)) throw new FileNotFoundException(parameterName + ": file does not exist: '" + path + "'.", path);
+            return path;
+        }
+
+        /// <summary>Return one absolute directory root. The caller may create it after all validation succeeds.</summary>
+        public static string DirectoryRoot(string parameterName, string value) => Normalize(parameterName, value);
+
+        private static string Normalize(string parameterName, string value)
+        {
+            string path = (value ?? "").Trim();
+            if (path.Length == 0) throw new InvalidDataException(parameterName + ": path is empty.");
+            if (path.Any(char.IsControl)) throw new InvalidDataException(parameterName + ": normalized path contains control characters.");
+            try { return Path.GetFullPath(path); }
+            catch (Exception error) when (error is ArgumentException || error is NotSupportedException || error is PathTooLongException)
+            {
+                throw new InvalidDataException(parameterName + ": invalid normalized path '" + path + "'.", error);
+            }
+        }
+    }
 
     /// <summary>
     /// Single-owner append-only event journal and replaceable checksummed checkpoint.
@@ -102,10 +134,10 @@ namespace OsEngine.OsTrader.AdaptivePositionManager
         public static void ExportCsv(string path, IEnumerable<ApmAuditRow> rows)
         {
             using StreamWriter writer = new StreamWriter(path, false, new UTF8Encoding(true));
-            writer.WriteLine("Sequence,Time,CampaignId,Kind,Action,Price,Volume,Filled,Raw,Allowed,Reasons,IntentId,Curve,Kappa,Policy,PendingIncrease,PendingReduce,Regime,Equity,Drawdown,Fees,MaximumVolume,Turnover,ExitReason,Ready,Quality,BrokerId,Side,IsLimit,OrderState,OrderFilled,OrderRemaining,SlippagePrice");
+            writer.WriteLine("Sequence,Time,CampaignId,Source,Kind,Action,Price,Volume,Filled,Raw,Allowed,Reasons,IntentId,Curve,Kappa,Policy,PendingIncrease,PendingReduce,Regime,Equity,Drawdown,Fees,MaximumVolume,Turnover,ExitReason,Ready,Quality,BrokerId,Side,IsLimit,OrderState,OrderFilled,OrderRemaining,SlippagePrice");
             foreach (ApmAuditRow row in rows)
             {
-                object[] fields = { row.Sequence, row.Time.ToString("O"), row.CampaignId, row.Kind, row.Action,
+                object[] fields = { row.Sequence, row.Time.ToString("O"), row.CampaignId, row.Source, row.Kind, row.Action,
                     row.Price, row.Volume, row.Filled, row.Raw, row.Allowed, row.Reasons, row.IntentId,
                     row.Snapshot?.Decision?.CurveTarget, row.Snapshot?.Decision?.Kappa, row.Snapshot?.Decision?.PolicyTarget,
                     row.Snapshot?.PendingIncrease, row.Snapshot?.PendingReduce, row.Snapshot?.Regime,

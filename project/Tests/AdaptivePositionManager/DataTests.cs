@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using OsEngine.OsTrader.AdaptivePositionManager;
 
 namespace OsEngine.AdaptivePositionManager.Tests
@@ -67,6 +68,23 @@ namespace OsEngine.AdaptivePositionManager.Tests
             Program.Equal("OUT_OF_ORDER", clocked.OnTick(Tick(100, 3, 2)).Quality, "clock before first trade is causal");
 
             string directory = Path.Combine(Path.GetTempPath(), "APM-artifacts-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+            string pasted = Path.Combine(directory, "pasted-schedule.json");
+            File.WriteAllText(pasted, "{}");
+            Program.Equal(Path.GetFullPath(pasted), ApmPathInput.ExistingFile("Schedule file", " \r\n" + pasted + "\r\n "),
+                "operator path trims pasted leading and trailing CRLF");
+            Program.Equal(Path.GetFullPath(directory), ApmPathInput.DirectoryRoot("Artifacts root", "  " + directory + "\r\n"),
+                "artifact root trims pasted whitespace");
+            try
+            {
+                ApmPathInput.ExistingFile("Dataset file", Path.Combine(directory, "missing.txt") + "\r\n");
+                throw new InvalidOperationException("missing normalized path was accepted");
+            }
+            catch (FileNotFoundException error)
+            {
+                Program.Check(error.Message.Contains("Dataset file") && !error.Message.Contains("\r") && !error.Message.Contains("\n"),
+                    "missing-path error names parameter without hidden trailing characters");
+            }
             using (ApmArtifacts artifacts = new ApmArtifacts(directory, 2))
             {
                 ApmCampaign campaign = CoreTests.Enter();
@@ -78,6 +96,8 @@ namespace OsEngine.AdaptivePositionManager.Tests
                 Program.Equal(1, artifacts.Recent().Length, "bounded audit view");
                 ApmArtifacts.ExportCsv(Path.Combine(directory, "export.csv"), artifacts.Recent());
                 Program.Check(File.ReadAllText(Path.Combine(directory, "export.csv")).Contains("\"100\",\"2\""), "numeric export units");
+                Program.Check(File.ReadLines(Path.Combine(directory, "export.csv")).First().Contains("Source"),
+                    "audit export distinguishes event source");
                 File.WriteAllText(Path.Combine(directory, "checkpoint.json"), "{}");
                 Throws(() => ApmArtifacts.LoadCheckpoint(Path.Combine(directory, "checkpoint.json")), "bad recovery envelope");
             }
