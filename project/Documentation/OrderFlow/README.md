@@ -9,7 +9,10 @@
 [руководстве Cloud Explorer](CLOUD_EXPLORER_USER_GUIDE.md), а полная граница
 доступной функции — в [runbook первичной проверки](RESEARCH_MVP_RUNBOOK.md).
 Cloud Explorer V2, поиск предвестников и Cloud calibration имеют отдельные current contracts; остальные архитектурные
-документы сохраняют полный target scope.
+документы сохраняют полный target scope. Новый модуль
+[«Отпечатки ленты»](TICK_PATTERN_STATISTICS_SPEC.md) пока только запланирован:
+один TXT одного инструмента → статистика и сортируемые таблицы → выбранные
+паттерны ромбами на графике. Он не описывает уже реализованную функцию.
 
 Открытые наблюдения владельца по интерфейсу Cloud Explorer и история
 закрытой проблемы переключения окон — в [реестре](TECHNICAL_DEBT.md).
@@ -70,6 +73,7 @@ Cloud находятся в [runbook](RESEARCH_MVP_RUNBOOK.md#45-cloud-цепо�
 | `ORDER-FLOW-CLOUD-EXPLORER-GUIDE-001` | [Cloud Explorer user guide](CLOUD_EXPLORER_USER_GUIDE.md) | Пошаговая русская инструкция по отдельному окну, настройкам, результатам, графику и реплею |
 | `ORDER-FLOW-CLOUD-EXPLORER-FOLLOWUP-001` | [Cloud Explorer follow-up contract](CLOUD_EXPLORER_FOLLOWUP_SPEC.md) | Русские ошибки, исправления экранов и отдельный offline-поиск сочетаний событий до внутридневного движения |
 | `ORDER-FLOW-CLOUD-CALIBRATION-001` | [Cloud calibration contract](CLOUD_CALIBRATION_SPEC.md) | Реализованный offline подбор Single/Chain и Standard/Diagonal rules: статистика, heatmap параметров, per-range rules, replay и Cloud Anatomy; физический DPI/focus — OWNER-RUN |
+| `ORDER-FLOW-TICK-PATTERNS-001` | [Статистика отпечатков ленты](TICK_PATTERN_STATISTICS_SPEC.md) | Target: профили одного инструмента, четыре детектора, сортируемые отдельные таблицы и выбор ромбов для графика и replay |
 | `UI-DETACHED-TABLES-001` | [Задание на окна таблиц](../UI/DETACHED_TABLES_SPEC.md) | Целевое правило всего приложения: таблицы по кнопке в отдельных окнах, кнопки видны и доступны |
 
 Если краткое описание roadmap конфликтует с подробным контрактом, применяется
