@@ -1,12 +1,13 @@
 # Authoritative active task state
 
 **ID:** `TASK-ORDER-FLOW-CLOUD-APPEARANCE-001`
-**Статус:** `IN_PROGRESS`
-**Фаза:** `PUBLICATION`
+**Статус:** `COMPLETED`
+**Фаза:** `TERMINAL_HANDOFF`
 **Ветка:** `docs/order-flow-production-roadmap`
-**Baseline/current HEAD:** `9a5a7c0e56dabdd9e0f62ec6ecd80d802ed0c1ca`
-**Completed transition IDs:** `ENTRY_BASELINE_VERIFIED`, `REMOTE_DOCS_INTEGRATED`, `UNIFY_CLOUD_APPEARANCE`, `OFFLINE_VERIFICATION`, `PRIMARY_REVIEWS`
-**Next transition ID:** `COMMIT_AND_PUSH`
+**Baseline HEAD:** `9a5a7c0e56dabdd9e0f62ec6ecd80d802ed0c1ca`
+**Published implementation HEAD:** `10341d07051af02f4dd64b320619110e4e5ec7ce`
+**Completed transition IDs:** `ENTRY_BASELINE_VERIFIED`, `REMOTE_DOCS_INTEGRATED`, `UNIFY_CLOUD_APPEARANCE`, `OFFLINE_VERIFICATION`, `PRIMARY_REVIEWS`, `COMMIT_AND_PUSH`
+**Next transition ID:** `OWNER_UI_ACCEPTANCE`
 
 ## Frozen scope
 
@@ -47,14 +48,18 @@ Only Main edits files; research and reviewers are read-only.
 - Independent scoped PRIMARY production and documentation reviews: CLEAN.
   Both reviewed the frozen diff against the baseline above; no findings.
 - Physical owner UI acceptance is separate from offline rendering evidence.
-- Commit/push authorized. Use ordinary push, never force.
+- Implementation commit `10341d070` pushed to origin's same-named branch via
+  ordinary fast-forward push over SSH; no force. Subsequent snapshot-only
+  finalization does not change the reviewed production/test/docs boundary.
 
 ## Blockers
 
-None. Implementation, verification and independent reviews are complete.
+None. Implementation, verification, independent reviews and code publication
+are complete. Physical desktop/DPI/focus and live remain NOT_RUN.
 
 ## Next action
 
-Commit the verified diff and push to origin, then record the published code
-checkpoint. Running desktop application still uses its existing binaries;
-owner must build the normal application output and restart to use the change.
+Owner may build the normal application output and restart to use the change,
+then check the shared size/contrast controls in the actual desktop session.
+The running desktop application was not stopped and still uses its existing
+binaries. No further implementation work is pending.
