@@ -13,7 +13,10 @@
 JSON-профили. Семантика, ограничения источника OI и общий API индикаторов — в
 [контракте временных порогов](../Indicators/TIME_PROFILES.md).
 Cloud Explorer V2, поиск предвестников и Cloud calibration имеют отдельные current contracts; остальные архитектурные
-документы сохраняют полный target scope.
+документы сохраняют полный target scope. Новый модуль
+[«Отпечатки ленты»](TICK_PATTERN_STATISTICS_SPEC.md) пока только запланирован:
+один TXT одного инструмента → статистика и сортируемые таблицы → выбранные
+паттерны ромбами на графике. Он не описывает уже реализованную функцию.
 
 Открытые наблюдения владельца по интерфейсу Cloud Explorer и история
 закрытой проблемы переключения окон — в [реестре](TECHNICAL_DEBT.md).
@@ -75,6 +78,7 @@ Cloud находятся в [runbook](RESEARCH_MVP_RUNBOOK.md#45-cloud-цепо�
 | `ORDER-FLOW-CLOUD-EXPLORER-FOLLOWUP-001` | [Cloud Explorer follow-up contract](CLOUD_EXPLORER_FOLLOWUP_SPEC.md) | Русские ошибки, исправления экранов и отдельный offline-поиск сочетаний событий до внутридневного движения |
 | `ORDER-FLOW-CLOUD-CALIBRATION-001` | [Cloud calibration contract](CLOUD_CALIBRATION_SPEC.md) | Реализованный offline подбор Single/Chain и Standard/Diagonal rules: статистика, heatmap параметров, per-range rules, replay и Cloud Anatomy; физический DPI/focus — OWNER-RUN |
 | `ORDER-FLOW-SRU6-CALIBRATION-2026-001` | [SRU6 Cloud calibration June–August 2026](SRU6_CLOUD_CALIBRATION_JUN_AUG_2026.md) | Offline research report с development/validation, проверенной сеткой и параметрами для ручной визуальной оценки; не торговая квалификация |
+| `ORDER-FLOW-TICK-PATTERNS-001` | [Статистика отпечатков ленты](TICK_PATTERN_STATISTICS_SPEC.md) | Target: профили одного инструмента, четыре детектора, сортируемые отдельные таблицы и выбор ромбов для графика и replay |
 | `UI-DETACHED-TABLES-001` | [Задание на окна таблиц](../UI/DETACHED_TABLES_SPEC.md) | Целевое правило всего приложения: таблицы по кнопке в отдельных окнах, кнопки видны и доступны |
 
 Если краткое описание roadmap конфликтует с подробным контрактом, применяется
