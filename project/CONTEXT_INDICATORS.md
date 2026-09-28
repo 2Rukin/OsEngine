@@ -3,6 +3,13 @@
 Как писать и использовать индикаторы на базе `Aindicator`.
 Базовая архитектура роботов — в `CONTEXT.md`. Шаблоны промптов для заказа новых индикаторов — в `CONTEXT_PROMPTS_INDICATORS.md`.
 
+Общие [временные пороги Volume/Delta/OI/Trades](Documentation/Indicators/TIME_PROFILES.md)
+подключаются явно через `ConfigureThresholdTimeProfiles` и
+`ResolveTimeThreshold`. Вкладка редактора появляется только у зарегистрированного
+потребителя; параметры периодов существующих индикаторов не меняются.
+Контракт описывает source clock, inclusive интервалы, reset callback,
+повторную свечу, сохранение и границы component evidence для трёх режимов.
+
 ## 1. Индикаторы
 
 ### 1.1 Две системы индикаторов

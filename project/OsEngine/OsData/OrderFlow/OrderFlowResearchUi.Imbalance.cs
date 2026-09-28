@@ -82,13 +82,13 @@ namespace OsEngine.OsData.OrderFlow
             }
         }
 
-        private OrderFlowImbalanceSettings ReadImbalanceSettings(string prefix, bool displayFilter = false)
+        private OrderFlowImbalanceSettings ReadImbalanceSettings(string prefix, bool displayFilter = false, bool scheduledCalculation = false)
         {
             OrderFlowImbalanceSettings settings = new OrderFlowImbalanceSettings
             {
                 ContextSeconds = displayFilter ? (prefix == "Cloud2" ? _displayedRequest?.Cloud2?.Imbalance?.ContextSeconds : _displayedRequest?.Cloud?.Imbalance?.ContextSeconds) ?? 30
                     : ParseInt(ImbalanceControl<TextBox>(prefix, "ContextSeconds").Text, "Cloud context seconds"),
-                Source = displayFilter ? (OrderFlowImbalanceSource)ImbalanceControl<ComboBox>(prefix, "ImbalanceSource").SelectedValue : OrderFlowImbalanceSource.Off
+                Source = displayFilter || scheduledCalculation ? (OrderFlowImbalanceSource)ImbalanceControl<ComboBox>(prefix, "ImbalanceSource").SelectedValue : OrderFlowImbalanceSource.Off
             };
             if (settings.Source == OrderFlowImbalanceSource.Off) { return settings; }
             settings.Direction = (OrderFlowImbalanceDirection)ImbalanceControl<ComboBox>(prefix, "ImbalanceDirection").SelectedValue;
@@ -129,7 +129,8 @@ namespace OsEngine.OsData.OrderFlow
         {
             return new OrderFlowCloudFilter(ReadImbalanceSettings(prefix, true),
                 ParseNonNegativeInt(ImbalanceControl<TextBox>(prefix, "MinCount").Text, "Minimum Cloud ticks"),
-                ParseNonNegativeInt(ImbalanceControl<TextBox>(prefix, "MaxCount").Text, "Maximum Cloud ticks"));
+                ParseNonNegativeInt(ImbalanceControl<TextBox>(prefix, "MaxCount").Text, "Maximum Cloud ticks"),
+                timeProfiles: prefix == "Cloud2" ? _displayedRequest?.Cloud2?.TimeProfiles : _displayedRequest?.Cloud?.TimeProfiles);
         }
 
         private void ApplyCloudFilters_Click(object sender, RoutedEventArgs e)
@@ -156,6 +157,7 @@ namespace OsEngine.OsData.OrderFlow
 
         private void RefreshCloudViewRows()
         {
+            RefreshAdditionalCloudRows();
             DataGridClouds.ItemsSource = _chart.CloudViewRows(false);
             DataGridClouds2.ItemsSource = _chart.CloudViewRows(true);
             foreach (string prefix in new[] { "Cloud", "Cloud2" })

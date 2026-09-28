@@ -155,6 +155,7 @@ namespace OsEngine.OrderFlowResearch.Tests
                 Run("StudyBarrierUnderflow", root, TestStudyBarrierUnderflow);
                 RegisterExplorerV2(root);
                 RegisterPatternSearch(root);
+                RegisterTimeProfiles(root);
                 RegisterCalibration(root);
             }
             finally { ServerMaster.LogMessageEvent -= WriteTestLog; Directory.Delete(root, true); }

@@ -14,6 +14,7 @@ namespace OsEngine.Indicators
     public partial class AIndicatorUi : Window
     {
         private Aindicator _indicator;
+        private ThresholdTimeProfiles _pendingTimeProfiles;
 
         public AIndicatorUi(Aindicator indicator)
         {
@@ -22,6 +23,13 @@ namespace OsEngine.Indicators
             OsEngine.Layout.StartupLocation.Start_MouseInCentre(this);
             Title = indicator.GetType().Name + " " + OsLocalization.Charts.Label1;
             _indicator = indicator;
+            if (!indicator.TimeThresholds.IsEmpty)
+            {
+                _pendingTimeProfiles = indicator.TimeProfiles;
+                TabItemTimeProfiles.Visibility = Visibility.Visible;
+                TabItemTimeProfiles.Header = ButtonTimeProfiles.Content = OsLocalization.ConvertToLocString("Eng:Threshold time profiles_Ru:Временные пороги_");
+                ButtonTimeProfiles.Click += TimeProfilesClick;
+            }
 
             CreateGridParam();
             UpdateGridParam();
@@ -49,6 +57,7 @@ namespace OsEngine.Indicators
             try
             {
                 Closed -= AIndicatorUi_Closed;
+                ButtonTimeProfiles.Click -= TimeProfilesClick;
 
                 _gridParam.DataError -= _gridParam_DataError;
                 HostParameters.Child = null;
@@ -92,6 +101,7 @@ namespace OsEngine.Indicators
             try
             {
                 SaveParam();
+                if (_pendingTimeProfiles != null) { _indicator.SetTimeProfiles(_pendingTimeProfiles); }
                 SaveVisual();
 
                 IsAccepted = true;
@@ -102,6 +112,16 @@ namespace OsEngine.Indicators
                 ServerMaster.SendNewLogMessage("Indicator parameters UI error: " + ex.ToString(), Logging.LogMessageType.Error);
                 return;
             }
+        }
+
+        private void TimeProfilesClick(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                ThresholdTimeProfilesUi ui = new ThresholdTimeProfilesUi(_pendingTimeProfiles, _indicator.TimeThresholds);
+                if (ui.ShowDialog() == true) { _pendingTimeProfiles = ui.Result; }
+            }
+            catch (Exception error) { ServerMaster.SendNewLogMessage(error.ToString(), Logging.LogMessageType.Error); }
         }
 
         public bool IsAccepted;
@@ -205,6 +225,8 @@ namespace OsEngine.Indicators
                 }
 
                 _gridParam.Rows.Add(row);
+                if (_indicator.IsTimeProfilesParameter(_indicator.Parameters[i]))
+                { row.Cells[1].Value = ButtonTimeProfiles.Content; row.ReadOnly = true; }
             }
         }
 
@@ -215,6 +237,7 @@ namespace OsEngine.Indicators
                 for (int i = 0; i < _indicator.Parameters.Count; i++)
                 {
 
+                    if (_indicator.IsTimeProfilesParameter(_indicator.Parameters[i])) { continue; }
                     if (_indicator.Parameters[i].Type == IndicatorParameterType.String)
                     {
                         ((IndicatorParameterString)_indicator.Parameters[i]).ValueString = _gridParam.Rows[i].Cells[1].EditedFormattedValue.ToString();

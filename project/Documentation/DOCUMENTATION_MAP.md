@@ -36,6 +36,7 @@ authoritative level документа. Он не превращает roadmap �
 | `ROBOTS-ARCH-001` | `project/CONTEXT_ROBOTS_ARCHITECTURE.md` | CURRENT DOMAIN CONTEXT | Архитектура `BotPanel`/tabs и режимов робота |
 | `ROBOTS-CONTEXT-001` | `project/CONTEXT_ROBOTS.md` | CURRENT DOMAIN CONTEXT | Практика разработки торговых роботов |
 | `INDICATORS-CONTEXT-001` | `project/CONTEXT_INDICATORS.md` | CURRENT DOMAIN CONTEXT | Индикаторы и их integration boundary |
+| `INDICATOR-TIME-PROFILES-001` | `project/Documentation/Indicators/TIME_PROFILES.md` | CURRENT IMPLEMENTATION CONTRACT — OFFLINE EVIDENCE | Общие временные пороги Volume/Delta/OI/Trades, reset, main OrderFlow layers и opt-in indicator API; physical UI/live не квалифицированы |
 | `HFT-CONTEXT-001` | `project/CONTEXT_HIGH_FREQUENCY.md` | CURRENT DOMAIN CONTEXT | Стакан, high-frequency и latency-sensitive patterns |
 | `RISK-CONTEXT-001` | `project/CONTEXT_POSITIONS_AND_RISK.md` | CURRENT DOMAIN CONTEXT | Positions, stops и risk controls |
 | `MCP-CONTEXT-001` | `project/CONTEXT_MCP.md` | CURRENT DOMAIN CONTEXT | MCP API, endpoints, tools и test stand |
@@ -63,6 +64,7 @@ authoritative level документа. Он не превращает roadmap �
 | `ORDER-FLOW-CLOUD-EXPLORER-GUIDE-001` | `project/Documentation/OrderFlow/CLOUD_EXPLORER_USER_GUIDE.md` | CURRENT OPERATOR GUIDE — OFFLINE RESEARCH ONLY | Русский пошаговый сценарий отдельного окна Cloud Explorer, результатов, графика, реплея, файлов и типичных ошибок |
 | `ORDER-FLOW-CLOUD-EXPLORER-FOLLOWUP-001` | `project/Documentation/OrderFlow/CLOUD_EXPLORER_FOLLOWUP_SPEC.md` | CURRENT IMPLEMENTATION CONTRACT — OFFLINE RESEARCH ONLY | Адресная валидация, согласованный график и ограниченный причинный поиск сценариев с недельным контекстом, Fit/Test и отдельными артефактами |
 | `ORDER-FLOW-CLOUD-CALIBRATION-001` | `project/Documentation/OrderFlow/CLOUD_CALIBRATION_SPEC.md` | CURRENT IMPLEMENTATION CONTRACT — OFFLINE RESEARCH ONLY | Реализованный session-aware подбор Single/Chain и Standard/Diagonal rules: статистика, heatmap, per-range rules, detached tables и Anatomy; физический DPI/focus — OWNER-RUN |
+| `ORDER-FLOW-SRU6-CALIBRATION-2026-001` | `project/Documentation/OrderFlow/SRU6_CLOUD_CALIBRATION_JUN_AUG_2026.md` | RESEARCH REPORT — OWNER VISUAL VALIDATION PENDING | Воспроизводимый offline-подбор описательных Cloud-параметров SRU6 за июнь–август 2026; не profitability/live claim |
 | `ORDER-FLOW-DATA-001` | `project/Documentation/OrderFlow/DATA_REPLAY_CONTRACT.md` | TARGET CONTRACT — PARTIAL RESEARCH MVP | Локальный tick text, ручной decimal step, inclusive dates, provenance и causal replay |
 | `ORDER-FLOW-RESEARCH-001` | `project/Documentation/OrderFlow/RESEARCH_PROTOCOL.md` | TARGET RESEARCH CONTRACT — PARTIAL MVP | Observation dataset, labels, experiment registry, rule/ML boundary и temporal validation |
 | `ORDER-FLOW-STRATEGY-001` | `project/Documentation/OrderFlow/STRATEGY_LIFECYCLE.md` | TARGET CONTRACT — BROAD CANDIDATE ONLY | Candidate/confirmation/no-trade/intent lifecycle и обязательное содержание StrategySpec |

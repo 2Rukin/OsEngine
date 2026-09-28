@@ -13,7 +13,7 @@ using System.Threading;
 
 namespace OsEngine.Indicators
 {
-    public abstract class Aindicator : IIndicator
+    public abstract partial class Aindicator : IIndicator
     {
         #region Mandatory overload members
 
@@ -41,8 +41,15 @@ namespace OsEngine.Indicators
             OnStateChange(IndicatorState.Configure);
         }
 
+        /// <summary>Clears output series and child indicators and resets the time-profile cursor.</summary>
+        /// <remarks>
+        /// For a registered consumer, private-state reset is deferred until the next processed candle;
+        /// this method does not itself erase arbitrary subclass fields. Caller serializes with processing.
+        /// Contract: INDICATOR-TIME-PROFILES-001.
+        /// </remarks>
         public void Clear()
         {
+            ResetTimeProfileProcessing();
             _myCandles = new List<Candle>();
 
             if (DataSeries != null)
@@ -596,9 +603,15 @@ namespace OsEngine.Indicators
 
         public string SecurityName;
 
+        /// <summary>Processes source candles, applying explicitly registered thresholds at Candle.TimeStart.</summary>
+        /// <remarks>
+        /// Caller owns ordering and serialization with settings and reload. Enabled profiles skip inactive
+        /// OnProcess calls and the Optimizer series cache; active forming candles may be processed repeatedly.
+        /// A participating consumer owns idempotent accumulation and reset. Contract: INDICATOR-TIME-PROFILES-001.
+        /// </remarks>
         public void Process(List<Candle> candles)
         {
-            if(StartProgram == StartProgram.IsOsOptimizer)
+            if(StartProgram == StartProgram.IsOsOptimizer && !TimeProfiles.Enabled)
             {
                 if (_tryGetCacheOnce == false)
                 {
@@ -687,6 +700,7 @@ namespace OsEngine.Indicators
 
         private void ProcessAll(List<Candle> candles)
         {
+            ResetTimeProfileProcessing();
             for (int i = 0; i < IncludeIndicators.Count; i++)
             {
                 IncludeIndicators[i].Clear();
@@ -750,7 +764,7 @@ namespace OsEngine.Indicators
                 return;
             }
 
-            OnProcess(candles, candles.Count - 1);
+            if (PrepareTimeProfile(candles[candles.Count - 1].TimeStart, candles.Count - 1)) { OnProcess(candles, candles.Count - 1); }
         }
 
         private void ProcessNew(List<Candle> candles, int index)
@@ -800,9 +814,15 @@ namespace OsEngine.Indicators
                 return;
             }
 
-            OnProcess(candles, index);
+            if (PrepareTimeProfile(candles[index].TimeStart, index)) { OnProcess(candles, index); }
         }
 
+        /// <summary>Rebuilds the retained candle history and notifies chart subscribers unless the history reference is null.</summary>
+        /// <remarks>
+        /// A registered consumer receives its private-state reset callback before the first rebuilt candle,
+        /// including after disabling its schedule. Caller serializes this operation with processing and saves
+        /// settings separately. Contract: INDICATOR-TIME-PROFILES-001.
+        /// </remarks>
         public void Reload()
         {
             if (_myCandles == null)
@@ -866,8 +886,13 @@ namespace OsEngine.Indicators
 
         #region  Loading of data arrays into the indicator
 
+        /// <summary>Processes a numeric series using the legacy synthetic-candle path, which has no source-clock timestamps.</summary>
+        /// <remarks>Caller serializes processing. Time profiles must be disabled for this overload. Contract: INDICATOR-TIME-PROFILES-001.</remarks>
+        /// <exception cref="InvalidOperationException">An enabled schedule requires real source candle timestamps.</exception>
         public void Process(List<decimal> values)
         {
+            if (_timeProfilesParameter != null && TimeProfiles.Enabled)
+            { throw new InvalidOperationException("Time profiles require source candle timestamps."); }
             //lock(_indicatorUpdateLocker)
             //{
                 if (values.Count == 0)

@@ -108,6 +108,9 @@ namespace OsEngine.OsData.OrderFlow
         private decimal _buyVolume;
         private decimal _sellVolume;
 
+        /// <summary>Clears only Delta accumulation at a scheduled boundary; previously created future labels remain owned by their labeler.</summary>
+        internal void Reset() { _deals.Clear(); _buyVolume = _sellVolume = 0; }
+
         /// <summary>
         /// Adds one closed deal bucket, evicts records strictly older than
         /// <c>T - FeatureWindowSeconds</c> and builds the causal feature DTO.

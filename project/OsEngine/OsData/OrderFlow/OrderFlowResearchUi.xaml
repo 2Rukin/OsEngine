@@ -53,6 +53,7 @@
                     <CheckBox Name="CheckBoxCalculateDelta" Content="Calculate delta" IsChecked="True" Margin="8"/>
                     <CheckBox Name="CheckBoxCalculateCloud" Content="Calculate Cloud" Margin="8"/>
                     <CheckBox Name="CheckBoxCalculateCloud2" Content="Calculate Cloud 2" Margin="8"/>
+                    <Button Name="ButtonAddCloud" Margin="4" Padding="10,4" MinHeight="30"/>
                 <Label Name="LabelPriceStep"  Content="Price step"/>
                 <TextBox Name="TextBoxPriceStep" Width="100" Margin="3"/>
                 </WrapPanel>
@@ -213,6 +214,24 @@
                                 </Grid>
                             </Expander>
                         </StackPanel>
+                    </TabItem>
+                    <TabItem Name="TabItemCloudLayersSettings" Header="Cloud instances / time">
+                        <Grid Margin="5"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                            <WrapPanel>
+                                <ComboBox Name="ComboBoxTimeProfileTarget" Width="110" Margin="4"/>
+                                <Button Name="ButtonTimeProfiles" Margin="4" Padding="8,4" MinHeight="30"/>
+                                <Button Name="ButtonSaveTimeProfiles" Margin="4" Padding="8,4" MinHeight="30"/>
+                                <Button Name="ButtonLoadTimeProfiles" Margin="4" Padding="8,4" MinHeight="30"/>
+                            </WrapPanel>
+                            <WrapPanel Grid.Row="1">
+                                <ComboBox Name="ComboBoxCloudLayers" Width="190" Margin="4" DisplayMemberPath="Name"/>
+                                <Button Name="ButtonEditCloudLayer" Margin="4" Padding="8,4" MinHeight="30"/>
+                                <Button Name="ButtonRemoveCloudLayer" Margin="4" Padding="8,4" MinHeight="30"/>
+                                <Button Name="ButtonCloudLayerVisibility" Margin="4" Padding="8,4" MinHeight="30"/>
+                                <Button Name="ButtonCloudLayerFilter" Margin="4" Padding="8,4" MinHeight="30"/>
+                            </WrapPanel>
+                            <TextBlock Name="TextBlockCloudLayers" Grid.Row="2" TextWrapping="Wrap" Margin="4" Foreground="{DynamicResource ControlForegroundWhite}"/>
+                        </Grid>
                     </TabItem>
                     <TabItem Name="TabItemChartSettings" Header="Chart">
                         <WrapPanel Margin="4">
@@ -485,6 +504,22 @@
                 </Grid>
             </TabItem>
             <TabItem Name="TabItemCloudExplorer" Header="Исследование Cloud"/>
+            <TabItem Name="TabItemAdditionalClouds" Header="Additional Clouds">
+                <Grid>
+                    <DataGrid Name="DataGridAdditionalClouds" IsReadOnly="True" AutoGenerateColumns="False" CanUserAddRows="False">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Cloud" Binding="{Binding Layer}" Width="140"/>
+                            <DataGridTextColumn Header="Time" Binding="{Binding Cloud.Time, StringFormat=yyyy-MM-dd HH:mm:ss.ffffff}" Width="200"/>
+                            <DataGridTextColumn Header="Volume" Binding="{Binding Cloud.Volume}" Width="110"/>
+                            <DataGridTextColumn Header="Delta" Binding="{Binding Cloud.Delta}" Width="110"/>
+                            <DataGridTextColumn Header="Trades" Binding="{Binding Cloud.TradeCount}" Width="90"/>
+                            <DataGridCheckBoxColumn Header="Threshold PASS" Binding="{Binding Cloud.ThresholdPassed}" Width="120"/>
+                            <DataGridTextColumn Header="Completion" Binding="{Binding Cloud.CompletionReason}" Width="150"/>
+                            <DataGridTextColumn Header="ID" Binding="{Binding Cloud.CloudId}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
             <TabItem Name="TabItemJournal" Header="Event journal">
                 <DataGrid Name="DataGridJournal" IsReadOnly="True" AutoGenerateColumns="False"
                           EnableRowVirtualization="True">

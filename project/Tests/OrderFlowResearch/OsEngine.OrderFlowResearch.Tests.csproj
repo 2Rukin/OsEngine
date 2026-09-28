@@ -12,6 +12,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\OsEngine\OsEngine.csproj" />
+    <!-- App-relative icon used by the unshown main-workbench component test. -->
+    <Resource Include="..\..\OsEngine\Images\OsLogo.ico" Link="Images\OsLogo.ico" />
     <EmbeddedResource Include="..\..\OsEngine\App.xaml" LogicalName="Research.App.xaml" />
     <EmbeddedResource Include="..\..\OsEngine\OsData\OrderFlow\OrderFlowResearchUi.xaml" LogicalName="Research.Ui.xaml" />
     <EmbeddedResource Include="..\..\OsEngine\OsData\OrderFlow\Explorer\CloudExplorerControl.xaml" LogicalName="Research.Explorer.Ui.xaml" />

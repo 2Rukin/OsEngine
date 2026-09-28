@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using OsEngine.Indicators;
 
 namespace OsEngine.OsData.OrderFlow
 {
@@ -14,10 +15,11 @@ namespace OsEngine.OsData.OrderFlow
     {
         private readonly OrderFlowImbalanceSettings _imbalance;
         private readonly ImmutableHashSet<string> _allowedClouds;
+        private readonly OrderFlowCloudSettings _scheduledSettings;
         public int MinimumTradeCount { get; }
         public int MaximumTradeCount { get; }
 
-        public OrderFlowCloudFilter(OrderFlowImbalanceSettings imbalance, int minimumTradeCount = 0, int maximumTradeCount = 0, IEnumerable<string> allowedClouds = null)
+        public OrderFlowCloudFilter(OrderFlowImbalanceSettings imbalance, int minimumTradeCount = 0, int maximumTradeCount = 0, IEnumerable<string> allowedClouds = null, ThresholdTimeProfiles timeProfiles = null)
         {
             if (imbalance == null) { throw new ArgumentNullException(nameof(imbalance)); }
             if (minimumTradeCount < 0 || maximumTradeCount < 0 || (maximumTradeCount > 0 && minimumTradeCount > maximumTradeCount))
@@ -27,6 +29,8 @@ namespace OsEngine.OsData.OrderFlow
                 MinimumDominantVolume = imbalance.MinimumDominantVolume, MinimumDifference = imbalance.MinimumDifference,
                 MinimumDeltaPercent = imbalance.MinimumDeltaPercent };
             _imbalance.Validate();
+            timeProfiles?.Validate(OrderFlowTimeThresholds.Cloud);
+            _scheduledSettings = timeProfiles?.Enabled == true ? new OrderFlowCloudSettings { Imbalance = _imbalance, TimeProfiles = timeProfiles } : null;
             _allowedClouds = allowedClouds?.ToImmutableHashSet(StringComparer.Ordinal);
             MinimumTradeCount = minimumTradeCount; MaximumTradeCount = maximumTradeCount;
         }
@@ -37,27 +41,32 @@ namespace OsEngine.OsData.OrderFlow
         {
             if (cloud == null) { throw new ArgumentNullException(nameof(cloud)); }
             if (_imbalance.Source == OrderFlowImbalanceSource.Off && MinimumTradeCount == 0 && MaximumTradeCount == 0 && _allowedClouds == null &&
-                cloud.ImbalanceSource == OrderFlowImbalanceSource.Off && cloud.ImbalancePassed) { return cloud; }
+                cloud.ImbalanceSource == OrderFlowImbalanceSource.Off && cloud.ImbalancePassed && cloud.ThresholdPassed) { return cloud; }
             OrderFlowCloud view = cloud.Copy();
-            view.InsideImbalance = cloud.InsideImbalance?.WithFloors(_imbalance);
-            view.ContextImbalance = cloud.ContextImbalance?.WithFloors(_imbalance);
-            view.ImbalanceSource = _imbalance.Source;
+            OrderFlowImbalanceSettings effective = EffectiveImbalance(cloud);
+            view.InsideImbalance = cloud.InsideImbalance?.WithFloors(effective);
+            view.ContextImbalance = cloud.ContextImbalance?.WithFloors(effective);
+            view.ImbalanceSource = effective.Source;
             view.ImbalancePassed = WithinCountAndSelection(cloud) &&
-                _imbalance.Passes(view.InsideImbalance, view.ContextImbalance);
+                effective.Passes(view.InsideImbalance, view.ContextImbalance);
             return view;
         }
 
         /// <summary>Evaluates saved evidence without allocating a Cloud view or changing the result.</summary>
         public bool Passes(OrderFlowCloud cloud)
         {
-            return WithinCountAndSelection(cloud) && (_imbalance.Source == OrderFlowImbalanceSource.Off ||
-                _imbalance.Passes(cloud.InsideImbalance?.WithFloors(_imbalance), cloud.ContextImbalance?.WithFloors(_imbalance)));
+            OrderFlowImbalanceSettings effective = EffectiveImbalance(cloud);
+            return WithinCountAndSelection(cloud) && (effective.Source == OrderFlowImbalanceSource.Off ||
+                effective.Passes(cloud.InsideImbalance?.WithFloors(effective), cloud.ContextImbalance?.WithFloors(effective)));
         }
 
-        /// <summary>Creates an independent filter limited to the study's causal volatility cohort, for chart exploration only.</summary>
-        public OrderFlowCloudFilter WithAllowedClouds(IEnumerable<string> ids) => new OrderFlowCloudFilter(_imbalance, MinimumTradeCount, MaximumTradeCount, ids);
+        private OrderFlowImbalanceSettings EffectiveImbalance(OrderFlowCloud cloud) => _scheduledSettings?.ScheduledImbalance(
+            new ThresholdTimeCursor(_scheduledSettings.TimeProfiles).Select(cloud.Time)) ?? _imbalance;
 
-        private bool WithinCountAndSelection(OrderFlowCloud cloud) => cloud.TradeCount >= MinimumTradeCount &&
+        /// <summary>Creates an independent filter limited to the study's causal volatility cohort, for chart exploration only.</summary>
+        public OrderFlowCloudFilter WithAllowedClouds(IEnumerable<string> ids) => new OrderFlowCloudFilter(_imbalance, MinimumTradeCount, MaximumTradeCount, ids, _scheduledSettings?.TimeProfiles);
+
+        private bool WithinCountAndSelection(OrderFlowCloud cloud) => cloud.ThresholdPassed && cloud.TradeCount >= MinimumTradeCount &&
             (MaximumTradeCount == 0 || cloud.TradeCount <= MaximumTradeCount) && (_allowedClouds == null || _allowedClouds.Contains(cloud.CloudId));
     }
 }

@@ -43,6 +43,11 @@ namespace OsEngine.OsData.OrderFlow
                 Candidates = new List<OrderFlowCandidate>(context.Result.Candidates),
                 Labels = new List<OrderFlowMarketPathLabel>(context.Result.Labels)
             };
+            for (int i = 0; i < context.AdditionalCloudAccumulators.Count; i++)
+            {
+                result.CloudLayers.Add(new OrderFlowCloudLayerResult { Layer = context.Result.CloudLayers[i].Layer,
+                    Clouds = context.AdditionalCloudAccumulators[i].Snapshot() });
+            }
             return new OrderFlowReplayFrame { Result = result, Time = tick.Time,
                 TickCount = context.Result.Quality.DealCount, SourceSequence = tick.SourceSequence };
         }

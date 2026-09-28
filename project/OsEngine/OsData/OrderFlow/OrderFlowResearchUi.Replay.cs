@@ -52,6 +52,7 @@ namespace OsEngine.OsData.OrderFlow
             _beforeReplayLegend = TextBlockChartLegend.Text;
             _beforeReplayDetails = TextBlockCandidateDetails.Text;
             _chart.BeginReplay(_replay.CloudReferenceVolume, _replay.Cloud2ReferenceVolume);
+            RefreshAdditionalCloudRows();
             StartCalibrationReplay();
             SetRunningState(true);
             ButtonCancel.IsEnabled = ButtonOpenArtifacts.IsEnabled = ButtonChartSelected.IsEnabled = false;

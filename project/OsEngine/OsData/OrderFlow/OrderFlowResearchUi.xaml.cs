@@ -45,8 +45,12 @@ namespace OsEngine.OsData.OrderFlow
         /// Creates the research-only workbench. The window does not start a
         /// replay, network access or file download.
         /// </summary>
-        public OrderFlowResearchUi()
+        public OrderFlowResearchUi() : this(null) { }
+
+        /// <summary>Allows an unshown component host to supply theme resources without creating an Application; null uses the normal application theme.</summary>
+        internal OrderFlowResearchUi(ResourceDictionary themeResources)
         {
+            if (themeResources != null) { Resources = themeResources; }
             InitializeComponent();
             _fromDateInput = new OrderFlowDateInput(DateFrom);
             _toDateInput = new OrderFlowDateInput(DateTo);
@@ -99,6 +103,7 @@ namespace OsEngine.OsData.OrderFlow
             InitializeCloudExplorer();
             InitializeTableWindows();
             InitializeCalibration();
+            InitializeTimeProfiles();
             Chart_ViewChanged(this, EventArgs.Empty);
         }
 
@@ -438,6 +443,7 @@ namespace OsEngine.OsData.OrderFlow
             DataGridClouds2.ItemsSource = result.Clouds2;
             TextBlockCandidateDetails.Text = string.Empty;
             _chart.SetResult(result);
+            RefreshAdditionalCloudRows();
             RestoreCalibrationLayers();
             _chart.SetCloudFilters(null, null);
             try { ApplyCloudViewFilters(); }
@@ -585,11 +591,12 @@ namespace OsEngine.OsData.OrderFlow
                 request.InvalidationTicks = ParseInt(TextBoxInvalidationTicks.Text, "Invalidation ticks");
             }
             BuildCloud2Request(request);
-            if (request.CalculateCloud) { request.Cloud.Imbalance = ReadImbalanceSettings("Cloud"); }
-            if (request.CalculateCloud2) { request.Cloud2.Imbalance = ReadImbalanceSettings("Cloud2"); }
+            if (request.CalculateCloud) { request.Cloud.Imbalance = ReadImbalanceSettings("Cloud", scheduledCalculation: OrderFlowTimeThresholds.HasDiagonalOverrides(_cloudTimeProfiles)); }
+            if (request.CalculateCloud2) { request.Cloud2.Imbalance = ReadImbalanceSettings("Cloud2", scheduledCalculation: OrderFlowTimeThresholds.HasDiagonalOverrides(_cloud2TimeProfiles)); }
             request.PriceStep = ParsePriceStep(TextBoxPriceStep.Text);
             request.FromDate = _fromDateInput.ReadDate();
             request.ToDate = _toDateInput.ReadDate();
+            AttachTimeProfiles(request);
             request.Validate();
             return request;
         }
@@ -679,6 +686,12 @@ namespace OsEngine.OsData.OrderFlow
             builder.AppendLine("Cloud hash: " + result.CloudHash);
             builder.AppendLine("Cloud 2: " + result.Clouds2.Count + text("; single ticks: ", "; одиночных тиков: ") + result.Clouds2.Count(cloud => cloud.CompletionReason == "SingleTick"));
             builder.AppendLine("Cloud 2 hash: " + result.Cloud2Hash);
+            if (result.CloudLayers.Count != 0)
+            {
+                builder.AppendLine(text("Additional Cloud instances: ", "Добавленные экземпляры Cloud: ") + result.CloudLayers.Count);
+                foreach (OrderFlowCloudLayerResult layer in result.CloudLayers)
+                { builder.AppendLine(layer.Layer.Name + ": " + layer.Clouds.Count(cloud => cloud.ThresholdPassed && cloud.ImbalancePassed) + " / " + layer.Clouds.Count); }
+            }
             builder.AppendLine(text("Cloud filter PASS / total: ", "Cloud прошли фильтр / всего: ")
                 + result.Clouds.Count(cloud => cloud.ImbalancePassed) + " / " + result.Clouds.Count);
             builder.AppendLine(text("Cloud 2 filter PASS / total: ", "Cloud 2 прошли фильтр / всего: ")
@@ -729,6 +742,7 @@ namespace OsEngine.OsData.OrderFlow
         private void SetRunningState(bool isRunning)
         {
             UpdateStatisticsControls(isRunning);
+            ButtonAddCloud.IsEnabled = TabItemCloudLayersSettings.IsEnabled = !isRunning;
             ButtonReplayPlay.IsEnabled = !isRunning && _displayedResult?.Quality.ResearchAccepted == true;
             CheckBoxCalculateDelta.IsEnabled = CheckBoxCalculateCloud.IsEnabled = CheckBoxCalculateCloud2.IsEnabled = !isRunning;
             UpdateCalculationControls();
@@ -809,6 +823,7 @@ namespace OsEngine.OsData.OrderFlow
                 DisposeCloudNavigation();
                 DisposeStatistics();
                 DisposeCloud2Controls();
+                DisposeTimeProfiles();
                 DisposeReplay();
                 DisposeChartTools();
 

@@ -117,12 +117,13 @@ namespace OsEngine.OsData.OrderFlow
             List<OrderFlowCloud> secondClouds = DisplayClouds(true);
             bool first = _showCloud && _result.CloudCalculated && firstClouds.Count > 0;
             bool second = _showCloud2 && _result.Cloud2Calculated && secondClouds.Count > 0;
-            if (!first && !second)
+            if (!first && !second && !HasAdditionalClouds())
             {
                 DrawText(context, L("No visible calculated Clouds — select a calculated layer or run research.", "Нет видимых рассчитанных Cloud — покажите рассчитанный слой или выполните расчёт."),
                     new Point(plot.Left + 8, plot.Top + 8), Brushes.Goldenrod, 12);
                 return;
             }
+            DrawAdditionalCloudPaths(context, plot, min, max);
             if (first) { DrawCloudPriceLayer(context, plot, min, max, firstClouds, Brushes.DeepSkyBlue); }
             if (second) { DrawCloudPriceLayer(context, plot, min, max, secondClouds, Brushes.MediumOrchid); }
         }

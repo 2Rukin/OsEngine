@@ -3,6 +3,7 @@
  * Ваши права на использование кода регулируются данной лицензией http://o-s-a.net/doc/license_simple_engine.pdf
 */
 
+using OsEngine.Indicators;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -82,6 +83,7 @@ namespace OsEngine.OsData.OrderFlow
             cancellationToken.ThrowIfCancellationRequested();
             result.CloudHash = HashClouds(result.Clouds, cancellationToken);
             result.Cloud2Hash = HashClouds(result.Clouds2, cancellationToken);
+            foreach (OrderFlowCloudLayerResult layer in result.CloudLayers) { layer.Hash = HashClouds(layer.Clouds, cancellationToken); }
             FinalizeQuality(result);
             SortResult(result);
             cancellationToken.ThrowIfCancellationRequested();
@@ -100,6 +102,7 @@ namespace OsEngine.OsData.OrderFlow
                         cloud.BuyVolume, cloud.SellVolume, cloud.BuyCount, cloud.SellCount, cloud.LargestTick,
                         cloud.FirstSourceSequence, cloud.FirstPrice, cloud.Notional, cloud.PriceStep);
                     cloudHash.Add(cloud.ImbalancePassed, cloud.ImbalanceSource);
+                    if (!cloud.ThresholdPassed) { cloudHash.Add("TIME_THRESHOLD_REJECTED"); }
                     HashImbalance(cloudHash, cloud.InsideImbalance, cancellationToken);
                     HashImbalance(cloudHash, cloud.ContextImbalance, cancellationToken);
                     cloudHash.Add(cloud.Qualified.Time, cloud.Qualified.SourceSequence, cloud.Qualified.Price,
@@ -148,6 +151,7 @@ namespace OsEngine.OsData.OrderFlow
                 replay?.BeforeTick(tick.Time, cancellationToken);
                 context.CloudAccumulator?.Add(tick, cancellationToken);
                 context.CloudAccumulator2?.Add(tick, cancellationToken);
+                foreach (OrderFlowCloudAccumulator accumulator in context.AdditionalCloudAccumulators) { accumulator.Add(tick, cancellationToken); }
                 if (bucket == null || bucket.Time != tick.Time)
                 {
                     if (bucket != null) { ProcessBucket(context, bucket); }
@@ -163,6 +167,7 @@ namespace OsEngine.OsData.OrderFlow
             if (bucket != null) { ProcessBucket(context, bucket); }
             context.CloudAccumulator?.Complete();
             context.CloudAccumulator2?.Complete();
+            foreach (OrderFlowCloudAccumulator accumulator in context.AdditionalCloudAccumulators) { accumulator.Complete(); }
             context.Labeler?.Complete(result.Quality.LastEventTime ?? DateTime.MinValue);
             result.Bars = context.BarAggregator.Complete();
         }
@@ -174,7 +179,14 @@ namespace OsEngine.OsData.OrderFlow
             context.Result.Quality.LastEventTime = bucket.Time;
             HashBucket(context.EventHash, bucket);
             context.Labeler?.Advance(bucket.Time, bucket.Deals);
-            OrderFlowFeatureSnapshot snapshot = context.FeatureWindow?.Build(bucket, context.Request);
+            ThresholdSelection selection = context.DeltaTimeCursor.Select(bucket.Time);
+            if (selection.Reset && context.FeatureWindow != null)
+            {
+                context.FeatureWindow.Reset();
+                context.LastLongCandidateTime = context.LastShortCandidateTime = context.NextBackgroundTime = DateTime.MinValue;
+            }
+            context.DeltaThresholdSelection = selection;
+            OrderFlowFeatureSnapshot snapshot = selection.Active ? context.FeatureWindow?.Build(bucket, context.Request) : null;
             context.BarAggregator.Add(bucket, snapshot);
             if (snapshot != null)
             {
@@ -185,8 +197,8 @@ namespace OsEngine.OsData.OrderFlow
 
         private static void ProcessObservation(OrderFlowRunContext context, OrderFlowFeatureSnapshot snapshot)
         {
-            OrderFlowDirection direction = DetectDirection(snapshot, context.Request,
-                context.PriceStep);
+            OrderFlowDirection direction = DeltaThresholdsPass(snapshot, context.DeltaThresholdSelection, context.Request)
+                ? DetectDirection(snapshot, context.Request, context.PriceStep, context.DeltaThresholdSelection.Value("MinimumAbsoluteDelta", context.Request.MinimumAbsoluteDelta)) : OrderFlowDirection.None;
             bool createdCandidate = false;
 
             if (direction != OrderFlowDirection.None)
@@ -250,18 +262,23 @@ namespace OsEngine.OsData.OrderFlow
             }
         }
 
+        private static bool DeltaThresholdsPass(OrderFlowFeatureSnapshot snapshot, ThresholdSelection selection, OrderFlowResearchRequest request) =>
+            OrderFlowTimeThresholds.Range(Math.Abs(snapshot.Delta), selection.Value("MinimumAbsoluteDelta", request.MinimumAbsoluteDelta), selection.Value("MaximumAbsoluteDelta", 0)) &&
+            OrderFlowTimeThresholds.Range(snapshot.BuyVolume + snapshot.SellVolume, selection.Value("MinimumVolume", 0), selection.Value("MaximumVolume", 0)) &&
+            OrderFlowTimeThresholds.Range(snapshot.TradeCount, selection.Value("MinimumTradeCount", 0), selection.Value("MaximumTradeCount", 0));
+
         private static OrderFlowDirection DetectDirection(OrderFlowFeatureSnapshot snapshot,
-            OrderFlowResearchRequest request, decimal priceStep)
+            OrderFlowResearchRequest request, decimal priceStep, decimal minimumDelta)
         {
             decimal minimumPriceChange = request.MinimumPriceChangeTicks * priceStep;
 
-            if (snapshot.Delta <= -request.MinimumAbsoluteDelta &&
+            if (snapshot.Delta <= -minimumDelta &&
                 snapshot.PriceChange >= minimumPriceChange)
             {
                 return OrderFlowDirection.Long;
             }
 
-            if (snapshot.Delta >= request.MinimumAbsoluteDelta &&
+            if (snapshot.Delta >= minimumDelta &&
                 snapshot.PriceChange <= -minimumPriceChange)
             {
                 return OrderFlowDirection.Short;
@@ -426,6 +443,13 @@ namespace OsEngine.OsData.OrderFlow
             OrderFlowCanonicalHash candidateHash, decimal priceStep)
         {
             Request = request;
+            DeltaTimeCursor = new ThresholdTimeCursor(request.DeltaTimeProfiles);
+            foreach (OrderFlowCloudLayer layer in request.CloudLayers.Where(l => l.Enabled))
+            {
+                OrderFlowCloudLayerResult output = new OrderFlowCloudLayerResult { Layer = layer.Copy() };
+                result.CloudLayers.Add(output);
+                AdditionalCloudAccumulators.Add(new OrderFlowCloudAccumulator(layer.Settings, priceStep, output.Clouds, "CLI-" + layer.Id + "-"));
+            }
             Result = result;
             EventHash = eventHash;
             FeatureHash = featureHash;
@@ -454,6 +478,9 @@ namespace OsEngine.OsData.OrderFlow
         public OrderFlowCloudAccumulator CloudAccumulator { get; private set; }
         public OrderFlowCloudAccumulator CloudAccumulator2 { get; private set; }
 
+        public List<OrderFlowCloudAccumulator> AdditionalCloudAccumulators { get; } = new List<OrderFlowCloudAccumulator>();
+        public ThresholdTimeCursor DeltaTimeCursor { get; private set; }
+        public ThresholdSelection DeltaThresholdSelection { get; set; }
         public OrderFlowFeatureWindow FeatureWindow { get; private set; }
 
         public OrderFlowDisplayBarAggregator BarAggregator { get; private set; }

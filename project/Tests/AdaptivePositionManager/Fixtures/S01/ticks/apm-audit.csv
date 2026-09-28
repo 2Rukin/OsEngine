@@ -1,0 +1,2 @@
+﻿Sequence,Time,CampaignId,Kind,Action,Price,Volume,Filled,Raw,Allowed,Reasons,IntentId,Curve,Kappa,Policy,PendingIncrease,PendingReduce,Regime,Equity,Drawdown,Fees,MaximumVolume,Turnover,ExitReason,Ready,Quality,BrokerId,Side,IsLimit,OrderState,OrderFilled,OrderRemaining,SlippagePrice
+"325","2026-09-25T00:02:31.0000000","S01","Decision","Wait","102","0","0","8.00000","8","SESSION_EXIT","","8.0","0","8","0","0","Normal","36.0","28.0","0","10","32","SESSION_EXIT","True","OK","","","","","","",""

@@ -4,6 +4,8 @@
 */
 
 using OsEngine.Entity;
+using OsEngine.Indicators;
+using System.Text.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -17,7 +19,7 @@ namespace OsEngine.OsData.OrderFlow
     /// ORDER-FLOW-MVP-RUNBOOK-001. Spread modes and the undisclosed Smart formula are unsupported.
     /// One run owns this mutable DTO; validation freezes only effective settings by convention.
     /// </remarks>
-    internal sealed class OrderFlowCloudSettings
+    internal sealed partial class OrderFlowCloudSettings
     {
         /// <summary>True emits each qualifying physical tick immediately; false accumulates eligible chains.</summary>
         public bool SingleTicks { get; set; }
@@ -29,6 +31,7 @@ namespace OsEngine.OsData.OrderFlow
 
         public void Validate()
         {
+            ValidateTimeProfiles();
             (Imbalance ?? throw new ArgumentException("Cloud imbalance settings are required.")).Validate();
             if (SingleTicks)
             {
@@ -47,7 +50,7 @@ namespace OsEngine.OsData.OrderFlow
         {
             return string.Join("|", SingleTicks ? "SINGLE_TICKS" : "CHAIN", MinimumTickVolume.ToString("G29", CultureInfo.InvariantCulture),
                 MinimumSumVolume.ToString("G29", CultureInfo.InvariantCulture),
-                MaximumGapMilliseconds.ToString(CultureInfo.InvariantCulture), MaximumRangeTicks.ToString(CultureInfo.InvariantCulture), Imbalance.CanonicalValue());
+                MaximumGapMilliseconds.ToString(CultureInfo.InvariantCulture), MaximumRangeTicks.ToString(CultureInfo.InvariantCulture), Imbalance.CanonicalValue()) + TimeProfileCanonicalValue();
         }
     }
 
@@ -71,6 +74,8 @@ namespace OsEngine.OsData.OrderFlow
             return copy;
         }
 
+        /// <summary>Current anchored-prefix verdict of scheduled volume/delta/trade-count thresholds; qualification remains historical.</summary>
+        public bool ThresholdPassed { get; set; } = true;
         public string CloudId { get; set; }
         public long FirstSourceSequence { get; set; }
         public decimal FirstPrice { get; set; }
@@ -137,7 +142,8 @@ namespace OsEngine.OsData.OrderFlow
     /// Inclusive volume/gap/range boundaries in chain mode; excluded sizes do not update or break a chain.
     /// An eligible breaking tick closes the old chain and starts the next one. Output is final historical
     /// grouping with separate completion evidence; EOF does not prove that a chain ended in the market.
-    /// No daily reset, deduplication, orders or labels. Decimal overflow propagates to replay rejection.
+    /// Time profiles select thresholds and admitted input; interval/day boundaries never split chains or reset
+    /// surrounding context. No deduplication, orders or labels. Decimal overflow rejects the run.
     /// Contract: ORDER-FLOW-DATA-001 and ORDER-FLOW-MVP-RUNBOOK-001.
     /// </remarks>
     internal sealed class OrderFlowCloudAccumulator
@@ -148,11 +154,15 @@ namespace OsEngine.OsData.OrderFlow
         private OrderFlowCloud _current;
         private readonly string _idPrefix;
         private readonly OrderFlowImbalanceWindow _context;
+        private readonly ThresholdTimeCursor _timeCursor;
+        private ThresholdTimePeriod _imbalancePeriod;
+        private OrderFlowImbalanceSettings _scheduledImbalance;
         private OrderFlowImbalanceProfile _inside;
 
         public OrderFlowCloudAccumulator(OrderFlowCloudSettings settings, decimal priceStep, List<OrderFlowCloud> output, string idPrefix = "CL-")
         {
             _settings = settings;
+            _timeCursor = new ThresholdTimeCursor(settings.TimeProfiles);
             _priceStep = priceStep;
             _output = output;
             _idPrefix = idPrefix;
@@ -163,8 +173,13 @@ namespace OsEngine.OsData.OrderFlow
         /// <remarks>Cancellation propagates, including during context expiry. Later breaking rows never replace a previous Cloud anchor snapshot.</remarks>
         public void Add(OrderFlowDeal tick, CancellationToken cancellationToken = default)
         {
+            ThresholdSelection selection = _timeCursor.Select(tick.Time);
+            if (!selection.Active) { return; }
+            if (!ReferenceEquals(_imbalancePeriod, selection.Period))
+            { _scheduledImbalance = _settings.ScheduledImbalance(selection); _imbalancePeriod = selection.Period; }
             _context.Add(tick, cancellationToken);
-            if (tick.Volume < _settings.MinimumTickVolume) { return; }
+            decimal minimumTick = selection.Value("MinimumTickVolume", _settings.MinimumTickVolume);
+            if (!OrderFlowTimeThresholds.Range(tick.Volume, minimumTick, selection.Value("MaximumTickVolume", _settings.MaximumTickVolume))) { return; }
 
             if (_current != null)
             {
@@ -190,9 +205,17 @@ namespace OsEngine.OsData.OrderFlow
             _inside.Change(tick);
             _current.InsideImbalance = _inside.Snapshot();
             _current.ContextImbalance = _context.Snapshot();
+            OrderFlowImbalanceSettings imbalance = _scheduledImbalance ?? _settings.Imbalance;
+            if (_scheduledImbalance != null)
+            {
+                _current.InsideImbalance = _current.InsideImbalance.WithFloors(imbalance);
+                _current.ContextImbalance = _current.ContextImbalance.WithFloors(imbalance);
+            }
             _current.ImbalanceSource = _settings.Imbalance.Source;
-            _current.ImbalancePassed = _settings.Imbalance.Passes(_current.InsideImbalance, _current.ContextImbalance);
-            if (_current.Qualified == null && _current.Volume >= _settings.MinimumSumVolume)
+            _current.ImbalancePassed = imbalance.Passes(_current.InsideImbalance, _current.ContextImbalance);
+            decimal minimumSum = _settings.SingleTicks ? minimumTick : selection.Value("MinimumSumVolume", _settings.MinimumSumVolume);
+            _current.ThresholdPassed = _settings.PassesThresholds(_current, selection, minimumSum) && (_scheduledImbalance == null || _current.ImbalancePassed);
+            if (_current.Qualified == null && _current.ThresholdPassed)
             {
                 _current.Qualified = new OrderFlowCloudSnapshot { Time = tick.Time, SourceSequence = tick.SourceSequence,
                     Price = tick.Price, Low = _current.Low, High = _current.High, Volume = _current.Volume,

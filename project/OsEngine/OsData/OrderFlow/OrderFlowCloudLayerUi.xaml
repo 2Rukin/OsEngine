@@ -1,0 +1,34 @@
+<Window x:Class="OsEngine.OsData.OrderFlow.OrderFlowCloudLayerUi"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Width="750" Height="720" MinWidth="500" MinHeight="360"
+        WindowStartupLocation="CenterScreen" Style="{DynamicResource WindowStyleCanResize}">
+    <Grid Margin="10" Background="{DynamicResource ControlBackgroundNormalLight}">
+        <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel>
+                <WrapPanel><Label Name="LabelName"/><TextBox Name="TextBoxName" Width="240" Margin="4"/>
+                    <CheckBox Name="CheckBoxEnabled" Margin="8"/><CheckBox Name="CheckBoxVisible" Margin="8"/>
+                    <Button Name="ButtonColor" MinHeight="30" Margin="4" Padding="8,4"/>
+                </WrapPanel>
+                <CheckBox Name="CheckBoxSingle" Margin="8"/>
+                <WrapPanel><Label Name="LabelGap"/><TextBox Name="TextBoxGap" Width="100" Margin="4"/>
+                    <Label Name="LabelRange"/><TextBox Name="TextBoxRange" Width="100" Margin="4"/>
+                </WrapPanel>
+                <WrapPanel><Label Name="LabelImbalance"/><ComboBox Name="ComboBoxImbalance" Width="115" Margin="4"/>
+                    <ComboBox Name="ComboBoxDirection" Width="110" Margin="4"/>
+                    <Label Name="LabelContext"/><TextBox Name="TextBoxContext" Width="70" Margin="4"/>
+                </WrapPanel>
+                <StackPanel Name="StackPanelThresholds"/>
+                <Button Name="ButtonTimeProfiles" MinHeight="34" Margin="4" Padding="8,4" HorizontalAlignment="Left"/>
+                <TextBlock Name="TextBlockTimeProfiles" TextWrapping="Wrap" Margin="6" Foreground="{DynamicResource ControlForegroundWhite}"/>
+                <TextBlock Name="TextBlockHelp" TextWrapping="Wrap" Margin="6" Foreground="{DynamicResource ControlForegroundWhite}"/>
+            </StackPanel>
+        </ScrollViewer>
+        <TextBlock Name="TextBlockStatus" Grid.Row="1" TextWrapping="Wrap" Margin="5" Foreground="{DynamicResource ControlForegroundWhite}"/>
+        <WrapPanel Grid.Row="2" HorizontalAlignment="Right">
+            <Button Name="ButtonAccept" MinHeight="32" Margin="4" Padding="12,4"/>
+            <Button Name="ButtonCancel" MinHeight="32" Margin="4" Padding="12,4" IsCancel="True"/>
+        </WrapPanel>
+    </Grid>
+</Window>

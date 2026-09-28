@@ -254,7 +254,8 @@ namespace OsEngine.OrderFlowResearch.Tests
             using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Research.Ui.xaml")) { ui = XDocument.Load(stream); }
             XNamespace ns = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
             XElement settings = ui.Descendants(ns + "TabControl").Single(item => (string)item.Attribute("Name") == "TabControlSettings");
-            AssertEqual(4, settings.Elements(ns + "TabItem").Count(), "Four settings tabs");
+            AssertEqual(5, settings.Elements(ns + "TabItem").Count(), "Five settings tabs including Cloud instances/time");
+            AssertEqual(1, settings.Elements(ns + "TabItem").Count(item => (string)item.Attribute("Name") == "TabItemCloudLayersSettings"), "Time profiles are in the main workbench");
             AssertEqual(1, ui.Descendants(ns + "ContentControl").Count(item => (string)item.Attribute("Name") == "ContentControlChart"), "One shared chart host");
             AssertTrue(Application.Current == null, "No application started");
         }

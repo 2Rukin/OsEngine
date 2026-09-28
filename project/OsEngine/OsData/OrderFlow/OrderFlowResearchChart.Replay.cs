@@ -73,12 +73,14 @@ namespace OsEngine.OsData.OrderFlow
         private void InstallPlaybackResult(OrderFlowResearchResult result)
         {
             _result = result;
+            _cloudLayerRowCache.Clear();
             ClearImbalanceDisplayCache();
             _displayBarCache.Clear();
             _shortestLabels = result == null ? new Dictionary<string, OrderFlowMarketPathLabel>() : OrderFlowCandidateView.ShortestLabels(result);
             _selectedCandidateId = null;
             _selectedCloudId = null;
             _cloudHits.Clear();
+            _additionalCloudHits.Clear();
             _cloudHits2.Clear();
             _cloudPlotBounds = Rect.Empty;
             ToolTip = null;

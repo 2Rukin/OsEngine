@@ -184,6 +184,22 @@ namespace OsEngine.OsData.OrderFlow
             WriteText(directory, "clouds2.csv", BuildCloudsCsv(result.Clouds2));
             WriteCloudPairs(directory, "cloud-pairs.csv", result.Clouds);
             WriteCloudPairs(directory, "cloud2-pairs.csv", result.Clouds2);
+            if (request.TimeProfileCanonicalValue().Length != 0 || request.Cloud?.TimeProfileCanonicalValue().Length > 0 || request.Cloud2?.TimeProfileCanonicalValue().Length > 0)
+            {
+                JsonSerializerOptions extendedOptions = new JsonSerializerOptions(jsonOptions);
+                extendedOptions.Converters.Add(new TimeArtifactDecimalConverter());
+                WriteText(directory, "time-profiles.json", JsonSerializer.Serialize(new { Version = "time-layers-1", request.DeltaTimeProfiles,
+                    Cloud1 = request.Cloud?.TimeProfiles, Cloud2 = request.Cloud2?.TimeProfiles,
+                    Layers = result.CloudLayers.OrderBy(l => l.Layer.Id, StringComparer.Ordinal).Select(l => new { l.Layer.Id, l.Layer.Settings, l.Hash, Count = l.Clouds.Count }) }, extendedOptions));
+                foreach (OrderFlowCloudLayerResult layer in result.CloudLayers)
+                {
+                    WriteText(directory, "cloud-" + layer.Layer.Id + ".csv", BuildCloudsCsv(layer.Clouds));
+                    WriteCloudPairs(directory, "cloud-" + layer.Layer.Id + "-pairs.csv", layer.Clouds);
+                }
+                WriteText(directory, "time-threshold-verdicts.json", JsonSerializer.Serialize(
+                    result.Clouds.Concat(result.Clouds2).Concat(result.CloudLayers.SelectMany(l => l.Clouds))
+                        .OrderBy(c => c.CloudId, StringComparer.Ordinal).Select(c => new { c.CloudId, c.ThresholdPassed }), jsonOptions));
+            }
             WriteText(directory, "quality.json", JsonSerializer.Serialize(result.Quality, jsonOptions));
             WriteText(directory, "observations.csv", BuildObservationsCsv(result.Observations));
             WriteText(directory, "candidates.csv", BuildCandidatesCsv(result.Candidates));
@@ -206,6 +222,12 @@ namespace OsEngine.OsData.OrderFlow
                 foreach (OrderFlowDiagonalPair pair in snapshot.Pairs.Values)
                 { writer.WriteLine(string.Join(",", cloud.CloudId, profile, FormatDecimal(pair.LowerPrice), FormatDecimal(pair.Buy), FormatDecimal(pair.Sell))); }
             }
+        }
+
+        private sealed class TimeArtifactDecimalConverter : JsonConverter<decimal>
+        {
+            public override decimal Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => reader.GetDecimal();
+            public override void Write(Utf8JsonWriter writer, decimal value, JsonSerializerOptions options) => writer.WriteRawValue(value.ToString("G29", CultureInfo.InvariantCulture));
         }
 
         private static string ImbalanceCsvHeader(string prefix)

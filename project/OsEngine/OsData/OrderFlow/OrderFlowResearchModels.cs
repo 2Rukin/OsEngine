@@ -91,7 +91,7 @@ namespace OsEngine.OsData.OrderFlow
     /// do not define orders, fills, PnL or a production trading policy.
     /// Contract: ORDER-FLOW-DATA-001 and ORDER-FLOW-RESEARCH-001.
     /// </remarks>
-    internal sealed class OrderFlowResearchRequest
+    internal sealed partial class OrderFlowResearchRequest
     {
         public bool CalculateDelta { get; set; } = true;
         public bool CalculateCloud { get; set; }
@@ -142,7 +142,8 @@ namespace OsEngine.OsData.OrderFlow
                 throw new ArgumentException("Output folder is required.", nameof(OutputRootPath));
             }
 
-            if (!CalculateDelta && !CalculateCloud && !CalculateCloud2) { throw new ArgumentException("Select Delta, Cloud 1 or Cloud 2."); }
+            ValidateTimeProfiles();
+            if (!CalculateDelta && !CalculateCloud && !CalculateCloud2 && !CloudLayers.Any(l => l.Enabled)) { throw new ArgumentException("Select Delta or at least one Cloud instance."); }
             if (CalculateCloud2) { (Cloud2 ?? throw new ArgumentException("Cloud 2 settings are required.")).Validate(); }
             else { Cloud2 = null; }
             if (CalculateCloud) { (Cloud ?? throw new ArgumentException("Cloud settings are required.")).Validate(); }
@@ -228,7 +229,7 @@ namespace OsEngine.OsData.OrderFlow
                 PriceStep.ToString("G29", CultureInfo.InvariantCulture),
                 FromDate?.ToString("yyyyMMdd", CultureInfo.InvariantCulture) ?? "ALL",
                 ToDate?.ToString("yyyyMMdd", CultureInfo.InvariantCulture) ?? "ALL"
-            });
+            }) + TimeProfileCanonicalValue();
         }
     }
 
@@ -458,7 +459,7 @@ namespace OsEngine.OsData.OrderFlow
     /// object contains no order, fill, position or profitability result.
     /// Contract: ORDER-FLOW-RESEARCH-001.
     /// </remarks>
-    internal sealed class OrderFlowResearchResult
+    internal sealed partial class OrderFlowResearchResult
     {
         public OrderFlowTickInput Input { get; set; }
 

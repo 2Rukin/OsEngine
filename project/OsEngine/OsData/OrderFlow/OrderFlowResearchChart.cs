@@ -109,6 +109,7 @@ namespace OsEngine.OsData.OrderFlow
         /// <param name="result">Offline result to display, or null to clear the viewport.</param>
         public void SetResult(OrderFlowResearchResult result)
         {
+            _cloudLayerViews.Clear(); _cloudLayerPostFilters.Clear(); _cloudLayerRowCache.Clear();
             EndDrag();
             _result = result;
             SetCalibrationLayers(System.Collections.Immutable.ImmutableArray<Calibration.CalibrationLayer>.Empty);
@@ -120,6 +121,7 @@ namespace OsEngine.OsData.OrderFlow
             _selectedCandidateId = null;
             _selectedCloudId = null;
             _cloudHits.Clear();
+            _additionalCloudHits.Clear();
             _cloudHits2.Clear();
             _cloudPlotBounds = Rect.Empty;
             _visibleCount = 120;
@@ -135,6 +137,7 @@ namespace OsEngine.OsData.OrderFlow
             _showCloud = cloud;
             _showCloud2 = cloud2;
             _cloudHits.Clear();
+            _additionalCloudHits.Clear();
             _cloudHits2.Clear();
             _cloudPlotBounds = Rect.Empty;
             ToolTip = null;
@@ -155,6 +158,7 @@ namespace OsEngine.OsData.OrderFlow
             if (secondLayer) { _cloudScale2 = coefficient; }
             else { _cloudScale = coefficient; }
             _cloudHits.Clear();
+            _additionalCloudHits.Clear();
             _cloudHits2.Clear();
             _cloudPlotBounds = Rect.Empty;
             ToolTip = null;
@@ -166,8 +170,9 @@ namespace OsEngine.OsData.OrderFlow
         {
             _selectedCloudId = cloudId;
             _passingClouds = _passingClouds2 = null;
-            _cloudHits.Clear(); _cloudHits2.Clear(); _cloudPlotBounds = Rect.Empty;
-            OrderFlowCloud cloud = _result?.Clouds.Find(item => item.CloudId == cloudId) ?? _result?.Clouds2.Find(item => item.CloudId == cloudId);
+            _cloudHits.Clear();
+            _additionalCloudHits.Clear(); _cloudHits2.Clear(); _cloudPlotBounds = Rect.Empty;
+            OrderFlowCloud cloud = _result?.Clouds.Find(item => item.CloudId == cloudId) ?? _result?.Clouds2.Find(item => item.CloudId == cloudId) ?? _result?.CloudLayers.SelectMany(l => l.Clouds).FirstOrDefault(item => item.CloudId == cloudId);
             int index = cloud == null ? -1 : CurrentBars.FindIndex(bar => bar.TimeStart <= cloud.Time && bar.TimeEnd > cloud.Time);
             ScrollTo(index < 0 ? _startIndex : index - VisibleCount / 2);
         }
@@ -177,6 +182,8 @@ namespace OsEngine.OsData.OrderFlow
         internal OrderFlowCloud CloudAt(Point point)
         {
             if (!_cloudPlotBounds.Contains(point)) { return null; }
+            for (int i = _additionalCloudHits.Count - 1; i >= 0; i--)
+            { if (CloudHitContains(point, _additionalCloudHits[i])) { return _additionalCloudHits[i].Cloud; } }
             for (int i = _cloudHits2.Count - 1; i >= 0; i--)
             {
                 if (CloudHitContains(point, _cloudHits2[i])) { return _cloudHits2[i].Cloud; }
@@ -196,7 +203,7 @@ namespace OsEngine.OsData.OrderFlow
 
         internal static string CloudDetails(OrderFlowCloud cloud)
         {
-            return (cloud.CloudId.StartsWith("CL2-", StringComparison.Ordinal) ? "Cloud 2 " : "Cloud 1 ") + cloud.CloudId + " · " + cloud.Time.ToString("yyyy-MM-dd HH:mm:ss.ffffff", CultureInfo.InvariantCulture) +
+            return (cloud.CloudId.StartsWith("CL2-", StringComparison.Ordinal) ? "Cloud 2 " : cloud.CloudId.StartsWith("CLI-", StringComparison.Ordinal) ? "Cloud " : "Cloud 1 ") + cloud.CloudId + " · " + cloud.Time.ToString("yyyy-MM-dd HH:mm:ss.ffffff", CultureInfo.InvariantCulture) +
                 "\n" + L("Price", "Цена") + " " + F(cloud.Price) + " · V " + F(cloud.Volume) +
                 " · Buy " + F(cloud.BuyVolume) + " / " + cloud.BuyCount + " · Sell " + F(cloud.SellVolume) + " / " + cloud.SellCount +
                 "\n" + L("Qualified", "Порог достигнут") + " " + cloud.Qualified.Time.ToString("yyyy-MM-dd HH:mm:ss.ffffff", CultureInfo.InvariantCulture) +
@@ -423,6 +430,7 @@ namespace OsEngine.OsData.OrderFlow
             _drawingPlot = Rect.Empty;
             _lineHits.Clear();
             _cloudHits.Clear();
+            _additionalCloudHits.Clear();
             _cloudHits2.Clear();
             _cloudPlotBounds = Rect.Empty;
             Rect bounds = new Rect(0, 0, ActualWidth, ActualHeight);
@@ -506,6 +514,7 @@ namespace OsEngine.OsData.OrderFlow
             {
                 DrawClouds(drawingContext, bars, left, slotWidth, priceTop, priceBottom, minPrice, maxPrice, true);
             }
+            DrawAdditionalClouds(drawingContext, bars, left, slotWidth, priceTop, priceBottom, minPrice, maxPrice);
             DrawCalibration(drawingContext, bars, left, slotWidth, priceTop, priceBottom, minPrice, maxPrice);
             if (deltaVisible)
             {
@@ -521,10 +530,12 @@ namespace OsEngine.OsData.OrderFlow
         }
 
         private void DrawClouds(DrawingContext context, List<OrderFlowDisplayBar> bars, double left, double slotWidth,
-            double top, double bottom, decimal minPrice, decimal maxPrice, bool secondLayer)
+            double top, double bottom, decimal minPrice, decimal maxPrice, bool secondLayer,
+            OrderFlowCloudLayerResult additional = null, OrderFlowCloudLayer view = null)
         {
-            List<OrderFlowCloud> clouds = DisplayClouds(secondLayer);
-            List<(Point Center, double Radius, OrderFlowCloud Cloud)> hits = secondLayer ? _cloudHits2 : _cloudHits;
+            List<OrderFlowCloud> clouds = additional == null ? DisplayClouds(secondLayer) : AdditionalClouds(additional);
+            List<(Point Center, double Radius, OrderFlowCloud Cloud)> hits = additional == null ? secondLayer ? _cloudHits2 : _cloudHits : new List<(Point, double, OrderFlowCloud)>();
+            decimal additionalReference = additional == null ? 1 : AdditionalCloudReference(additional);
             int low = 0;
             int high = clouds.Count;
             while (low < high)
@@ -545,9 +556,10 @@ namespace OsEngine.OsData.OrderFlow
                 double fraction = (cloud.Time.Ticks - bars[barIndex].TimeStart.Ticks) /
                     (double)(bars[barIndex].TimeEnd.Ticks - bars[barIndex].TimeStart.Ticks);
                 Point center = new Point(left + slotWidth * (barIndex + fraction), Scale(cloud.Price, minPrice, maxPrice, bottom, top));
-                double radius = CloudVolumeRadius(cloud.Volume, secondLayer);
+                double radius = additional == null ? CloudVolumeRadius(cloud.Volume, secondLayer) : AdditionalCloudRadius(additionalReference, cloud.Volume);
                 Color color = cloud.BuyCount > cloud.SellCount ? Colors.LimeGreen : cloud.BuyCount < cloud.SellCount ? Colors.Tomato : Colors.SteelBlue;
-                if (!cloud.ImbalancePassed) { color = Colors.Gray; }
+                if (view != null) { color = (Color)ColorConverter.ConvertFromString(view.Color); }
+                if (!cloud.ImbalancePassed || !cloud.ThresholdPassed) { color = Colors.Gray; }
                 Brush fill = secondLayer ? Brushes.Transparent : new SolidColorBrush(Color.FromArgb(75, color.R, color.G, color.B));
                 Pen outline = new Pen(cloud.CloudId == _selectedCloudId ? Brushes.Gold : new SolidColorBrush(color), secondLayer ? 2.5 : 1.3);
                 if (cloud.CompletedAt == null) { outline.DashStyle = DashStyles.Dash; }
@@ -556,6 +568,7 @@ namespace OsEngine.OsData.OrderFlow
                 hits.Add((center, radius, cloud));
             }
             DrawCloudVolumeLabels(context, hits, secondLayer);
+            if (additional != null) { _additionalCloudHits.AddRange(hits); }
             context.Pop();
         }
 

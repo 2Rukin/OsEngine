@@ -1,107 +1,108 @@
 # Authoritative active task state
 
-**ID:** `TASK-ADAPTIVE-POSITION-MANAGER-001`
-**Статус:** `BLOCKED`
-**Фаза:** `CP18 normal build verified; T12 owner/research gates remain`
+**ID:** `TASK-ORDER-FLOW-SRU6-CALIBRATION-001`
+**Статус:** `COMPLETED`
+**Фаза:** `TERMINAL_REPORT_DELIVERED`
 **Ветка:** `docs/order-flow-production-roadmap`
-**Baseline HEAD:** `909f7a17adcfee3ea8bbf778cfce6c240b7acd42`
-**Specification baseline:** `f54de33961d45f73319ae1c7313f2854bcb27398`
-**Completed transition IDs:** `T01_T11_IMPLEMENTATION_AND_REVIEWS`, `T12_FEASIBLE_VERIFICATION`, `OWNER_WALKTHROUGH_FINDINGS_FIX`, `OWNER_UX_FIX_REVIEWS_CLEAN`, `CP17_PRIMARY`, `CP17_FIX_AND_FINAL_VERIFICATION`, `CP17_VALIDATION_TERMINAL_CLEAN`, `CP18_NATIVE_BUILD_VERIFIED`
-**Next transition ID:** `OWNER_MANUAL_UI_ACCEPTANCE`
+**Baseline/current HEAD:** `97bd89fb676d074842169a1f9041af595b7eb3ec`
+**Completed transition IDs:** `ENTRY_BASELINE_VERIFIED`, `RESEARCH_SPEC_FROZEN`, `CALCULATE_DEVELOPMENT_AND_VALIDATION`, `SELECT_STABLE_SETTINGS`, `WRITE_AND_REGISTER_REPORT`, `DOC_REVIEW_PRIMARY_FIX_VALIDATION_1_CLEAN`
+**Next transition ID:** `OWNER_VISUAL_CLOUD_ASSESSMENT`
 
-## Frozen scope and authority
+## Frozen scope
 
-CP18: owner now requests normal rebuild of the application and commit/push.
-Scope is fresh tracked build outputs in the existing solution plus this snapshot;
-no source/project changes. Publish build artifacts in a separate build commit.
-Preserve both earlier DividendsUpdater backup sets and capture current bytes
-before overwriting generated outputs. Normal build replaces the prior isolated
-build restriction for this explicitly requested delivery step. No app/stand launch.
+Owner requests an offline descriptive Cloud calibration study for local SRU6
+tick text from 2026-06-01 through 2026-08-31 inclusive, followed by one Markdown
+report linked in chat. Goal: recommend settings for owner visual inspection,
+with evidence and limitations; no profitability or live-readiness claim.
 
-Owner explicitly requests review of CP16 UX fixes, correction of findings, commit
-and ordinary fast-forward push. Main sole writer. Runtime scope is 14 source/test
-files listed by exact GitBlob/SHA256 in
-`docs/adaptive-position-manager/evidence/cp17-verification.json`, plus matching
-APM docs, DOCMAP and this snapshot. Robot directory remains
-`OsEngine/Robots/MyBots/AdaptivePositionResearchBot/`.
-No reset/rebase/merge/force, live/paper/broker/MCP/StopOrders, credentials or
-physical-DPI simulation. Synthetic native Tester and UI checks are authorized.
-Earlier closed review identities remain historical; CP17 is newly owner-requested.
+Study source:
+`OsEngine/bin/Debug/Data/Set_SRTicks/SRU6/Tick/SRU6.txt`.
+Manual PriceStep is 1. Source-clock profiles are FORTS Morning 07:00-10:30,
+FORTS Main 10:30-19:00 and FORTS Evening 19:00-23:51 exclusive. June-July is
+development; August is chronological validation. Tick threshold is frozen from
+the development P95 for each profile. Candidate grid uses Gap
+100/250/500/1000/2000 ms and Range 1/2/3/5/8/13 ticks. Chain summaries require
+TradeCount >= 2. Selection favors adequate observations, low neighbor sensitivity
+and stable validation rather than the largest isolated metric.
 
-## CP17 dirty boundary and build isolation (historical)
+In-scope writes: final registered Markdown report, DOCMAP entry and this state.
+A temporary same-assembly offline harness and all large calibration bundles live
+outside final repository scope and are removed after extracted evidence is frozen.
+No application, connector, MCP/StopOrders stand, broker session, orders,
+credentials, commit, push, reset, rebase or merge.
 
-16 pre-existing tracked DLL/EXE changes and three untracked generated fixture
-files remain excluded: bin outputs of OsEngine, DividendsUpdater, McpTestStand,
-OrderFlowResearch, StopOrdersTestStand, WikiConnectionTest; S01 ticks
-SecuritiesSettings.txt/apm-audit.csv and S02 ticks SecurityTestSettings.txt.
-19/19 match CP17 entry SHA256 in TEMP/OsEngine-APM-cp17-c39ec605eb5c4a00a9f6055bf26f054a/excluded-before.json.
-DetachedTables changes were separately committed before baseline; outside scope.
-Five DividendsUpdater artifacts remain excluded. Updater source unchanged;
-original before-image of earlier AfterBuild effect unknown. Keep both sets:
-TEMP/OsEngine-APM-output-recovery/{current-app-output,earlier-test-output},inventory.json.
-Do not restore from HEAD or another build by guess. Exact undo requires proven
-before-image; both saved sets remain backup/evidence.
-All builds use TEMP OutputPath and
-`Tests/AdaptivePositionManager/IsolatedBuild.targets` through
-CustomAfterMicrosoftCommonTargets to redirect updater copies to updater-aux.
-Normal application bin has not been refreshed by CP17.
+## Baseline and dirty boundary
+
+The existing Order Flow time-profile implementation remains dirty and completed;
+it is not modified by this research run. User/runtime dirty binaries
+`OsEngine/bin/Debug/OsEngine.dll` and `.exe`, the tracked APM schedule fixture,
+and three untracked APM fixture files are preserved. All builds use isolated
+temporary output. Input tick data is read-only and is not registered in Git.
+
+Input inventory at entry: 158316586 bytes, 3130667 physical rows, spanning
+2026-03-16 through 2026-09-17. Requested date rows: June 540116, July 1329413,
+August 766308; total 2635837 before profile/day filtering.
+
+## Research and evidence decisions
+
+- Calculations use current production calibration engine and exact source-order
+  parser through a temporary friend-assembly harness; no reimplementation of
+  Cloud formation is accepted as evidence.
+- Development and validation are chronological. August is not used to choose the
+  tick threshold or candidate formation.
+- Report includes all tested variants or an attached compact table, dataset/code
+  identity, data quality, descriptive metrics, selection rationale and limitations.
+- This is descriptive formation calibration only. No future price reaction,
+  commissions, slippage, fills, PnL, StrategySpec or final OOS is calculated.
+- OBSERVABILITY: NO CHANGE. MODE PARITY: NO CHANGE. Trading/order/risk behavior:
+  NO CHANGE.
 
 ## Verification status
 
-- CP18 normal build: `dotnet build OsEngine.sln --no-restore -m:1 -v:q`,
-  exit0, 0 errors / 36 warnings. Normal application output now refreshed at
-  OsEngine/bin/Debug/OsEngine.exe; DLL ProductVersion identifies source 909f7a17a.
-  OsEngine.dll SHA256 E993F828ABAF240D8CA1D7C028F2C153E39B978DED8D71EFD048DBE19ABF4629.
-- CP18 newly built offline APM suite: 8580/8580 PASS. No UI/stand/live launch.
-  All 14 CP17 source hashes unchanged, so closed CP17 reviews remain reusable.
-  Source/XML/observability/parity contracts: NO CHANGE.
-- CP18 publishes 16 fresh tracked EXE/DLL outputs in a separate build commit.
-  Before images (22 files), after hashes and build/test logs retained at
-  TEMP/OsEngine-APM-cp18-native-build/. Earlier updater backup evidence 11/11
-  unchanged. Three original local Tester files unchanged and remain untracked.
-  Newly generated untracked APM test output retained at that checkpoint's
-  apm-test-build/ after qualification, outside the repository's Changes list.
-- CP17 evidence below remains the independently reviewed source checkpoint;
-  its isolated binary hashes are historical and do not identify CP18 normal output.
-- CP16 implements UX01–08: grouped status, semantic state styling, schedule-only
-  disabled Start, typed run-level campaign/report rows, unique CSV names,
-  normalized paths, audit Source. Original work record retains earlier reviews.
-- CP17 production F01/docs D01 fixed: button Pause uses current controller state;
-  historical fields remain historical. Both history directions tested.
-- Main proved clipped buttons at minimum 520x320 DIP; flexible status row now
-  keeps controls inside content viewport. SizeChanged logs exceptions.
-- Docs D02/D03 corrected current/history evidence boundary and path error claims.
-  New manifest registers exact source/binary/artifact hashes, commands and exits.
-- Build: full solution, exit0, 0errors/17warnings (16 existing + NU1900).
-- Offline: 8580/8580 PASS. UI: S01/S02/S08/S09/S19 PASS at actual DPI144;
-  1280x720 physical viewport and 520x320 DIP minimum. No LayoutTransform simulation.
-  Actual Pause/Resume/manual/emergency clicks, latch/reason/q0 and cleanup tested.
-  Two displayed campaign rows are synthetic projections, not native lifecycle proof.
-- Native Tester S01 path-crlf: PASS 10,8,6,8,10,6,8,0.
-  Native Tester S02 plain: PASS 10,14,18,14,18,14,0.
-- Build and executable: TEMP/OsEngine-APM-cp17-final/.
-  UI: TEMP/OsEngine-APM-cp17-ui-final/.
-  Native: TEMP/OsEngine-APM-cp17-native-S01/ and -S02/.
-- APM_CP17_REVIEW and APM_CP17_DOCS VALIDATION_1: TERMINAL CLEAN.
-  14/14 source hashes/blobs and 14/14 artifact hashes independently verified;
-  47 local links, zero broken. Scoped diff whitespace PASS; agent validator 109/109 PASS.
-- CP17 publication is identified by the containing Git commit. Ordinary push is
-  explicitly authorized; remote SHA verification follows the commit in handoff.
+- Branch/HEAD/status and relevant dirty boundary inspected.
+- Source file existence, size, first/last timestamps and requested monthly row
+  counts verified read-only.
+- Applicable authorities: DOCMAP-001, ORDER-FLOW-CLOUD-CALIBRATION-001,
+  ORDER-FLOW-RESEARCH-001 and AGENT-WORKFLOW-001.
+- Input SHA-256:
+  `435EA400FFCC45CD3215BE0806F660368A024D1C2942B8EED8AA8E3D2FED1F7B`.
+  Requested dates accepted 2635837 rows. June-July is development; August is
+  validation. Full grid is 90 cells per segment pair across three weekday FORTS
+  profiles; chosen formation is Gap2000/Range5/Context30, diagonal off.
+- Primary thresholds are Morning tick10/cloud85/absDelta75/trades2, Main
+  tick14/cloud367/absDelta343/trades2, Evening tick10/cloud89/absDelta82/trades2.
+  A separate DayMask127 control matches the main editor's daily applicability.
+- Report `Documentation/OrderFlow/SRU6_CLOUD_CALIBRATION_JUN_AUG_2026.md`
+  SHA-256 `0EE829AA17B636A06C94A4FD884A7BCC23E4FA838165F7C623E27DEEF2EECF1A`.
+  Compact/full-grid summary SHA-256 `7ACB2B...3A69`, selected-filter summary
+  `34D8B91E...25B0`, daily control `5786B5D0...C939`.
+- Isolated calculation build: 0 errors; only existing compiler and NU1903
+  dependency warnings. Temporary harness source and work bundles removed from
+  repository scope; compact evidence remains in the task TEMP directory.
+- Agent validator: 109/109 PASS. `git diff --check`: PASS. Report registration
+  and links checked. OsEngine application/process was not launched or stopped;
+  existing PID20252 and dirty native bin files were preserved.
+- Independent documentation review PRIMARY found one calendar-transfer mismatch.
+  Main fixed it with the DayMask127 control. VALIDATION_1: CLEAN; 9 rows / 42
+  numeric cells and 4/4 hashes independently checked.
+- No production behavior was changed by this research/report step. OBSERVABILITY:
+  NO CHANGE. MODE PARITY: NO CHANGE. Visual chart assessment: OWNER-RUN/NOT_RUN.
+- Commit/push: NOT RUN; no authorization.
 
 ## Blockers
 
-QG06 physical DPI100/125/200 and repeat owner walkthrough: OWNER-RUN/NOT_RUN.
-T12 remains blocked by manual/research gates; no physical checks are simulated.
-ResearchOnly: native TradeOnly Tester/Optimizer capability exists; historical
-file/period/timezone/economic profile not qualified. Baseline/OOS/cost-stress,
-book/OFI production adapter, full ADAPT, native restart/live recovery and
-profitability readiness remain unproven. Live is rejected.
-XML-doc current-vs-historical contract updated; audit Source additive;
-sizing/risk/order dispatch unchanged. Full current task evidence and historical
-reviews are in docs/adaptive-position-manager/evidence/implementation.md.
+None. Physical chart evaluation remains OWNER-RUN by explicit request and is the
+next separate transition, not a blocker for the completed offline report.
+
+## Suspended/completed prior work
+
+TASK-ORDER-FLOW-TIME-LAYERS-001 is completed on the same unchanged HEAD and dirty
+worktree: full offline regression 213/213, main build 0 errors, production and
+documentation review terminal CLEAN. No commit/push. TASK-ADAPTIVE-POSITION-
+MANAGER-001 remains blocked only on its separate owner physical acceptance.
 
 ## Next action
 
-After authorized CP18 build-output publication, resume owner physical
-DPI100/125/200 and walkthrough of the normal application build; QG06/T12 stay open.
-Do not reopen closed CP17 reviews or repeat unchanged execution evidence automatically.
+Owner enters the three recommended daily periods and visually evaluates density,
+chain merging near 10:30/19:00 and sign distribution. Any tuning starts from the
+two documented P75/P95 alternatives; do not claim profitability from this report.
