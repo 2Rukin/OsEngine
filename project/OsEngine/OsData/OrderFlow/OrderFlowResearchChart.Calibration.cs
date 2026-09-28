@@ -79,7 +79,7 @@ namespace OsEngine.OsData.OrderFlow
                 if (low == bars.Count || time < bars[low].TimeStart) { continue; }
                 double fraction = (time.Ticks - bars[low].TimeStart.Ticks) / (double)(bars[low].TimeEnd.Ticks - bars[low].TimeStart.Ticks);
                 Point point = new Point(left + slot * (low + fraction), Scale(marker.Event.Evidence.Price, min, max, bottom, top));
-                double radius = Math.Clamp(3 + Math.Log10(1 + (double)marker.Event.Volume), 4, 12);
+                double radius = _cloudScale * Math.Clamp(3 + _cloudContrast / 2 * Math.Log10(1 + (double)marker.Event.Volume), 4, 12);
                 Brush brush = CalibrationBrush(marker.Event.Delta >= 0 ? "JournalSwatchLongBrush" : "JournalSwatchShortBrush");
                 bool selected = marker.CloudId == _calibrationSelection?.CloudId;
                 Pen pen = new Pen(selected ? CalibrationBrush("ControlForeground") : brush, selected ? 3 : 1.5);

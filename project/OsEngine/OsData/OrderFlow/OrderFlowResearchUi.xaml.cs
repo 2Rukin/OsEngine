@@ -89,7 +89,7 @@ namespace OsEngine.OsData.OrderFlow
             CheckBoxCalculateCloud.Click += CalculationMode_Click;
             CheckBoxShowDelta.Click += ChartLayers_Click;
             CheckBoxShowCloud.Click += ChartLayers_Click;
-            SliderCloudScale.ValueChanged += SliderCloudScale_ValueChanged;
+            SliderChartCloudScale.ValueChanged += SliderCloudScale_ValueChanged;
             DataGridClouds.MouseDoubleClick += DataGridClouds_MouseDoubleClick;
             InitializeCloud2Controls();
             InitializeCloudImbalanceControls();
@@ -150,10 +150,10 @@ namespace OsEngine.OsData.OrderFlow
             TabItemChart.Header = OsLocalization.ConvertToLocString("Eng:Chart_Ru:График_");
             TabItemJournal.Header = OsLocalization.ConvertToLocString("Eng:Event journal_Ru:Журнал событий_");
             LabelChartTimeFrame.Content = L("Timeframe", "Таймфрейм");
-            LabelCloudScale.Content = LabelChartCloudScale.Content = L("Cloud size", "Размер Cloud");
-            SliderCloudScale.ToolTip = SliderChartCloudScale.ToolTip = L(
-                "Radius coefficient 0.1–3. Changes only the circles, without recalculation.",
-                "Коэффициент радиуса 0,1–3. Меняет только кружки, без пересчёта.");
+            LabelChartCloudScale.Content = L("All Clouds size", "Размер всех Cloud");
+            SliderChartCloudScale.ToolTip = L(
+                "Radius coefficient 0.1–3 for all Cloud markers, including added instances. No recalculation.",
+                "Коэффициент радиуса 0,1–3 для всех меток Cloud, включая добавленные экземпляры. Без пересчёта.");
             LabelTimeFrame.Content = OsLocalization.ConvertToLocString("Eng:Display timeframe_Ru:Таймфрейм отображения_");
             TextBlockChartBoundary.Text = OsLocalization.ConvertToLocString(
                 "Eng:Visualization only. Signals are not recalculated._Ru:Только визуализация. Сигналы не пересчитываются._");
@@ -210,15 +210,11 @@ namespace OsEngine.OsData.OrderFlow
                 ScrollBarChart.LargeChange = Math.Max(1, _chart.VisibleCount * 0.8);
                 ScrollBarChart.Value = _chart.StartIndex;
                 TextBlockChartRange.Text = _chart.RangeText;
-                SliderCloudContrast.ToolTip = SliderChartCloudContrast.ToolTip = (_chart.IsReplaying
-                    ? L("Replay reference = minimum Cloud sum: ", "Опорный объём реплея = минимальная сумма Cloud: ") : L(
-                    "Emphasizes differences in volume, independently of overall size. Full-result median volume = ",
-                    "Усиливает разницу объёмов независимо от общего размера. Медианный объём всего результата = "))
-                    + _chart.CloudReferenceVolume.ToString("0.############################", CultureInfo.InvariantCulture);
-                SliderCloud2Contrast.ToolTip = SliderChartCloud2Contrast.ToolTip = (_chart.IsReplaying
-                    ? L("Cloud 2 replay reference = effective volume threshold: ", "Опорный объём реплея Cloud 2 = действующий порог объёма: ")
-                    : L("Cloud 2 full-result median volume: ", "Медианный объём всего результата Cloud 2: "))
-                    + _chart.Cloud2ReferenceVolume.ToString("0.############################", CultureInfo.InvariantCulture);
+                SliderChartCloudContrast.ToolTip = _chart.IsReplaying
+                    ? L("Volume-size contrast for all Clouds. Each regular layer uses its configured volume threshold during replay.",
+                        "Контраст размеров всех Cloud по объёму. В реплее каждый обычный слой использует свой заданный порог объёма.")
+                    : L("Volume-size contrast for all Clouds. Each regular layer uses its full-result median volume.",
+                        "Контраст размеров всех Cloud по объёму. Каждый обычный слой использует медиану объёма своего результата.");
             }
             catch (Exception error) { ShowError(error); }
             finally { _updatingChartRange = false; }
@@ -458,8 +454,8 @@ namespace OsEngine.OsData.OrderFlow
             TextBlockChartLegend.Text = (result.DeltaCalculated ? TextBlockChartLegend.Text : string.Empty) + L(
                 " Clouds: squares for single trades, circles for chains. Green = more Buy ticks, red = more Sell ticks, blue = equal counts. Size reflects volume. Anchor is the last tick; completion may be later. OpenAtEnd is unfinished.",
                 " Cloud: квадраты — одиночные сделки, круги — цепочки. Зелёный — больше тиков Buy, красный — Sell, синий — поровну. Размер отражает объём. Метка стоит на последнем тике; завершение может быть позже. OpenAtEnd — незавершённая цепочка.");
-            TextBlockChartLegend.Text += L(" Cloud 2: thick outlined markers; its Cloud path is purple. Layers have independent size/contrast and visibility.",
-                " Cloud 2: метки с толстым контуром; линия по Cloud — фиолетовая. Размер, контраст и видимость слоёв независимы.");
+            TextBlockChartLegend.Text += L(" Cloud 2: thick outlined markers; its Cloud path is purple. Size/contrast are shared by all Clouds; layer visibility is independent.",
+                " Cloud 2: метки с толстым контуром; линия по Cloud — фиолетовая. Размер и контраст общие для всех Cloud; видимость слоёв независима.");
             ButtonOpenArtifacts.IsEnabled = Directory.Exists(result.ArtifactDirectory);
             TabControlResults.SelectedItem = TabItemSummary;
 
@@ -836,7 +832,7 @@ namespace OsEngine.OsData.OrderFlow
                 CheckBoxCalculateCloud.Click -= CalculationMode_Click;
                 CheckBoxShowDelta.Click -= ChartLayers_Click;
                 CheckBoxShowCloud.Click -= ChartLayers_Click;
-                SliderCloudScale.ValueChanged -= SliderCloudScale_ValueChanged;
+                SliderChartCloudScale.ValueChanged -= SliderCloudScale_ValueChanged;
                 DataGridClouds.MouseDoubleClick -= DataGridClouds_MouseDoubleClick;
                 ButtonBrowseTicks.Click -= ButtonBrowseTicks_Click;
                 ButtonAllDates.Click -= ButtonAllDates_Click;

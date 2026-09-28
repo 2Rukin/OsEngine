@@ -80,6 +80,14 @@ namespace OsEngine.OrderFlowResearch.Tests
             AssertEqual(2, cursor.Advance(3, true)[0].Markers.Length, "EOF only after Complete");
             CalibrationChartData data = CalibrationPresentation.Load(run, new[] { rule }, OrderFlowDisplayTimeFrame.Min1, CancellationToken.None);
             OrderFlowResearchChart chart = new OrderFlowResearchChart(); chart.SetResult(data.Prices); chart.SetCalibrationLayers(data.Layers);
+            RenderDrawingChart(chart);
+            List<(Point Point, double Radius, CalibrationMarker Marker)> hits = CalField<List<(Point, double, CalibrationMarker)>>(chart, "_calibrationHits");
+            AssertTrue(hits.Count > 0, "Calibration overlay painted");
+            double baseRadius = hits[0].Radius;
+            chart.SetCloudScale(2); AssertEqual(0, hits.Count, "Size invalidates calibration hits");
+            RenderDrawingChart(chart); AssertEqual(baseRadius * 2, hits[0].Radius, "Common size scales calibration marker and hit");
+            chart.SetCloudContrast(4); AssertEqual(0, hits.Count, "Contrast invalidates calibration hits");
+            RenderDrawingChart(chart); AssertTrue(hits[0].Radius > baseRadius * 2, "Common contrast changes calibration marker");
             chart.BeginReplay(1); chart.SetCalibrationReplay(3, false); chart.SetCalibrationPlaybackLayers(cursor.Advance(3, true));
             AssertTrue(!data.Layers[0].Markers.Last().Known(3, false), "Historical EOF gate remains independent of mailbox");
             RecordingReplay observer = new RecordingReplay();

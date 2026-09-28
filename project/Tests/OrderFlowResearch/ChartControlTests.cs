@@ -72,15 +72,14 @@ namespace OsEngine.OrderFlowResearch.Tests
             XDocument ui;
             using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Research.Ui.xaml")) { ui = XDocument.Load(stream); }
             XNamespace ns = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
-            string[] names = { "ComboBoxTimeFrame", "ComboBoxChartTimeFrame", "SliderCloudScale", "SliderChartCloudScale" };
+            string[] names = { "ComboBoxTimeFrame", "ComboBoxChartTimeFrame", "SliderChartCloudScale" };
             List<XElement> controls = names.Select(name => ui.Descendants().Single(item => (string)item.Attribute("Name") == name)).ToList();
             AssertTrue(controls[1].Ancestors(ns + "TabItem").Any(item => (string)item.Attribute("Name") == "TabItemChart"), "Selector is directly inside chart result tab");
-            AssertTrue(controls[3].Ancestors(ns + "TabItem").Any(item => (string)item.Attribute("Name") == "TabItemChart"), "Size control is directly inside chart result tab");
+            AssertTrue(controls[2].Ancestors(ns + "TabItem").Any(item => (string)item.Attribute("Name") == "TabItemChart"), "Size control is directly inside chart result tab");
             FrameworkElement host = (FrameworkElement)XamlReader.Parse(new XElement(ns + "StackPanel", controls.Select(item => new XElement(item))).ToString());
             ComboBox primary = (ComboBox)host.FindName(names[0]);
             ComboBox mirror = (ComboBox)host.FindName(names[1]);
             Slider scale = (Slider)host.FindName(names[2]);
-            Slider mirrorScale = (Slider)host.FindName(names[3]);
             primary.ItemsSource = values.Select(value => new KeyValuePair<OrderFlowDisplayTimeFrame, string>(value,
                 OrderFlowChartTimeFrames.GetDisplayName(value, true))).ToList();
             primary.SelectedValue = OrderFlowDisplayTimeFrame.Min1;
@@ -94,10 +93,10 @@ namespace OsEngine.OrderFlowResearch.Tests
             }
             primary.SelectedValue = OrderFlowDisplayTimeFrame.Hour12;
             AssertEqual(primary.SelectedValue, mirror.SelectedValue, "Settings choice reflected above chart");
-            mirrorScale.Value = 2.5;
-            AssertEqual(2.5, scale.Value, "Chart size propagates to event source");
-            scale.Value = 0.1;
-            AssertEqual(0.1, mirrorScale.Value, "Settings size reflected above chart");
+            AssertEqual(1d, scale.Value, "Shared size defaults to one");
+            AssertEqual(0.1, scale.Minimum, "Shared size minimum"); AssertEqual(3d, scale.Maximum, "Shared size maximum");
+            AssertEqual(2, ui.Descendants(ns + "Slider").Count(item => ((string)item.Attribute("Name"))?.Contains("Cloud") == true),
+                "Exactly one size/contrast pair in the entire workbench");
             AssertEqual("1 месяц", OrderFlowChartTimeFrames.GetDisplayName(OrderFlowDisplayTimeFrame.Month1, true), "Month label");
             AssertEqual("12 h", OrderFlowChartTimeFrames.GetDisplayName(OrderFlowDisplayTimeFrame.Hour12, false), "Hour label");
             AssertTrue(Application.Current == null, "No application or window started");

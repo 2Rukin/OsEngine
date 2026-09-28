@@ -24,10 +24,10 @@ namespace OsEngine.OsData.OrderFlow
         private void InitializeChartTools()
         {
             _chartHost = new OrderFlowChartHost(ContentControlChartHome);
-            OrderFlowChartHost.BindSettings(ComboBoxChartTimeFrame, ComboBoxTimeFrame, SliderChartCloudScale,
-                SliderCloudScale, TextBlockChartCloudScale);
-            OrderFlowChartHost.BindVisualSlider(SliderChartCloudContrast, SliderCloudContrast, TextBlockChartCloudContrast, "{0:F1}");
-            LabelCloudContrast.Content = LabelChartCloudContrast.Content = L("Cloud contrast", "Контраст Cloud");
+            OrderFlowChartHost.BindTimeFrame(ComboBoxChartTimeFrame, ComboBoxTimeFrame);
+            OrderFlowChartHost.BindVisualReadout(SliderChartCloudScale, TextBlockChartCloudScale, "{0:F1}×");
+            OrderFlowChartHost.BindVisualReadout(SliderChartCloudContrast, TextBlockChartCloudContrast, "{0:F1}");
+            LabelChartCloudContrast.Content = L("All Clouds contrast", "Контраст всех Cloud");
             CheckBoxCloudVolumes.Content = L("Cloud volumes", "Объёмы Cloud");
             LabelRightPadding.Content = L("Right space %", "Поле справа, %");
             SliderRightPadding.ValueChanged += SliderRightPadding_ValueChanged;
@@ -61,7 +61,7 @@ namespace OsEngine.OsData.OrderFlow
             ButtonActivateChartWindow.Content = L("Show chart window", "Показать окно графика");
             UpdateChartWindowState();
             UpdateDrawingTools();
-            SliderCloudContrast.ValueChanged += SliderCloudContrast_ValueChanged;
+            SliderChartCloudContrast.ValueChanged += SliderCloudContrast_ValueChanged;
             CheckBoxCloudVolumes.Click += CheckBoxCloudVolumes_Click;
             CheckBoxCloudPriceMode.Click += CheckBoxCloudPriceMode_Click;
             ComboBoxPriceDisplay.SelectionChanged += ComboBoxPriceDisplay_SelectionChanged;
@@ -81,7 +81,7 @@ namespace OsEngine.OsData.OrderFlow
         {
             _chart.DrawingChanged -= Chart_DrawingChanged;
             SliderRightPadding.ValueChanged -= SliderRightPadding_ValueChanged;
-            SliderCloudContrast.ValueChanged -= SliderCloudContrast_ValueChanged;
+            SliderChartCloudContrast.ValueChanged -= SliderCloudContrast_ValueChanged;
             CheckBoxCloudVolumes.Click -= CheckBoxCloudVolumes_Click;
             CheckBoxCloudPriceMode.Click -= CheckBoxCloudPriceMode_Click;
             ComboBoxPriceDisplay.SelectionChanged -= ComboBoxPriceDisplay_SelectionChanged;

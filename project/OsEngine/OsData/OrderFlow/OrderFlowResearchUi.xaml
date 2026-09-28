@@ -241,24 +241,6 @@
                             <CheckBox Name="CheckBoxShowDelta" Content="Show delta" IsChecked="True" Margin="8"/>
                             <CheckBox Name="CheckBoxShowCloud" Content="Show Cloud 1" IsChecked="True" Margin="8"/>
                             <CheckBox Name="CheckBoxShowCloud2" Content="Show Cloud 2" IsChecked="True" Margin="8"/>
-                            <Label Name="LabelCloudScale" Content="Cloud size" VerticalAlignment="Center"/>
-                            <Slider Name="SliderCloudScale" Minimum="0.1" Maximum="3" Value="1"
-                                    TickFrequency="0.1" IsSnapToTickEnabled="True" SmallChange="0.1" LargeChange="0.5"
-                                    Width="150" Margin="4" VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding ElementName=SliderCloudScale, Path=Value, StringFormat={}{0:F1}×}"
-                                       Foreground="{DynamicResource ControlForegroundWhite}" VerticalAlignment="Center" Width="45"/>
-                            <Label Name="LabelCloudContrast" Content="Cloud contrast" VerticalAlignment="Center"/>
-                            <Slider Name="SliderCloudContrast" Minimum="0.5" Maximum="10" Value="2"
-                                    TickFrequency="0.1" IsSnapToTickEnabled="True" SmallChange="0.1" LargeChange="0.5"
-                                    Width="130" Margin="4" VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding ElementName=SliderCloudContrast, Path=Value, StringFormat={}{0:F1}}"
-                                       Foreground="{DynamicResource ControlForegroundWhite}" VerticalAlignment="Center" Width="32"/>
-                            <Label Name="LabelCloud2Scale" Content="Cloud 2 size" VerticalAlignment="Center"/>
-                            <Slider Name="SliderCloud2Scale" Minimum="0.1" Maximum="3" Value="1" Width="130" Margin="4"
-                                    TickFrequency="0.1" IsSnapToTickEnabled="True" SmallChange="0.1" LargeChange="0.5"/>
-                            <Label Name="LabelCloud2Contrast" Content="Cloud 2 contrast" VerticalAlignment="Center"/>
-                            <Slider Name="SliderCloud2Contrast" Minimum="0.5" Maximum="10" Value="2" Width="130" Margin="4"
-                                    TickFrequency="0.1" IsSnapToTickEnabled="True" SmallChange="0.1" LargeChange="0.5"/>
                         </WrapPanel>
                     </TabItem>
                 </TabControl>
@@ -424,18 +406,18 @@
                                       SelectedValue="{Binding ElementName=ComboBoxTimeFrame, Path=SelectedValue, Mode=TwoWay}"/>
                             <Label Name="LabelChartCloudScale" Content="Cloud size" VerticalAlignment="Center"/>
                             <Slider Name="SliderChartCloudScale" Minimum="0.1" Maximum="3"
-                                    Value="{Binding ElementName=SliderCloudScale, Path=Value, Mode=TwoWay}"
+                                    Value="1"
                                     TickFrequency="0.1" IsSnapToTickEnabled="True" SmallChange="0.1" LargeChange="0.5"
                                     Width="130" Margin="4" VerticalAlignment="Center"/>
-                            <TextBlock Name="TextBlockChartCloudScale" Text="{Binding ElementName=SliderCloudScale, Path=Value, StringFormat={}{0:F1}×}"
+                            <TextBlock Name="TextBlockChartCloudScale"
                                        Foreground="{DynamicResource ControlForegroundWhite}" VerticalAlignment="Center" Width="45"/>
 
                             <Label Name="LabelChartCloudContrast" Content="Cloud contrast" VerticalAlignment="Center"/>
                             <Slider Name="SliderChartCloudContrast" Minimum="0.5" Maximum="10"
-                                    Value="{Binding ElementName=SliderCloudContrast, Path=Value, Mode=TwoWay}"
+                                    Value="2"
                                     TickFrequency="0.1" IsSnapToTickEnabled="True" SmallChange="0.1" LargeChange="0.5"
                                     Width="110" Margin="4" VerticalAlignment="Center"/>
-                            <TextBlock Name="TextBlockChartCloudContrast" Text="{Binding ElementName=SliderCloudContrast, Path=Value, StringFormat={}{0:F1}}"
+                            <TextBlock Name="TextBlockChartCloudContrast"
                                        Foreground="{DynamicResource ControlForegroundWhite}" VerticalAlignment="Center" Width="32"/>
                             <CheckBox Name="CheckBoxCloudVolumes" Content="Cloud volumes" IsChecked="True" Margin="6" VerticalAlignment="Center"/>
                             <Label Name="LabelRightPadding" Content="Right space %" VerticalAlignment="Center"/>
@@ -452,14 +434,6 @@
                         </WrapPanel>
                         <StackPanel Grid.Row="1">
                             <WrapPanel Margin="4,0">
-                                <Label Name="LabelChartCloud2Scale" Content="Cloud 2 size" VerticalAlignment="Center"/>
-                                <Slider Name="SliderChartCloud2Scale" Minimum="0.1" Maximum="3" Value="1" Width="120" Margin="4"
-                                        TickFrequency="0.1" IsSnapToTickEnabled="True" SmallChange="0.1" LargeChange="0.5"/>
-                                <TextBlock Name="TextBlockChartCloud2Scale" Width="45" Foreground="{DynamicResource ControlForegroundWhite}" VerticalAlignment="Center"/>
-                                <Label Name="LabelChartCloud2Contrast" Content="Cloud 2 contrast" VerticalAlignment="Center"/>
-                                <Slider Name="SliderChartCloud2Contrast" Minimum="0.5" Maximum="10" Value="2" Width="120" Margin="4"
-                                        TickFrequency="0.1" IsSnapToTickEnabled="True" SmallChange="0.1" LargeChange="0.5"/>
-                                <TextBlock Name="TextBlockChartCloud2Contrast" Width="38" Foreground="{DynamicResource ControlForegroundWhite}" VerticalAlignment="Center"/>
                                 <CheckBox Name="CheckBoxCloud2Volumes" Content="Cloud 2 volumes" IsChecked="True" Margin="6" VerticalAlignment="Center"/>
                             </WrapPanel>
                             <WrapPanel Name="WrapPanelReplay" Margin="4,0">

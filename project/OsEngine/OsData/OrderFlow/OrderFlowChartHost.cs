@@ -57,21 +57,18 @@ namespace OsEngine.OsData.OrderFlow
 
         #region Stable bindings
 
-        /// <summary>Binds chart toolbar controls to existing settings objects, independent of Window namescopes.</summary>
-        public static void BindSettings(ComboBox timeFrame, ComboBox settingsTimeFrame, Slider scale, Slider settingsScale, TextBlock scaleText)
+        /// <summary>Binds the chart timeframe to the settings selector, independent of Window namescopes.</summary>
+        public static void BindTimeFrame(ComboBox timeFrame, ComboBox settingsTimeFrame)
         {
             BindingOperations.SetBinding(timeFrame, ItemsControl.ItemsSourceProperty,
                 new Binding(nameof(ItemsControl.ItemsSource)) { Source = settingsTimeFrame });
             BindingOperations.SetBinding(timeFrame, System.Windows.Controls.Primitives.Selector.SelectedValueProperty,
                 new Binding(nameof(ComboBox.SelectedValue)) { Source = settingsTimeFrame, Mode = BindingMode.TwoWay });
-            BindVisualSlider(scale, settingsScale, scaleText, "{0:F1}×");
         }
 
-        /// <summary>Binds a mirrored visual slider and readout to the settings object, surviving popout/return namescope changes.</summary>
-        public static void BindVisualSlider(Slider target, Slider source, TextBlock readout, string format)
+        /// <summary>Binds a readout directly to the shared chart slider, surviving popout/return namescope changes.</summary>
+        public static void BindVisualReadout(Slider source, TextBlock readout, string format)
         {
-            BindingOperations.SetBinding(target, System.Windows.Controls.Primitives.RangeBase.ValueProperty,
-                new Binding(nameof(Slider.Value)) { Source = source, Mode = BindingMode.TwoWay });
             BindingOperations.SetBinding(readout, TextBlock.TextProperty,
                 new Binding(nameof(Slider.Value)) { Source = source, StringFormat = format });
         }

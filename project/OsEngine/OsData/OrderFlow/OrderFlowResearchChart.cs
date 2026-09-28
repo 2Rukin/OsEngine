@@ -144,19 +144,18 @@ namespace OsEngine.OsData.OrderFlow
             InvalidateVisual();
         }
 
-        /// <summary>Scales Cloud circle radii and pointer hit areas by a display-only coefficient, without modifying results.</summary>
+        /// <summary>Scales all Cloud marker radii and pointer hit areas, including added instances and calibration overlays, without modifying results.</summary>
         /// <param name="coefficient">Finite radius multiplier from 0.1 through 3; initial value is 1.</param>
-        /// <param name="secondLayer">True targets Cloud 2; false targets Cloud 1.</param>
         /// <remarks>UI-thread-only. Invalidates the last painted hit targets until the next render.</remarks>
         /// <exception cref="ArgumentOutOfRangeException">The coefficient is non-finite or outside the supported range.</exception>
-        public void SetCloudScale(double coefficient, bool secondLayer = false)
+        public void SetCloudScale(double coefficient)
         {
             if (!double.IsFinite(coefficient) || coefficient < 0.1 || coefficient > 3)
             {
                 throw new ArgumentOutOfRangeException(nameof(coefficient));
             }
-            if (secondLayer) { _cloudScale2 = coefficient; }
-            else { _cloudScale = coefficient; }
+            _cloudScale = coefficient;
+            _calibrationHits.Clear();
             _cloudHits.Clear();
             _additionalCloudHits.Clear();
             _cloudHits2.Clear();
@@ -556,7 +555,7 @@ namespace OsEngine.OsData.OrderFlow
                 double fraction = (cloud.Time.Ticks - bars[barIndex].TimeStart.Ticks) /
                     (double)(bars[barIndex].TimeEnd.Ticks - bars[barIndex].TimeStart.Ticks);
                 Point center = new Point(left + slotWidth * (barIndex + fraction), Scale(cloud.Price, minPrice, maxPrice, bottom, top));
-                double radius = additional == null ? CloudVolumeRadius(cloud.Volume, secondLayer) : AdditionalCloudRadius(additionalReference, cloud.Volume);
+                double radius = additional == null ? CloudVolumeRadius(cloud.Volume, secondLayer) : CloudVolumeRadius(cloud.Volume, additionalReference);
                 Color color = cloud.BuyCount > cloud.SellCount ? Colors.LimeGreen : cloud.BuyCount < cloud.SellCount ? Colors.Tomato : Colors.SteelBlue;
                 if (view != null) { color = (Color)ColorConverter.ConvertFromString(view.Color); }
                 if (!cloud.ImbalancePassed || !cloud.ThresholdPassed) { color = Colors.Gray; }

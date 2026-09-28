@@ -75,11 +75,5 @@ namespace OsEngine.OsData.OrderFlow
         }
         private decimal AdditionalCloudReference(OrderFlowCloudLayerResult result) => IsReplaying
             ? (result.Layer.Settings.SingleTicks ? result.Layer.Settings.MinimumTickVolume : result.Layer.Settings.MinimumSumVolume) : MedianVolume(result.Clouds);
-        private static double AdditionalCloudRadius(decimal reference, decimal volume)
-        {
-            double relative = (double)volume / (double)Math.Max(reference, 0.0000000000000000000000000001m);
-            double power = 2 * Math.Log2(relative);
-            return 4 + 20 * (Math.Max(0, power) + Math.Log2(1 + Math.Pow(2, -Math.Abs(power))));
-        }
     }
 }

@@ -28,11 +28,7 @@ namespace OsEngine.OsData.OrderFlow
             TextBlockCloud2Help.Text = L(
                 "Single ticks: each trade at or above the volume threshold creates its own Cloud immediately. Chain parameters are ignored. Uncheck for a second independent chain calculation.",
                 "Одиночные тики: каждая сделка с объёмом не ниже порога сразу создаёт отдельный Cloud. Параметры цепочки не учитываются. Снимите флажок для второго независимого расчёта цепочек.");
-            LabelCloud2Scale.Content = LabelChartCloud2Scale.Content = L("Cloud 2 size", "Размер Cloud 2");
-            LabelCloud2Contrast.Content = LabelChartCloud2Contrast.Content = L("Cloud 2 contrast", "Контраст Cloud 2");
             CheckBoxCloud2Volumes.Content = L("Cloud 2 volumes", "Объёмы Cloud 2");
-            OrderFlowChartHost.BindVisualSlider(SliderChartCloud2Scale, SliderCloud2Scale, TextBlockChartCloud2Scale, "{0:F1}×");
-            OrderFlowChartHost.BindVisualSlider(SliderChartCloud2Contrast, SliderCloud2Contrast, TextBlockChartCloud2Contrast, "{0:F1}");
             BindCloudVisibility(CheckBoxChartShowCloud, CheckBoxShowCloud);
             BindCloudVisibility(CheckBoxChartShowCloud2, CheckBoxShowCloud2);
             BindingOperations.SetBinding(TextBlockRightPadding, TextBlock.TextProperty,
@@ -42,8 +38,6 @@ namespace OsEngine.OsData.OrderFlow
             CheckBoxShowCloud2.Click += ChartLayers_Click;
             CheckBoxChartShowCloud.Click += ChartLayers_Click;
             CheckBoxChartShowCloud2.Click += ChartLayers_Click;
-            SliderCloud2Scale.ValueChanged += SliderCloud2Scale_ValueChanged;
-            SliderCloud2Contrast.ValueChanged += SliderCloud2Contrast_ValueChanged;
             CheckBoxCloud2Volumes.Click += CheckBoxCloud2Volumes_Click;
             DataGridClouds2.MouseDoubleClick += DataGridClouds_MouseDoubleClick;
         }
@@ -85,8 +79,6 @@ namespace OsEngine.OsData.OrderFlow
             CheckBoxShowCloud2.Click -= ChartLayers_Click;
             CheckBoxChartShowCloud.Click -= ChartLayers_Click;
             CheckBoxChartShowCloud2.Click -= ChartLayers_Click;
-            SliderCloud2Scale.ValueChanged -= SliderCloud2Scale_ValueChanged;
-            SliderCloud2Contrast.ValueChanged -= SliderCloud2Contrast_ValueChanged;
             CheckBoxCloud2Volumes.Click -= CheckBoxCloud2Volumes_Click;
             DataGridClouds2.MouseDoubleClick -= DataGridClouds_MouseDoubleClick;
         }
@@ -94,18 +86,6 @@ namespace OsEngine.OsData.OrderFlow
         #endregion
 
         #region Second Cloud appearance
-
-        private void SliderCloud2Scale_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            try { _chart.SetCloudScale(e.NewValue, true); }
-            catch (Exception error) { ShowError(error); }
-        }
-
-        private void SliderCloud2Contrast_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            try { _chart.SetCloudContrast(e.NewValue, true); }
-            catch (Exception error) { ShowError(error); }
-        }
 
         private void CheckBoxCloud2Volumes_Click(object sender, RoutedEventArgs e)
         {

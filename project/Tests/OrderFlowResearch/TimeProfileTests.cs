@@ -399,6 +399,11 @@ namespace OsEngine.OrderFlowResearch.Tests
             try
             {
                 ui = new OrderFlowResearchUi(new ResourceDictionary { { "WindowStyleCanResize", new Style(typeof(Window)) } });
+                OrderFlowResearchChart chart = CalField<OrderFlowResearchChart>(ui, "_chart");
+                CalField<Slider>(ui, "SliderChartCloudScale").Value = 2.5;
+                CalField<Slider>(ui, "SliderChartCloudContrast").Value = 3.5;
+                AssertEqual(2.5, CalField<double>(chart, "_cloudScale"), "Real shared size slider reaches renderer");
+                AssertEqual(3.5, CalField<double>(chart, "_cloudContrast"), "Real shared contrast slider reaches renderer");
                 CalField<TextBox>(ui, "TextBoxTicksPath").Text = fixture.TicksFilePath;
                 CalField<TextBox>(ui, "TextBoxOutputPath").Text = fixture.OutputRootPath;
                 CalField<TextBox>(ui, "TextBoxPriceStep").Text = "1";

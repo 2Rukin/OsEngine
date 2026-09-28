@@ -173,12 +173,12 @@ namespace OsEngine.OrderFlowResearch.Tests
             chart.SetLayers(false, true, true); RenderDrawingChart(chart);
             double firstRadius = chart.CloudVolumeRadius(1000);
             double secondRadius = chart.CloudVolumeRadius(1000, true);
-            chart.SetCloudScale(3, true); chart.SetCloudContrast(10, true); RenderDrawingChart(chart);
-            AssertEqual(firstRadius, chart.CloudVolumeRadius(1000), "Second style leaves first untouched");
-            AssertTrue(chart.CloudVolumeRadius(1000, true) > secondRadius, "Second size/contrast applied");
+            chart.SetCloudScale(3); RenderDrawingChart(chart);
+            AssertEqual(firstRadius * 3, chart.CloudVolumeRadius(1000), "Shared size scales first layer");
+            AssertEqual(secondRadius * 3, chart.CloudVolumeRadius(1000, true), "Shared size scales second layer");
             AssertTrue(chart.CloudAt(CloudHits(chart, true)[0].Center).CloudId.StartsWith("CL2-"), "Topmost second layer owns overlap hit");
-            Expect<ArgumentOutOfRangeException>(() => chart.SetCloudContrast(10.01, true));
-            Expect<ArgumentOutOfRangeException>(() => chart.SetCloudScale(3.01, true));
+            Expect<ArgumentOutOfRangeException>(() => chart.SetCloudContrast(10.01));
+            Expect<ArgumentOutOfRangeException>(() => chart.SetCloudScale(3.01));
             AssertEqual(before, JsonSerializer.Serialize(result), "Visibility/styles leave both results immutable");
         }
 
@@ -269,7 +269,7 @@ namespace OsEngine.OrderFlowResearch.Tests
             XDocument ui;
             using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Research.Ui.xaml")) { ui = XDocument.Load(stream); }
             XElement surface = ui.Descendants().Single(element => (string)element.Attribute("Name") == "ScrollViewerChartSurface");
-            foreach (string name in new[] { "CheckBoxChartShowCloud", "CheckBoxChartShowCloud2", "SliderChartCloud2Scale", "SliderChartCloud2Contrast", "SliderRightPadding" })
+            foreach (string name in new[] { "CheckBoxChartShowCloud", "CheckBoxChartShowCloud2", "SliderChartCloudScale", "SliderChartCloudContrast", "SliderRightPadding" })
             { AssertTrue(surface.Descendants().Any(element => (string)element.Attribute("Name") == name), "Control moves with separate chart: " + name); }
             XElement margin = surface.Descendants().Single(element => (string)element.Attribute("Name") == "SliderRightPadding");
             AssertEqual("5", (string)margin.Attribute("Value"), "Visible default five");

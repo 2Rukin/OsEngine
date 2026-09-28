@@ -160,9 +160,8 @@ namespace OsEngine.OrderFlowResearch.Tests
             ComboBox primary = new ComboBox { SelectedValuePath = "Key", ItemsSource = OrderFlowChartTimeFrames.GetMenuValues()
                 .Select(frame => new KeyValuePair<OrderFlowDisplayTimeFrame, string>(frame, frame.ToString())).ToList() };
             primary.SelectedValue = OrderFlowDisplayTimeFrame.Min1;
-            Slider primaryScale = new Slider { Minimum = 0.1, Maximum = 5, Value = 1 };
             ComboBox mirror = new ComboBox { SelectedValuePath = "Key" };
-            Slider mirrorScale = new Slider { Minimum = 0.1, Maximum = 5 };
+            Slider mirrorScale = new Slider { Minimum = 0.1, Maximum = 3, Value = 1 };
             TextBlock scaleText = new TextBlock();
             OrderFlowResearchChart chart = new OrderFlowResearchChart();
             StackPanel surface = new StackPanel();
@@ -170,7 +169,8 @@ namespace OsEngine.OrderFlowResearch.Tests
             ContentControl embedded = new ContentControl { Content = surface };
             ContentControl separate = new ContentControl();
             NameScope.SetNameScope(embedded, new NameScope()); NameScope.SetNameScope(separate, new NameScope());
-            OrderFlowChartHost.BindSettings(mirror, primary, mirrorScale, primaryScale, scaleText);
+            OrderFlowChartHost.BindTimeFrame(mirror, primary);
+            OrderFlowChartHost.BindVisualReadout(mirrorScale, scaleText, "{0:F1}×");
             using (OrderFlowChartHost host = new OrderFlowChartHost(embedded))
             {
                 for (int i = 0; i < 3; i++)
@@ -185,11 +185,10 @@ namespace OsEngine.OrderFlowResearch.Tests
                     primary.SelectedValue = OrderFlowDisplayTimeFrame.Hour4;
                     AssertEqual(primary.SelectedValue, mirror.SelectedValue, "Settings propagate to detached selector");
                     mirrorScale.Value = 2.5;
-                    AssertEqual(2.5, primaryScale.Value, "Detached scale propagates");
-                    primaryScale.Value = 0.5;
-                    AssertEqual(0.5, mirrorScale.Value, "Settings scale propagates");
+                    Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.DataBind, new Action(() => { }));
                     AssertTrue(scaleText.Text.EndsWith("5×"), "Readout binding survives namescope change");
                     host.Restore(); host.Restore();
+                    AssertEqual(2.5, mirrorScale.Value, "Shared slider value survives return");
                     AssertTrue(separate.Content == null && ReferenceEquals(surface, embedded.Content), "Idempotent return");
                 }
                 ContentControl occupied = new ContentControl { Content = new TextBlock() };

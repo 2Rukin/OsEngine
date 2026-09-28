@@ -55,6 +55,45 @@ namespace OsEngine.OrderFlowResearch.Tests
             Expect<ArgumentOutOfRangeException>(() => chart.SetCloudContrast(double.PositiveInfinity));
         }
 
+        private static void TestSharedCloudAppearance(string root)
+        {
+            OrderFlowResearchRequest request = TwoCloudRequest(root);
+            request.CloudLayers = new List<OrderFlowCloudLayer>
+            {
+                new OrderFlowCloudLayer { Name = "Added chain", Settings = new OrderFlowCloudSettings { MinimumSumVolume = 1 } },
+                new OrderFlowCloudLayer { Name = "Added single", Settings = new OrderFlowCloudSettings { SingleTicks = true, MinimumTickVolume = 500 } }
+            };
+            RecordingReplay observer = new RecordingReplay();
+            OrderFlowResearchResult result = new OrderFlowResearchEngine().Run(request, System.Threading.CancellationToken.None, observer);
+            string before = JsonSerializer.Serialize(result);
+            OrderFlowResearchChart chart = new OrderFlowResearchChart(); chart.SetResult(result); chart.SetLayers(false, true, true);
+            foreach (bool replay in new[] { false, true })
+            {
+                if (replay) { chart.BeginReplay(request.Cloud.MinimumSumVolume, request.Cloud2.MinimumTickVolume); chart.ApplyReplayFrame(observer.Frames.Last().Result); }
+                chart.SetCloudScale(1); chart.SetCloudContrast(2); RenderDrawingChart(chart);
+                List<(Point Center, double Radius, OrderFlowCloud Cloud)> added = CalField<List<(Point, double, OrderFlowCloud)>>(chart, "_additionalCloudHits");
+                List<(Point Center, double Radius, OrderFlowCloud Cloud)>[] groups = { CloudHits(chart, false), CloudHits(chart, true), added };
+                Dictionary<string, double> radii = groups.SelectMany(g => g).ToDictionary(h => h.Cloud.CloudId, h => h.Radius);
+                AssertTrue(groups.All(g => g.Count > 0), "Legacy and added layers render in history/replay");
+                AssertTrue(added.Any(h => h.Cloud.TradeCount == 1) && added.Any(h => h.Cloud.TradeCount > 1), "Both added marker shapes covered");
+                chart.SetCloudScale(2);
+                AssertTrue(groups.All(g => g.Count == 0), "Shared size invalidates every old hit list");
+                RenderDrawingChart(chart);
+                foreach ((Point center, double radius, OrderFlowCloud cloud) in groups.SelectMany(g => g))
+                { AssertTrue(Math.Abs(radius - radii[cloud.CloudId] * 2) < 1e-8, "Shared size scales every actual painted/hit radius"); }
+                radii = groups.SelectMany(g => g).ToDictionary(h => h.Cloud.CloudId, h => h.Radius);
+                chart.SetCloudContrast(4);
+                AssertTrue(groups.All(g => g.Count == 0), "Shared contrast invalidates every old hit list");
+                RenderDrawingChart(chart);
+                foreach (List<(Point Center, double Radius, OrderFlowCloud Cloud)> group in groups)
+                { AssertTrue(group.Any(h => Math.Abs(h.Radius - radii[h.Cloud.CloudId]) > 1e-8), "Shared contrast changes each legacy/added group"); }
+                if (replay) { chart.EndReplay(); }
+            }
+            AssertEqual(before, JsonSerializer.Serialize(result), "Shared controls and replay never modify research results");
+            foreach (OrderFlowReplayFrame frame in observer.Frames)
+            { AssertEqual(observer.Frozen[observer.Frames.IndexOf(frame)], JsonSerializer.Serialize(frame), "Rendered replay snapshots stay immutable"); }
+        }
+
         private static void TestCloudVolumeLabels(string root)
         {
             OrderFlowResearchResult result = new OrderFlowResearchEngine().Run(CloudRequest(root, Row(Start, 100, 500, Side.Buy)), System.Threading.CancellationToken.None);
@@ -81,23 +120,24 @@ namespace OsEngine.OrderFlowResearch.Tests
             XDocument ui;
             using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Research.Ui.xaml")) { ui = XDocument.Load(stream); }
             XNamespace ns = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
-            string[] names = { "SliderCloudContrast", "SliderChartCloudContrast", "TextBlockChartCloudContrast" };
+            string[] names = { "SliderChartCloudContrast", "TextBlockChartCloudContrast" };
             FrameworkElement content = (FrameworkElement)XamlReader.Parse(new XElement(ns + "StackPanel", names.Select(name =>
                 new XElement(ui.Descendants().Single(element => (string)element.Attribute("Name") == name)))).ToString());
-            Slider primary = (Slider)content.FindName(names[0]); Slider mirror = (Slider)content.FindName(names[1]);
-            TextBlock text = (TextBlock)content.FindName(names[2]);
-            OrderFlowChartHost.BindVisualSlider(mirror, primary, text, "{0:F1}");
+            Slider primary = (Slider)content.FindName(names[0]);
+            TextBlock text = (TextBlock)content.FindName(names[1]);
+            OrderFlowChartHost.BindVisualReadout(primary, text, "{0:F1}");
             ContentControl first = new ContentControl { Content = content }; ContentControl second = new ContentControl();
             using (OrderFlowChartHost host = new OrderFlowChartHost(first))
             {
                 AssertEqual(2d, primary.Value, "Default contrast");
                 AssertEqual(0.5, primary.Minimum, "Minimum contrast"); AssertEqual(10d, primary.Maximum, "Maximum contrast");
-                host.MoveTo(second); mirror.Value = 2.5;
-                AssertEqual(2.5, primary.Value, "Separate window still changes primary event source");
+                host.MoveTo(second); primary.Value = 2.5;
+                AssertEqual(2.5, primary.Value, "Detached slider retains value");
                 Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.DataBind, new Action(() => { }));
                 AssertTrue(text.Text.Contains("2"), "Readout stays bound after transfer");
                 host.Restore(); primary.Value = 0.5;
-                AssertEqual(0.5, mirror.Value, "Return retains two-way binding");
+                Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.DataBind, new Action(() => { }));
+                AssertTrue(text.Text.EndsWith("5"), "Readout stays bound after return");
             }
         }
     }

@@ -88,6 +88,7 @@ namespace OsEngine.OrderFlowResearch.Tests
                 Run("calendar month aggregation", root, TestMonthlyChartBars);
                 Run("visible timeframe and circle controls stay synchronized", root, TestChartControlBindings);
                 Run("Cloud visual coefficient and hit geometry", root, TestCloudVisualScale);
+                Run("shared Cloud appearance across legacy added and replay layers", root, TestSharedCloudAppearance);
                 Run("drawing rays clip in both time directions", root, TestDrawingClipping);
                 Run("drawing source anchors and compressed time", root, TestDrawingCoordinates);
                 Run("drawing interaction and immutable results", root, TestDrawingInteraction);

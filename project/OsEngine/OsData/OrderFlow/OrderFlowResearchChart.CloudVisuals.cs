@@ -18,8 +18,6 @@ namespace OsEngine.OsData.OrderFlow
         private double _cloudContrast = 2;
         private decimal _cloudReferenceVolume = 1;
         private bool _showCloudVolumes = true;
-        private double _cloudScale2 = 1;
-        private double _cloudContrast2 = 2;
         private decimal _cloudReferenceVolume2 = 1;
         private bool _showCloudVolumes2 = true;
 
@@ -28,14 +26,15 @@ namespace OsEngine.OsData.OrderFlow
         internal decimal Cloud2ReferenceVolume => _cloudReferenceVolume2;
 
         /// <summary>
-        /// Changes relative volume-size contrast for the selected layer (secondLayer selects Cloud 2), independently of the overall radius multiplier. UI-thread-only; no recalculation/export.
-        /// The finite exponent ranges from 0.5 through 10 (default 2). Larger values emphasize differences around the median volume.
+        /// Changes relative volume-size contrast for all Clouds, including added instances and calibration overlays. UI-thread-only; no recalculation/export.
+        /// The finite exponent ranges from 0.5 through 10 (default 2). Ordinary layers retain their own history/replay references; calibration retains its capped logarithmic sizing.
         /// </summary>
-        public void SetCloudContrast(double contrast, bool secondLayer = false)
+        public void SetCloudContrast(double contrast)
         {
             if (!double.IsFinite(contrast) || contrast < 0.5 || contrast > 10) { throw new ArgumentOutOfRangeException(nameof(contrast)); }
-            if (secondLayer) { _cloudContrast2 = contrast; }
-            else { _cloudContrast = contrast; }
+            _cloudContrast = contrast;
+            _additionalCloudHits.Clear();
+            _calibrationHits.Clear();
             _cloudHits.Clear();
             _cloudHits2.Clear();
             _cloudPlotBounds = Rect.Empty;
@@ -72,12 +71,15 @@ namespace OsEngine.OsData.OrderFlow
         /// Full-result median normalization makes comparisons stable during pan/zoom/TF changes, not across different results.
         /// </summary>
         internal double CloudVolumeRadius(decimal volume, bool secondLayer = false)
+            => CloudVolumeRadius(volume, secondLayer ? _cloudReferenceVolume2 : _cloudReferenceVolume);
+
+        private double CloudVolumeRadius(decimal volume, decimal reference)
         {
-            double relative = (double)volume / (double)(secondLayer ? _cloudReferenceVolume2 : _cloudReferenceVolume);
-            double power = (secondLayer ? _cloudContrast2 : _cloudContrast) * Math.Log2(relative);
+            double relative = (double)volume / (double)Math.Max(reference, 0.0000000000000000000000000001m);
+            double power = _cloudContrast * Math.Log2(relative);
             // Stable softplus: direct Pow(relative, 10) can overflow for valid decimal volume ratios.
             double logarithm = Math.Max(0, power) + Math.Log2(1 + Math.Pow(2, -Math.Abs(power)));
-            return (secondLayer ? _cloudScale2 : _cloudScale) * (4 + 20 * logarithm);
+            return _cloudScale * (4 + 20 * logarithm);
         }
 
         #endregion
