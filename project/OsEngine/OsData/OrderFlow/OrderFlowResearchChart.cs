@@ -112,6 +112,7 @@ namespace OsEngine.OsData.OrderFlow
             _cloudLayerViews.Clear(); _cloudLayerPostFilters.Clear(); _cloudLayerRowCache.Clear();
             EndDrag();
             _result = result;
+            _contextResult = null; _contextHits.Clear();
             SetCalibrationLayers(System.Collections.Immutable.ImmutableArray<Calibration.CalibrationLayer>.Empty);
             ClearImbalanceDisplayCache();
             UpdateCloudReference();
@@ -302,6 +303,7 @@ namespace OsEngine.OsData.OrderFlow
             try
             {
                 Point point = e.GetPosition(this);
+                if (e.ClickCount == 2 && ContextClick(point)) { e.Handled = true; return; }
                 if (e.ClickCount == 2 && CalibrationClick(point)) { e.Handled = true; return; }
                 if (TotalBars == 0 || point.X < 92 || point.X > ActualWidth - 12) { return; }
                 Focus();
@@ -425,6 +427,7 @@ namespace OsEngine.OsData.OrderFlow
 
         private void DrawChart(DrawingContext drawingContext)
         {
+            _contextHits.Clear(); _contextPlot = Rect.Empty;
             _calibrationHits.Clear();
             _drawingPlot = Rect.Empty;
             _lineHits.Clear();
@@ -515,6 +518,7 @@ namespace OsEngine.OsData.OrderFlow
             }
             DrawAdditionalClouds(drawingContext, bars, left, slotWidth, priceTop, priceBottom, minPrice, maxPrice);
             DrawCalibration(drawingContext, bars, left, slotWidth, priceTop, priceBottom, minPrice, maxPrice);
+            DrawContext(drawingContext, bars, left, slotWidth, priceTop, priceBottom, minPrice, maxPrice);
             if (deltaVisible)
             {
                 DrawDeltaBars(drawingContext, bars, left, slotWidth, deltaTop, deltaBottom, maxDelta);

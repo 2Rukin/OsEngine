@@ -18,6 +18,13 @@ Cloud Explorer V2, поиск предвестников и Cloud calibration и
 один TXT одного инструмента → статистика и сортируемые таблицы → выбранные
 паттерны ромбами на графике. Он не описывает уже реализованную функцию.
 
+Новый отдельный workspace **«Контекст рынка»** объединяет на одном графике
+серую цену High/Low, три настраиваемых масштаба областей, VWAP/TWAP/σ,
+локальные события и подтверждённую структуру. [Runbook системы](MULTISCALE_CONTEXT_RUNBOOK.md)
+описывает настройки, replay, ручные якоря, сохранение, исходы и примеры
+исследования торговых сценариев. Это текущая самостоятельная реализация;
+полная целевая спецификация «Отпечатки ленты» ею не заменяется.
+
 Открытые наблюдения владельца по интерфейсу Cloud Explorer и история
 закрытой проблемы переключения окон — в [реестре](TECHNICAL_DEBT.md).
 Общая постановка будущего переноса **всех пользовательских таблиц приложения**
@@ -79,6 +86,7 @@ Cloud находятся в [runbook](RESEARCH_MVP_RUNBOOK.md#45-cloud-цепо�
 | `ORDER-FLOW-CLOUD-EXPLORER-FOLLOWUP-001` | [Cloud Explorer follow-up contract](CLOUD_EXPLORER_FOLLOWUP_SPEC.md) | Русские ошибки, исправления экранов и отдельный offline-поиск сочетаний событий до внутридневного движения |
 | `ORDER-FLOW-CLOUD-CALIBRATION-001` | [Cloud calibration contract](CLOUD_CALIBRATION_SPEC.md) | Реализованный offline подбор Single/Chain и Standard/Diagonal rules: статистика, heatmap параметров, per-range rules, replay и Cloud Anatomy; физический DPI/focus — OWNER-RUN |
 | `ORDER-FLOW-SRU6-CALIBRATION-2026-001` | [SRU6 Cloud calibration June–August 2026](SRU6_CLOUD_CALIBRATION_JUN_AUG_2026.md) | Offline research report с development/validation, проверенной сеткой и параметрами для ручной визуальной оценки; не торговая квалификация |
+| `ORDER-FLOW-CONTEXT-001` | [Многомасштабный контекст: runbook](MULTISCALE_CONTEXT_RUNBOOK.md) | Текущий отдельный график трёх масштабов, математика, replay, профили, статистика и операторские примеры |
 | `ORDER-FLOW-TICK-PATTERNS-001` | [Статистика отпечатков ленты](TICK_PATTERN_STATISTICS_SPEC.md) | Target: профили одного инструмента, четыре детектора, сортируемые отдельные таблицы и выбор ромбов для графика и replay |
 | `UI-DETACHED-TABLES-001` | [Задание на окна таблиц](../UI/DETACHED_TABLES_SPEC.md) | Целевое правило всего приложения: таблицы по кнопке в отдельных окнах, кнопки видны и доступны |
 

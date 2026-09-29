@@ -1,64 +1,86 @@
 # Authoritative active task state
 
-**ID:** `TASK-THG-SRU6-015`
+**ID:** `TASK-ORDER-FLOW-MULTISCALE-INTEGRATION-016`
 **Статус:** `COMPLETE`
 **Фаза:** `TERMINAL`
 **Ветка:** `docs/order-flow-production-roadmap`
-**Baseline/current HEAD:** `088add98b728f8088fb18ff2e59c8d4113ad043c`
-**Entry dirty boundary:** `TEMP/TradeHelp4-analysis/sru6-entry.json`, SHA-256 `21cf59f762702520d41143bbda9042815eda19ddd4cbc83759f1725b63ad5f6b`
-**Completed transition IDs:** `SRU6_ENTRY`, `SRU6_RESEARCH`, `SRU6_IMPLEMENTATION`, `SRU6_NATIVE_REPLAY`, `SRU6_OFFLINE_VERIFY`, `SRU6_PRIMARY_REVIEW`, `SRU6_FIX`, `SRU6_REVERIFY`, `SRU6_VALIDATION_1`, `SRU6_TERMINAL`
-**Next transition ID:** `SRU6_HANDOFF`
+**Integration baseline:** `eeaf0576ea3145b98a24932896a1897f58378f67`
+**Source commit:** `c0d532f41e216314abcbc97f19dc2266f3afb2b7`
+**Completed transition IDs:** `ENTRY_BASELINE_VERIFIED`, `SOURCE_REVIEW_REUSED`, `CHERRY_PICK_RESOLVED`, `WINDOWS_BUILD`, `SOLUTION_BUILD`, `CONTEXT_TESTS`, `INTEGRATION_TERMINAL`
+**Next transition ID:** `OWNER_WINDOWS_UI_CHECK`
 
-## Frozen scope and authorization
+## Frozen scope
 
-User authorized offline historical testing of Futures2Grid with `C:\Qscalp\SRU6.txt`
-and related `C:\Qscalp\SRU6\*.qsh`, comparison with existing OsEngine negative-price
-support, fixes for reproducible reachable findings, and a final owner manual-test report.
-Scope: current signed-price/Futures2/Tester integration; Tests/TradeHelpGrid; registered
-current qualification/operator/completeness documents, DOCMAP and this snapshot.
-Read external SRU6 data only; no conversion or mutation of source files.
-Main sole writer. No live connector, broker/account, credentials, real/paper orders,
-MCP/StopOrders stand, commit, push, reset, rebase or merge.
+Integrate the independently reviewed multiscale context commit into the current
+Futures2 branch, preserving both test projects in `OsEngine.sln`. The source scope is a
+separate configurable offline Order Flow workspace using one existing chart:
+grey High/Low prices, three selectable formation periods, frozen volume areas,
+causal hierarchy, anchored VWAP/TWAP and population sigma, structural swings,
+local tape events, exact event coordinates, future-path statistics, manual
+anchors, instrument profiles, saved studies and prefix replay. Tables open
+separately; display filters preserve calculations. Existing Cloud workspaces
+are unchanged. No heartbeat, broker, orders, credentials or live qualification.
 
-## Decisions and acceptance
+## Implementation and documentation
 
-Use SRU6 as the primary positive-price historical set. Treat TXT trades and QSH Quotes
-as separate replays because current Tester selects one QSH stream per symbol/day and
-does not prove synchronized Deals+Quotes playback. Existing native negative-price
-behavior is authoritative where reachable; retain the explicit zero-presence contract
-needed by Futures2 and remove/repair duplication only when executable evidence proves it.
-Historical replay must use real rows/frames, deterministic configuration and recorded
-totals. Fix only defects reproduced on current checkout, with regression coverage.
-Acceptance: executable SRU6 evidence, existing managed suite and full solution build;
-clear execution-model limits; production and documentation scoped reviews if code/docs
-change; final Russian report splits automated PASS from exact manual cases.
+Main is the only writer; researchers and reviewers are read-only. The source commit
+derives from `088add98b728f8088fb18ff2e59c8d4113ad043c`; its production additions live in
+`project/OsEngine/OsData/OrderFlow/Context/`, with chart/UI partials and tiny hooks.
+`ORDER-FLOW-CONTEXT-001` is registered in DOCMAP and documented in
+`project/Documentation/OrderFlow/MULTISCALE_CONTEXT_RUNBOOK.md`:
+usage, examples, settings, formulas, interpretation, chronological tuning,
+trading hypotheses and cancellation conditions. Markdown, XML lifecycle
+contracts and runtime-flow Mermaid were reviewed together with implementation.
 
 ## Verification status
 
-Entry inherited from terminal 014: 935/935 managed assertions, full build 0 errors and
-17 existing warnings, validator 109 PASS, reviews CLEAN/CLEAN. Current managed suite
-still 935/935; full solution build0errors/17 existing warnings plus NU1900. Native zero-loader reproduced FAIL before fix and
-PASS after fix. Native signed fixture PASS12orders/12fills; exact12/12 delivery on
-each tab, negative/literal-zero/fifth-decimal order and fill prices, replay end and
-intent/order/fill ledger match are asserted. SRU6 TXT PASS6/6 flat with exact240/240
-delivery per tab; QSH5min PASS2/2 with one depth callback per tab. Both reached the
-configured replay end and matched the Futures2 ledger. Recorded errors0.
-Static data audit: SRU6.txt has 3,130,667 ordered seven-field trades across 174 days;
-171 each v4 one-stream QSH Deals/Quotes/AuxInfo files have valid gzip headers.
-Agent validator109PASS, local links4docsPASS, evidence JSON parses, diff-checkPASS.
-PRIMARY found `THG-SRU6-SAF-001`, `THG-SRU6-DOC-001` and `THG-SRU6-DOC-002`;
-all three bounded fixes are applied and reverified. VALIDATION_1 scope10-file
-aggregate SHA-256 `fd9fb0d00b5782ea7549508e9a1339db5460a8536b365c38d193736b3e7057b1`.
-Production and documentation VALIDATION_1 outcomes are CLEAN/CLEAN; terminal
-review is `THG-HISTORICAL-REVIEW-015`.
+The reviewed source evidence below is supplemented by current combined-checkout
+Windows results: main project PASS with0errors/16existing warnings; full solution
+PASS with0errors/28existing warnings including unavailable NuGet vulnerability feed;
+OrderFlowContext portable suite PASS24/24.
+
+- PASS: `dotnet run --project project/Tests/OrderFlowContext/OsEngine.OrderFlowContext.Tests.csproj`,
+  24/24 offline tests linking actual production parser, Cloud detector, runner,
+  math, event/area engine and indexed future labels. Only host enum/localizer facades.
+- PASS: SRU6 2026-06-22 actual two-pass parsing/detection/calculation and JSON
+  round-trip: 63,888 trades, 493 areas, 34,475 events, 119,484 paths.
+  Source SHA-256: `435ea400ffcc45cd3215be0806f660368a024d1c2942b8eed8aa8e3d2fed1f7b`.
+  Repeated final run: 16.2 seconds; payload stayed
+  `b6c469fd299260e9d122d8fc85ded983aa4a38d6694197005020eaa013f6c1b9`.
+- PASS: main cross-build with `EnableWindowsTargeting=true`: 0 errors,
+  16 existing warnings. Final solution also rebuilt changed main/XAML.
+- PASS: full solution cross-build: 0 errors, 43 existing warnings; SDK 10.0.401.
+  Linux used `-m:1 -p:EnableWindowsTargeting=true -p:UseSharedCompilation=false`
+  and a temporary `CustomBeforeMicrosoftCommonProps` that sets `RuntimeIdentifier`
+  to `win-x64` only for DividendsUpdater. Its existing post-build target requires
+  an .exe; plain Linux solution build fails that copy. No repository build logic
+  was changed and no executable/test stand from the solution was launched.
+- PASS: `.agents/validation/validate-agent-system.sh`, 109/109; diff whitespace.
+- Windows WPF physical interaction and existing Windows-specific runners: NOT_RUN.
+
+## Independent review
+
+PRIMARY -> FIX -> VALIDATION_1 -> CLEAN for both production and documentation.
+Reviewed implementation checkpoint staged hash:
+`525528c822a24cad363cff0fb0226cdfdfe9472194eaaf4a4a00edd2ff74d7b9`.
+Only this state/evidence snapshot changed after that checkpoint.
+Closed CTX-P01 (manual identity), CTX-P02 (temporary replay drawings),
+CTX-P03/CTX-DOC-001 (midnight horizon), CTX-P04 (manual session boundary),
+CTX-DOC-002 (flow and XML contracts). No remaining proved in-scope findings.
+
+OBSERVABILITY: REQUIRED, implemented with progress, stable event/area IDs,
+source/settings/payload hashes, gap/outcome status and standard error logging.
+MODE PARITY: NO CHANGE to Tester/live execution; only offline history/prefix
+replay claims. Future paths exclude execution, fees, slippage and PnL claims.
 
 ## Blockers
 
-None for offline research. Historical Tester cannot prove partial fills, exchange queue,
-transport uncertainty, live TRANSAQ recovery or broker-side state. Those remain manual/
-owner-run or synthetic fault-injection evidence and must not be reported as replay PASS.
+No implementation blocker. Physical Windows UI remains OWNER-RUN: DPI/resize,
+mouse selection, layers, manual two-click, detached tables, replay pause/step,
+close during background work. Cross-compilation cannot prove those interactions.
 
 ## Next action
 
-Return the terminal Russian handoff with automated evidence and exact remaining
-manual/owner-run cases. No further repository action is authorized.
+Open OsData -> Order Flow -> «Контекст рынка» on Windows and follow the runbook
+with one day first. Physical DPI, mouse, detached-table and replay interactions
+remain an owner check; no broker or order path is involved.

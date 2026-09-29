@@ -1,0 +1,53 @@
+<Window x:Class="OsEngine.OsData.OrderFlow.Context.FlowContextWindow"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ Title="Контекст рынка — области, масштабы и лента" Width="1450" Height="900" MinWidth="850" MinHeight="550" WindowStartupLocation="CenterScreen" Style="{DynamicResource WindowStyleCanResize}">
+ <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+ <Grid Margin="8" MinHeight="650" Background="{DynamicResource ControlBackgroundNormalLight}">
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*" MinHeight="330"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <Expander Name="ExpanderInput" Header="Источник — один инструмент, время как в TXT" IsExpanded="True">
+   <Grid Margin="4"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <Label Content="Тики TXT"/><TextBox Name="TextBoxInput" Grid.Column="1" Margin="4"/><Button Name="ButtonBrowse" Grid.Column="2" Content="Выбрать файл" Margin="4" Padding="8,4"/>
+    <WrapPanel Grid.Row="1" Grid.ColumnSpan="3"><Label Content="С"/><DatePicker Name="DatePickerFrom" Width="130"/><Label Content="По"/><DatePicker Name="DatePickerTo" Width="130"/><Label Content="Пустые даты — весь файл. Для первого запуска выберите один день."/></WrapPanel>
+   </Grid>
+  </Expander>
+  <WrapPanel Grid.Row="1">
+   <Button Name="ButtonRun" Content="Рассчитать систему" Padding="10,6" Margin="3"/><Button Name="ButtonCancel" Content="Отмена расчёта" Padding="8,6" Margin="3" IsEnabled="False"/>
+   <Button Name="ButtonSettings" Content="Настройки инструмента" Padding="8,6" Margin="3"/><Button Name="ButtonSaveProfile" Content="Сохранить профиль" Padding="8,6" Margin="3"/><Button Name="ButtonLoadProfile" Content="Загрузить профиль" Padding="8,6" Margin="3"/>
+   <Button Name="ButtonSave" Content="Сохранить исследование" Padding="8,6" Margin="3"/><Button Name="ButtonOpen" Content="Открыть исследование" Padding="8,6" Margin="3"/>
+   <Button Name="ButtonGuide" Content="Как пользоваться" Padding="8,6" Margin="3"/>
+  </WrapPanel>
+  <WrapPanel Grid.Row="2">
+   <Label Content="Периоды формирования" ToolTip="Максимальное время объединения цепочек в область. Это параметры расчёта, а не таймфрейм цены."/>
+   <Label Content="Локальный"/><ComboBox Name="ComboBoxLocal" Width="85" Margin="3" DisplayMemberPath="Value" SelectedValuePath="Key"/>
+   <Label Content="Рабочий"/><ComboBox Name="ComboBoxWork" Width="85" Margin="3" DisplayMemberPath="Value" SelectedValuePath="Key"/>
+   <Label Content="Старший"/><ComboBox Name="ComboBoxSenior" Width="85" Margin="3" DisplayMemberPath="Value" SelectedValuePath="Key"/>
+   <Label Content="Цена"/><ComboBox Name="ComboBoxPricePeriod" Width="90" Margin="3" DisplayMemberPath="Value" SelectedValuePath="Key"/>
+   <Label Content="Слой"/><ComboBox Name="ComboBoxScale" Width="110" Margin="3"/>
+   <CheckBox Name="CheckBoxAllRegions" Content="Все области" Margin="6" VerticalAlignment="Center" ToolTip="По умолчанию показаны выбранный эпизод, его родитель и дети; без выбора — последний эпизод каждого масштаба."/>
+  </WrapPanel>
+  <WrapPanel Grid.Row="3">
+   <CheckBox Name="CheckBoxRegions" Content="Области" IsChecked="True" Margin="5"/><CheckBox Name="CheckBoxVwap" Content="VWAP — сплошная" IsChecked="True" Margin="5"/><CheckBox Name="CheckBoxTwap" Content="TWAP — штрих" IsChecked="True" Margin="5"/>
+   <CheckBox Name="CheckBoxBands" Content="Полосы σ" IsChecked="True" Margin="5"/><ComboBox Name="ComboBoxSigma" Width="55" Margin="3"/>
+   <CheckBox Name="CheckBoxSwings" Content="Структура" IsChecked="True" Margin="5"/><CheckBox Name="CheckBoxEvents" Content="Ромбы событий" IsChecked="True" Margin="5"/>
+   <ComboBox Name="ComboBoxKind" Width="220" Margin="3"/><CheckBox Name="CheckBoxWarmup" Content="После прогрева" Margin="5"/>
+   <Button Name="ButtonRegions" Content="Таблица областей" Margin="3" Padding="8,4"/><Button Name="ButtonEvents" Content="Таблица событий" Margin="3" Padding="8,4"/><Button Name="ButtonStatistics" Content="Статистика исходов" Margin="3" Padding="8,4"/>
+  </WrapPanel>
+  <ContentControl Name="ContentControlChart" Grid.Row="4" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" MinHeight="330"/>
+  <Grid Grid.Row="5"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+   <Slider Name="SliderPosition" Minimum="0" Maximum="1" SmallChange="1" LargeChange="20" Margin="8,3"/>
+   <WrapPanel Grid.Row="1">
+    <Button Name="ButtonReplay" Content="Реплей" Margin="3" Padding="8,4"/><Button Name="ButtonStep" Content="Один тик" Margin="3" Padding="8,4" IsEnabled="False"/><Button Name="ButtonHistory" Content="Вся история" Margin="3" Padding="8,4"/>
+    <Label Content="Скорость"/><ComboBox Name="ComboBoxSpeed" Width="70" Margin="3"/><Button Name="ButtonPrevious" Content="← Событие" Margin="3" Padding="8,4"/><Button Name="ButtonNext" Content="Событие →" Margin="3" Padding="8,4"/>
+    <Button Name="ButtonClearSelection" Content="Снять выбор" Margin="3" Padding="8,4"/><Button Name="ButtonZoomIn" Content="Масштаб +" Margin="3" Padding="8,4"/><Button Name="ButtonZoomOut" Content="Масштаб −" Margin="3" Padding="8,4"/>
+    <Button Name="ButtonDraw" Content="Выделить область: два клика" Margin="3" Padding="8,4"/><Button Name="ButtonAnchor" Content="Добавить выделение как якорь" Margin="3" Padding="8,4"/><Button Name="ButtonClearAnchors" Content="Очистить ручные якоря" Margin="3" Padding="8,4"/>
+   </WrapPanel>
+  </Grid>
+  <StackPanel Grid.Row="6">
+   <TextBlock Name="TextBlockLegend" Text="Цена — серые High/Low. Области: синий — локальный, оранжевый — рабочий, фиолетовый — старший. Ромбы: голубой — одинаковые размеры, жёлтый — ускорение, зелёный/красный — направление реакции. Двойной клик — карточка." TextWrapping="Wrap" Margin="6" Foreground="{DynamicResource ControlForegroundWhite}"/>
+   <TextBox Name="TextBoxDetails" IsReadOnly="True" TextWrapping="Wrap" MaxHeight="170" VerticalScrollBarVisibility="Auto" Margin="4"/>
+  </StackPanel>
+  <TextBlock Name="TextBlockStatus" Grid.Row="7" TextWrapping="Wrap" Margin="6" Foreground="{DynamicResource ControlForegroundWhite}"/>
+ </Grid>
+ </ScrollViewer>
+</Window>
