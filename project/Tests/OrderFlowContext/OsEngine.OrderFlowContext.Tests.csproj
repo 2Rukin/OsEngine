@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="HostFacades.cs" />
+    <Compile Include="../../OsEngine/OsData/OrderFlow/Context/FlowContextModels.cs" Link="Core/FlowContextModels.cs" />
+    <Compile Include="../../OsEngine/OsData/OrderFlow/Context/FlowContextMath.cs" Link="Core/FlowContextMath.cs" />
+    <Compile Include="../../OsEngine/OsData/OrderFlow/Context/FlowContextEngine.cs" Link="Core/FlowContextEngine.cs" />
+    <Compile Include="../../OsEngine/OsData/OrderFlow/Context/FlowContextPresentation.cs" Link="Core/FlowContextPresentation.cs" />
+    <Compile Include="../../OsEngine/OsData/OrderFlow/Context/FlowContextOutcomes.cs" Link="Core/FlowContextOutcomes.cs" />
+    <Compile Include="../../OsEngine/OsData/OrderFlow/Context/FlowContextRunner.cs" Link="Core/FlowContextRunner.cs" />
+    <Compile Include="../../OsEngine/OsData/OrderFlow/OrderFlowTickReader.cs" Link="Core/OrderFlowTickReader.cs" />
+    <Compile Include="../../OsEngine/OsData/OrderFlow/OrderFlowResearchModels.cs" Link="Core/OrderFlowResearchModels.cs" />
+    <Compile Include="../../OsEngine/OsData/OrderFlow/OrderFlowClouds.cs" Link="Core/OrderFlowClouds.cs" />
+    <Compile Include="../../OsEngine/OsData/OrderFlow/OrderFlowCloudSettings.TimeProfiles.cs" Link="Core/OrderFlowCloudSettings.TimeProfiles.cs" />
+    <Compile Include="../../OsEngine/OsData/OrderFlow/OrderFlowCloudImbalance.cs" Link="Core/OrderFlowCloudImbalance.cs" />
+    <Compile Include="../../OsEngine/OsData/OrderFlow/OrderFlowTimeProfiles.cs" Link="Core/OrderFlowTimeProfiles.cs" />
+    <Compile Include="../../OsEngine/OsData/OrderFlow/OrderFlowResearchViewModels.cs" Link="Core/OrderFlowResearchViewModels.cs" />
+    <Compile Include="../../OsEngine/Indicators/ThresholdTimeProfiles.cs" Link="Core/ThresholdTimeProfiles.cs" />
+  </ItemGroup>
+</Project>

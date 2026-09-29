@@ -1,65 +1,78 @@
 # Authoritative active task state
 
-**ID:** `TASK-ORDER-FLOW-CLOUD-APPEARANCE-001`
-**Статус:** `COMPLETED`
+**ID:** `TASK-ORDER-FLOW-MULTISCALE-001`
+**Статус:** `IMPLEMENTED_AND_REVIEWED`
 **Фаза:** `TERMINAL_HANDOFF`
-**Ветка:** `docs/order-flow-production-roadmap`
-**Baseline HEAD:** `9a5a7c0e56dabdd9e0f62ec6ecd80d802ed0c1ca`
-**Published implementation HEAD:** `10341d07051af02f4dd64b320619110e4e5ec7ce`
-**Completed transition IDs:** `ENTRY_BASELINE_VERIFIED`, `REMOTE_DOCS_INTEGRATED`, `UNIFY_CLOUD_APPEARANCE`, `OFFLINE_VERIFICATION`, `PRIMARY_REVIEWS`, `COMMIT_AND_PUSH`
-**Next transition ID:** `OWNER_UI_ACCEPTANCE`
+**Ветка:** `feature/order-flow-multiscale-context`
+**Baseline HEAD:** `088add98b728f8088fb18ff2e59c8d4113ad043c`
+**Completed transition IDs:** `ENTRY_BASELINE_VERIFIED`, `SCOPE_DEFINED`, `IMPLEMENT_MULTISCALE`, `PORTABLE_TESTS`, `PRIMARY_REVIEW`, `FIX`, `VALIDATION_1`, `FINAL_BUILD`
+**Next transition ID:** `OWNER_WINDOWS_UI_CHECK`
 
 ## Frozen scope
 
-Owner requests one size/contrast slider pair on the Order Flow chart controlling
-all Cloud markers, including additional instances; implement, commit and push.
-In scope: OrderFlow chart/UI controls, marker geometry/hit testing, applicable
-offline regression tests, current operator docs and this snapshot.
-Preserve calculation thresholds, time profiles, research identities and data.
-No connector, broker, credentials, orders or live/test-stand launch.
+Separate configurable offline Order Flow workspace using one existing chart:
+grey High/Low prices, three selectable formation periods, frozen volume areas,
+causal hierarchy, anchored VWAP/TWAP and population sigma, structural swings,
+local tape events, exact event coordinates, future-path statistics, manual
+anchors, instrument profiles, saved studies and prefix replay. Tables open
+separately; display filters preserve calculations. Existing Cloud workspaces
+are unchanged. No heartbeat, broker, orders, credentials or live qualification.
 
-## Baseline and dirty boundary
+## Implementation and documentation
 
-Entry HEAD was clean `2e7d1d007ef4d1b2208be4c9367715a78c663a74`.
-Remote `f85adc559` adds a target tick-pattern document. Ordinary merge retained
-both independent documentation registrations; merge HEAD is the baseline above.
-Running OsEngine PID20252 observed. Use isolated build outputs while it runs.
-Only Main edits files; research and reviewers are read-only.
+Main is the only writer; researchers and reviewers are read-only. Branch derives
+from the exact baseline above. Production additions live in
+`project/OsEngine/OsData/OrderFlow/Context/`, with chart/UI partials and tiny hooks.
+`ORDER-FLOW-CONTEXT-001` is registered in DOCMAP and documented in
+`project/Documentation/OrderFlow/MULTISCALE_CONTEXT_RUNBOOK.md`:
+usage, examples, settings, formulas, interpretation, chronological tuning,
+trading hypotheses and cancellation conditions. Markdown, XML lifecycle
+contracts and runtime-flow Mermaid were reviewed together with implementation.
 
 ## Verification status
 
-- A single size/contrast pair stays on the chart toolbar, including detached
-  chart hosting. Legacy Cloud 1/2 and additional layers share visual parameters.
-- OBSERVABILITY: NO CHANGE. MODE PARITY: NO CHANGE.
-- Main project build: exit 0, 0 errors / 16 existing warnings.
-- Solution build: exit 0, 0 errors / 27 existing warnings.
-- OrderFlow test project build: exit 0, 0 errors / 0 warnings.
-- Offline OrderFlow runner: exit 0, 214 passed / 0 failed. Includes actual shared
-  slider handlers, legacy/added marker geometry in history/replay, calibration
-  geometry invalidation and detached readouts; no application launch.
-- Build command override: `-p:OutputPath=%TEMP%/OsEngine-CloudAppearance-43fedb4873234786953ddbf1fbc673f5/{bin,tests}/`.
-  Commands: `dotnet build OsEngine/OsEngine.csproj`, `dotnet build OsEngine.sln`,
-  `dotnet build Tests/OrderFlowResearch/OsEngine.OrderFlowResearch.Tests.csproj`;
-  execute the resulting offline `OsEngine.OrderFlowResearch.Tests.exe`.
-- The solution's DividendsUpdater copy target refreshed two tracked binaries.
-  Both matched isolated build hashes and were restored to HEAD; no owner edits.
-- Agent validator: 109 checks PASS; all 48 scoped local file links resolve;
-  diff whitespace PASS.
-- Independent scoped PRIMARY production and documentation reviews: CLEAN.
-  Both reviewed the frozen diff against the baseline above; no findings.
-- Physical owner UI acceptance is separate from offline rendering evidence.
-- Implementation commit `10341d070` pushed to origin's same-named branch via
-  ordinary fast-forward push over SSH; no force. Subsequent snapshot-only
-  finalization does not change the reviewed production/test/docs boundary.
+- PASS: `dotnet run --project project/Tests/OrderFlowContext/OsEngine.OrderFlowContext.Tests.csproj`,
+  24/24 offline tests linking actual production parser, Cloud detector, runner,
+  math, event/area engine and indexed future labels. Only host enum/localizer facades.
+- PASS: SRU6 2026-06-22 actual two-pass parsing/detection/calculation and JSON
+  round-trip: 63,888 trades, 493 areas, 34,475 events, 119,484 paths.
+  Source SHA-256: `435ea400ffcc45cd3215be0806f660368a024d1c2942b8eed8aa8e3d2fed1f7b`.
+  Repeated final run: 16.2 seconds; payload stayed
+  `b6c469fd299260e9d122d8fc85ded983aa4a38d6694197005020eaa013f6c1b9`.
+- PASS: main cross-build with `EnableWindowsTargeting=true`: 0 errors,
+  16 existing warnings. Final solution also rebuilt changed main/XAML.
+- PASS: full solution cross-build: 0 errors, 43 existing warnings; SDK 10.0.401.
+  Linux used `-m:1 -p:EnableWindowsTargeting=true -p:UseSharedCompilation=false`
+  and a temporary `CustomBeforeMicrosoftCommonProps` that sets `RuntimeIdentifier`
+  to `win-x64` only for DividendsUpdater. Its existing post-build target requires
+  an .exe; plain Linux solution build fails that copy. No repository build logic
+  was changed and no executable/test stand from the solution was launched.
+- PASS: `.agents/validation/validate-agent-system.sh`, 109/109; diff whitespace.
+- Windows WPF physical interaction and existing Windows-specific runners: NOT_RUN.
+
+## Independent review
+
+PRIMARY -> FIX -> VALIDATION_1 -> CLEAN for both production and documentation.
+Reviewed implementation checkpoint staged hash:
+`525528c822a24cad363cff0fb0226cdfdfe9472194eaaf4a4a00edd2ff74d7b9`.
+Only this state/evidence snapshot changed after that checkpoint.
+Closed CTX-P01 (manual identity), CTX-P02 (temporary replay drawings),
+CTX-P03/CTX-DOC-001 (midnight horizon), CTX-P04 (manual session boundary),
+CTX-DOC-002 (flow and XML contracts). No remaining proved in-scope findings.
+
+OBSERVABILITY: REQUIRED, implemented with progress, stable event/area IDs,
+source/settings/payload hashes, gap/outcome status and standard error logging.
+MODE PARITY: NO CHANGE to Tester/live execution; only offline history/prefix
+replay claims. Future paths exclude execution, fees, slippage and PnL claims.
 
 ## Blockers
 
-None. Implementation, verification, independent reviews and code publication
-are complete. Physical desktop/DPI/focus and live remain NOT_RUN.
+No implementation blocker. Physical Windows UI remains OWNER-RUN: DPI/resize,
+mouse selection, layers, manual two-click, detached tables, replay pause/step,
+close during background work. Cross-compilation cannot prove those interactions.
 
 ## Next action
 
-Owner may build the normal application output and restart to use the change,
-then check the shared size/contrast controls in the actual desktop session.
-The running desktop application was not stopped and still uses its existing
-binaries. No further implementation work is pending.
+Open OsData -> Order Flow -> «Контекст рынка» on Windows and follow the runbook
+with one day first. Implementation and reviewed documentation belong to this
+feature branch; Git and the final handoff provide the exact published commit.

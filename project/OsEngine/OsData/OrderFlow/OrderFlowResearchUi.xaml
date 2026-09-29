@@ -247,6 +247,7 @@
                 <WrapPanel Grid.Row="2" Orientation="Horizontal"
                             HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Name="ButtonRun" Margin="8,2,2,2" MinWidth="105" Height="34" Content="Run research"/>
+                    <Button Name="ButtonContext" Margin="4" Height="Auto" MinHeight="34" Padding="8,4" Content="Контекст рынка"/>
                     <Button Name="ButtonCalibration" Margin="4" Height="Auto" MinHeight="34" Padding="8,4" Content="Cloud calibration"/>
                     <Button Name="ButtonCancel" Margin="2" MinWidth="80" Height="34" Content="Cancel" IsEnabled="False"/>
                     <Button Name="ButtonOpenArtifacts" Margin="2" MinWidth="115" Height="34" Content="Open artifacts" IsEnabled="False"/>

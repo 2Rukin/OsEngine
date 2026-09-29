@@ -103,6 +103,7 @@ namespace OsEngine.OsData.OrderFlow
             InitializeCloudExplorer();
             InitializeTableWindows();
             InitializeCalibration();
+            InitializeContext();
             InitializeTimeProfiles();
             Chart_ViewChanged(this, EventArgs.Empty);
         }
@@ -813,6 +814,7 @@ namespace OsEngine.OsData.OrderFlow
             {
                 _isClosing = true;
                 DisposeCalibration();
+                DisposeContext();
                 _tableWindows?.Dispose();
                 DisposeCloudExplorer();
                 DisposeCloudImbalanceControls();

@@ -1,0 +1,31 @@
+<Window x:Class="OsEngine.OsData.OrderFlow.Context.FlowContextSettingsWindow"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ Title="Профиль системы контекста" Width="760" Height="730" MinWidth="580" MinHeight="450" WindowStartupLocation="CenterOwner" Style="{DynamicResource WindowStyleCanResize}">
+ <Window.Resources>
+  <BooleanToVisibilityConverter x:Key="BooleanVisibility"/>
+  <DataTemplate x:Key="SettingEditor">
+   <Grid Margin="4"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/></Grid.ColumnDefinitions>
+    <TextBlock Text="{Binding Label}" ToolTip="{Binding Help}" TextWrapping="Wrap" VerticalAlignment="Center" Foreground="{DynamicResource ControlForegroundWhite}"/>
+    <TextBox Grid.Column="1" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Margin="6,2" Visibility="{Binding IsValue, Converter={StaticResource BooleanVisibility}}" ToolTip="{Binding Help}"/>
+    <CheckBox Grid.Column="1" IsChecked="{Binding Checked}" Content="Включено" Margin="6,2" Visibility="{Binding IsBoolean, Converter={StaticResource BooleanVisibility}}"/>
+   </Grid>
+  </DataTemplate>
+ </Window.Resources>
+ <Grid Margin="10" Background="{DynamicResource ControlBackgroundNormalLight}">
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <TextBlock Text="Изменения применяются при следующем расчёте. Пороги задаются отдельно для инструмента и каждого масштаба." TextWrapping="Wrap" Margin="4,4,4,10" Foreground="{DynamicResource ControlForegroundWhite}"/>
+  <TabControl Grid.Row="1">
+   <TabItem Header="Общие"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel>
+    <ItemsControl Name="ItemsControlGeneral" ItemTemplate="{StaticResource SettingEditor}"/>
+    <TextBlock Text="Сессии по времени файла, HH:mm-HH:mm; например 10:00-14:00;14:05-18:45. 24:00 допустимо только для конца." TextWrapping="Wrap" Margin="6" Foreground="{DynamicResource ControlForegroundWhite}"/>
+    <TextBox Name="TextBoxSessions" Margin="6"/>
+    <TextBlock Text="Горизонты результата, минуты через ;" Margin="6" Foreground="{DynamicResource ControlForegroundWhite}"/><TextBox Name="TextBoxHorizons" Margin="6"/>
+   </StackPanel></ScrollViewer></TabItem>
+   <TabItem Header="Локальный"><ScrollViewer VerticalScrollBarVisibility="Auto"><ItemsControl Name="ItemsControlLocal" ItemTemplate="{StaticResource SettingEditor}"/></ScrollViewer></TabItem>
+   <TabItem Header="Рабочий"><ScrollViewer VerticalScrollBarVisibility="Auto"><ItemsControl Name="ItemsControlWork" ItemTemplate="{StaticResource SettingEditor}"/></ScrollViewer></TabItem>
+   <TabItem Header="Старший"><ScrollViewer VerticalScrollBarVisibility="Auto"><ItemsControl Name="ItemsControlSenior" ItemTemplate="{StaticResource SettingEditor}"/></ScrollViewer></TabItem>
+  </TabControl>
+  <TextBlock Name="TextBlockError" Grid.Row="2" TextWrapping="Wrap" Margin="6" Foreground="{DynamicResource ControlForegroundWhite}"/>
+  <WrapPanel Grid.Row="3" HorizontalAlignment="Right"><Button Name="ButtonApply" Content="Применить к следующему расчёту" Padding="12,6" Margin="4"/><Button Name="ButtonCancel" Content="Отмена" Padding="12,6" Margin="4"/></WrapPanel>
+ </Grid>
+</Window>
