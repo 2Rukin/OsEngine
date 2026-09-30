@@ -142,6 +142,17 @@ namespace OsEngine.OsTrader.Grids.Futures2
 
         /// <summary>Stages a validated plan/policy; working or unknown orders must drain before publication.</summary>
         public void Configure(Futures2Plan plan, Futures2Policy policy, decimal capital, int endpoint)
+            => Configure(plan, policy, capital, endpoint, false);
+
+        /// <summary>Stages a configuration, optionally replacing explicit level settings even when input geometry is unchanged.</summary>
+        /// <param name="plan">Detached validated plan with native endpoint identity.</param>
+        /// <param name="policy">Validated execution policy.</param>
+        /// <param name="capital">Positive total held plus fillable-entry collateral limit.</param>
+        /// <param name="endpoint">Native endpoint index, zero or one.</param>
+        /// <param name="replaceLevelSettings">True for a complete Simple parameter snapshot; false preserves existing manual level edits for equal inputs.</param>
+        /// <remarks>Replacement still drains working orders and retains old owned lots and their exit settings.
+        /// The four-argument overload preserves the full Futures2Grid contract. THG-SIMPLE-017.</remarks>
+        public void Configure(Futures2Plan plan, Futures2Policy policy, decimal capital, int endpoint, bool replaceLevelSettings)
         {
             policy.Validate();
             ValidateHedgePolicy(plan, policy);
@@ -150,7 +161,7 @@ namespace OsEngine.OsTrader.Grids.Futures2
             if (Data.ActivePlan.Length != 0 && Data.Book.Lots.Any(l => l.Quantity > 0)
                 && !Data.Plans[Data.ActivePlan].SameOrientation(plan))
                 throw new InvalidOperationException("Logical direction/hedge mode cannot change while inventory remains.");
-            if (Data.ActivePlan.Length > 0 && System.Text.Json.JsonSerializer.Serialize(Data.Plans[Data.ActivePlan].Input)
+            if (!replaceLevelSettings && Data.ActivePlan.Length > 0 && System.Text.Json.JsonSerializer.Serialize(Data.Plans[Data.ActivePlan].Input)
                 == System.Text.Json.JsonSerializer.Serialize(plan.Input)) plan = Data.Plans[Data.ActivePlan];
             if (plan.Input.IsHedge) Data.Schema = Math.Max(Data.Schema, 3);
             if (policy.AscendingLevelPriority || policy.QuoteOrdinaryLimits) Data.Schema = Math.Max(Data.Schema, 5);

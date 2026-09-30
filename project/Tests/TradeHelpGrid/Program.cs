@@ -42,6 +42,7 @@ namespace OsEngine.TradeHelpGrid.Tests
             Run("empty robot owner removal", EmptyRemovalCases.Run);
             Run("execution policy options", ExecutionPolicyCases.Run);
             Run("range level settings", RangeStateCases.Run);
+            Run("simple grid", SimpleCases.Run);
             Console.WriteLine("OFFLINE ASSERTIONS: " + _passed + "/" + (_passed + _failed) + " PASS; failures=" + _failed);
             Console.WriteLine("No live connector, native replay session, GUI or broker operations executed.");
             return _failed == 0 ? 0 : 1;

@@ -878,6 +878,10 @@ public class GridOnIndicator : BotPanel
 
 ## Futures2Grid: отдельный нативный робот
 
+Упрощённый `Futures2GridSimple` переиспользует тот же execution/recovery;
+exact-step параметры и per-zone overrides описаны в
+[THG-SIMPLE-017](Documentation/TradeHelpGrid/SIMPLE_GRID.md).
+
 `Robots/MyBots/Futures2Grid/Futures2Grid.cs` реализует восстановленный Futures2
 поверх BotTabSimple/Journal. `TradeGrid` не меняется. Контракт signed/zero цен,
 order ownership и runtime управления — [ADR-THG-002](Documentation/TradeHelpGrid/ADR-0002_OSENGINE_IMPLEMENTATION.md),
