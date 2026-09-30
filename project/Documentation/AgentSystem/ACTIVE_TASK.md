@@ -1,65 +1,64 @@
 # Authoritative active task state
 
-**ID:** `TASK-ORDER-FLOW-CLOUD-APPEARANCE-001`
-**Статус:** `COMPLETED`
-**Фаза:** `TERMINAL_HANDOFF`
+**ID:** `TASK-THG-SRU6-015`
+**Статус:** `COMPLETE`
+**Фаза:** `TERMINAL`
 **Ветка:** `docs/order-flow-production-roadmap`
-**Baseline HEAD:** `9a5a7c0e56dabdd9e0f62ec6ecd80d802ed0c1ca`
-**Published implementation HEAD:** `10341d07051af02f4dd64b320619110e4e5ec7ce`
-**Completed transition IDs:** `ENTRY_BASELINE_VERIFIED`, `REMOTE_DOCS_INTEGRATED`, `UNIFY_CLOUD_APPEARANCE`, `OFFLINE_VERIFICATION`, `PRIMARY_REVIEWS`, `COMMIT_AND_PUSH`
-**Next transition ID:** `OWNER_UI_ACCEPTANCE`
+**Baseline/current HEAD:** `088add98b728f8088fb18ff2e59c8d4113ad043c`
+**Entry dirty boundary:** `TEMP/TradeHelp4-analysis/sru6-entry.json`, SHA-256 `21cf59f762702520d41143bbda9042815eda19ddd4cbc83759f1725b63ad5f6b`
+**Completed transition IDs:** `SRU6_ENTRY`, `SRU6_RESEARCH`, `SRU6_IMPLEMENTATION`, `SRU6_NATIVE_REPLAY`, `SRU6_OFFLINE_VERIFY`, `SRU6_PRIMARY_REVIEW`, `SRU6_FIX`, `SRU6_REVERIFY`, `SRU6_VALIDATION_1`, `SRU6_TERMINAL`
+**Next transition ID:** `SRU6_HANDOFF`
 
-## Frozen scope
+## Frozen scope and authorization
 
-Owner requests one size/contrast slider pair on the Order Flow chart controlling
-all Cloud markers, including additional instances; implement, commit and push.
-In scope: OrderFlow chart/UI controls, marker geometry/hit testing, applicable
-offline regression tests, current operator docs and this snapshot.
-Preserve calculation thresholds, time profiles, research identities and data.
-No connector, broker, credentials, orders or live/test-stand launch.
+User authorized offline historical testing of Futures2Grid with `C:\Qscalp\SRU6.txt`
+and related `C:\Qscalp\SRU6\*.qsh`, comparison with existing OsEngine negative-price
+support, fixes for reproducible reachable findings, and a final owner manual-test report.
+Scope: current signed-price/Futures2/Tester integration; Tests/TradeHelpGrid; registered
+current qualification/operator/completeness documents, DOCMAP and this snapshot.
+Read external SRU6 data only; no conversion or mutation of source files.
+Main sole writer. No live connector, broker/account, credentials, real/paper orders,
+MCP/StopOrders stand, commit, push, reset, rebase or merge.
 
-## Baseline and dirty boundary
+## Decisions and acceptance
 
-Entry HEAD was clean `2e7d1d007ef4d1b2208be4c9367715a78c663a74`.
-Remote `f85adc559` adds a target tick-pattern document. Ordinary merge retained
-both independent documentation registrations; merge HEAD is the baseline above.
-Running OsEngine PID20252 observed. Use isolated build outputs while it runs.
-Only Main edits files; research and reviewers are read-only.
+Use SRU6 as the primary positive-price historical set. Treat TXT trades and QSH Quotes
+as separate replays because current Tester selects one QSH stream per symbol/day and
+does not prove synchronized Deals+Quotes playback. Existing native negative-price
+behavior is authoritative where reachable; retain the explicit zero-presence contract
+needed by Futures2 and remove/repair duplication only when executable evidence proves it.
+Historical replay must use real rows/frames, deterministic configuration and recorded
+totals. Fix only defects reproduced on current checkout, with regression coverage.
+Acceptance: executable SRU6 evidence, existing managed suite and full solution build;
+clear execution-model limits; production and documentation scoped reviews if code/docs
+change; final Russian report splits automated PASS from exact manual cases.
 
 ## Verification status
 
-- A single size/contrast pair stays on the chart toolbar, including detached
-  chart hosting. Legacy Cloud 1/2 and additional layers share visual parameters.
-- OBSERVABILITY: NO CHANGE. MODE PARITY: NO CHANGE.
-- Main project build: exit 0, 0 errors / 16 existing warnings.
-- Solution build: exit 0, 0 errors / 27 existing warnings.
-- OrderFlow test project build: exit 0, 0 errors / 0 warnings.
-- Offline OrderFlow runner: exit 0, 214 passed / 0 failed. Includes actual shared
-  slider handlers, legacy/added marker geometry in history/replay, calibration
-  geometry invalidation and detached readouts; no application launch.
-- Build command override: `-p:OutputPath=%TEMP%/OsEngine-CloudAppearance-43fedb4873234786953ddbf1fbc673f5/{bin,tests}/`.
-  Commands: `dotnet build OsEngine/OsEngine.csproj`, `dotnet build OsEngine.sln`,
-  `dotnet build Tests/OrderFlowResearch/OsEngine.OrderFlowResearch.Tests.csproj`;
-  execute the resulting offline `OsEngine.OrderFlowResearch.Tests.exe`.
-- The solution's DividendsUpdater copy target refreshed two tracked binaries.
-  Both matched isolated build hashes and were restored to HEAD; no owner edits.
-- Agent validator: 109 checks PASS; all 48 scoped local file links resolve;
-  diff whitespace PASS.
-- Independent scoped PRIMARY production and documentation reviews: CLEAN.
-  Both reviewed the frozen diff against the baseline above; no findings.
-- Physical owner UI acceptance is separate from offline rendering evidence.
-- Implementation commit `10341d070` pushed to origin's same-named branch via
-  ordinary fast-forward push over SSH; no force. Subsequent snapshot-only
-  finalization does not change the reviewed production/test/docs boundary.
+Entry inherited from terminal 014: 935/935 managed assertions, full build 0 errors and
+17 existing warnings, validator 109 PASS, reviews CLEAN/CLEAN. Current managed suite
+still 935/935; full solution build0errors/17 existing warnings plus NU1900. Native zero-loader reproduced FAIL before fix and
+PASS after fix. Native signed fixture PASS12orders/12fills; exact12/12 delivery on
+each tab, negative/literal-zero/fifth-decimal order and fill prices, replay end and
+intent/order/fill ledger match are asserted. SRU6 TXT PASS6/6 flat with exact240/240
+delivery per tab; QSH5min PASS2/2 with one depth callback per tab. Both reached the
+configured replay end and matched the Futures2 ledger. Recorded errors0.
+Static data audit: SRU6.txt has 3,130,667 ordered seven-field trades across 174 days;
+171 each v4 one-stream QSH Deals/Quotes/AuxInfo files have valid gzip headers.
+Agent validator109PASS, local links4docsPASS, evidence JSON parses, diff-checkPASS.
+PRIMARY found `THG-SRU6-SAF-001`, `THG-SRU6-DOC-001` and `THG-SRU6-DOC-002`;
+all three bounded fixes are applied and reverified. VALIDATION_1 scope10-file
+aggregate SHA-256 `fd9fb0d00b5782ea7549508e9a1339db5460a8536b365c38d193736b3e7057b1`.
+Production and documentation VALIDATION_1 outcomes are CLEAN/CLEAN; terminal
+review is `THG-HISTORICAL-REVIEW-015`.
 
 ## Blockers
 
-None. Implementation, verification, independent reviews and code publication
-are complete. Physical desktop/DPI/focus and live remain NOT_RUN.
+None for offline research. Historical Tester cannot prove partial fills, exchange queue,
+transport uncertainty, live TRANSAQ recovery or broker-side state. Those remain manual/
+owner-run or synthetic fault-injection evidence and must not be reported as replay PASS.
 
 ## Next action
 
-Owner may build the normal application output and restart to use the change,
-then check the shared size/contrast controls in the actual desktop session.
-The running desktop application was not stopped and still uses its existing
-binaries. No further implementation work is pending.
+Return the terminal Russian handoff with automated evidence and exact remaining
+manual/owner-run cases. No further repository action is authorized.

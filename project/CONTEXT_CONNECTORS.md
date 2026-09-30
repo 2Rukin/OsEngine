@@ -579,3 +579,28 @@ ws.SendAsync("{\"subscribe\": ...}");
 - Если появились новые штатные приёмы/классы — глава 10; новые антипаттерны — глава 11.
 - Карта проекта `CONTEXT.md` и `AGENTS.md` — при изменении соглашений.
 
+
+## Opt-in signed-price integration для Futures2Grid
+
+AServer дополнительно реализует `IExplicitQuoteSource` и `IExplicitAccountSource`.
+Первый копирует presence сторон до legacy empty-book filtering, второй — только
+explicit observations от realization с HasExplicitAccountUpdates; legacy
+PortfolioEvent cache не считается новым source observation. В текущем diff
+производитель добавлен в Alor position/funds callbacks; другие реализации без
+capability блокируют live non-paper Futures2Grid. Capture time
+сохраняется при dispatch. Native legacy events сохраняют прежний контракт.
+Tester/Optimizer реализуют explicit quotes на event clock; signed orders
+передают UsesSignedPrice/SignedPercentBase, включая literal zero, в opt-in
+matching/PnL paths. Это не общий допуск каждого connector к signed prices.
+Contract-unit native quantity checks, account freshness/recovery и profile
+ограничения: [ADR-THG-002](Documentation/TradeHelpGrid/ADR-0002_OSENGINE_IMPLEMENTATION.md).
+
+Для штатного TRANSAQ добавлен отдельный opt-in `ISignedOrderSource`: сохраняются
+native N, connection-scoped T и V, brokerref проходит native Journal, observations
+захватывают исходные session/sequence/time. AServer предпочитает exact realization
+quotes этому профилю вместо повторного преобразования legacy double depth.
+Union/FORTS ветви, full/delta presence, manual funds restriction, native очередь
+и пределы восстановления —
+[THG-TRANSAQ-IMPLEMENTATION-006](Documentation/TradeHelpGrid/FINAM_TRANSAQ_IMPLEMENTATION.md).
+Ранее проверенный Alor/simulator путь сохраняется; offline synthetic TRANSAQ
+не является квалификацией физического подключения.

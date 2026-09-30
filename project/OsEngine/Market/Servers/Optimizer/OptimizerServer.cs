@@ -21,7 +21,7 @@ using System.Linq;
 
 namespace OsEngine.Market.Servers.Optimizer
 {
-    public class OptimizerServer : IServer
+    public class OptimizerServer : IServer, IExplicitQuoteSource
     {
         private static readonly CultureInfo CultureInfo = CultureInfo.InvariantCulture;
 
@@ -660,7 +660,7 @@ namespace OsEngine.Market.Servers.Optimizer
                 { // running on candles / прогон на свечках
                     Candle lastCandle = security.LastCandle;
 
-                    if (order.Price == 0)
+                    if (order.Price == 0 && !order.UsesSignedPrice)
                     {
                         order.Price = lastCandle.Open;
                     }
@@ -1416,6 +1416,8 @@ namespace OsEngine.Market.Servers.Optimizer
             orderOnBoard.NumberUser = order.NumberUser;
             orderOnBoard.PortfolioNumber = order.PortfolioNumber;
             orderOnBoard.Price = order.Price;
+            orderOnBoard.UsesSignedPrice = order.UsesSignedPrice;
+            orderOnBoard.SignedPercentBase = order.SignedPercentBase;
             orderOnBoard.SecurityNameCode = order.SecurityNameCode;
             orderOnBoard.Side = order.Side;
             orderOnBoard.State = OrderStateType.Active;
@@ -1574,6 +1576,8 @@ namespace OsEngine.Market.Servers.Optimizer
             orderOnBoard.NumberUser = order.NumberUser;
             orderOnBoard.PortfolioNumber = order.PortfolioNumber;
             orderOnBoard.Price = order.Price;
+            orderOnBoard.UsesSignedPrice = order.UsesSignedPrice;
+            orderOnBoard.SignedPercentBase = order.SignedPercentBase;
             orderOnBoard.SecurityNameCode = order.SecurityNameCode;
             orderOnBoard.Side = order.Side;
             orderOnBoard.State = OrderStateType.Fail;
@@ -2118,6 +2122,8 @@ namespace OsEngine.Market.Servers.Optimizer
                 NewBidAskIncomeEvent((decimal)candle.Close, (decimal)candle.Close, GetSecurityForName(nameSecurity, ""));
             }
 
+            ExplicitQuoteEvent?.Invoke(new ExplicitQuote(nameSecurity, true, candle.Close, true, candle.Close, candle.TimeStart));
+
             _candleManager.SetNewCandleInSeries(candle, nameSecurity, timeFrame);
 
             if (TestingProgressChangeEvent != null && _lastTimeCountChange.AddMilliseconds(300) < DateTime.Now)
@@ -2151,6 +2157,7 @@ namespace OsEngine.Market.Servers.Optimizer
             {
                 NewMarketDepthEvent(marketDepth);
             }
+            ExplicitQuoteEvent?.Invoke(ExplicitQuote.FromDepth(marketDepth));
 
             if (TestingProgressChangeEvent != null && _lastTimeCountChange.AddMilliseconds(300) < DateTime.Now)
             {
@@ -2158,6 +2165,9 @@ namespace OsEngine.Market.Servers.Optimizer
                 TestingProgressChangeEvent(lastCount, maxCount, NumberServer);
             }
         }
+
+        /// <summary>Presence-aware synthetic quotes on the tester event clock; zero remains literal.</summary>
+        public event Action<ExplicitQuote> ExplicitQuoteEvent;
 
         public event Action<decimal, decimal, Security> NewBidAskIncomeEvent;
 
@@ -2210,6 +2220,11 @@ namespace OsEngine.Market.Servers.Optimizer
             if (NewBidAskIncomeEvent != null)
             {
                 NewBidAskIncomeEvent((decimal)tradesNew[tradesNew.Count - 1].Price, (decimal)tradesNew[tradesNew.Count - 1].Price, GetSecurityForName(tradesNew[tradesNew.Count - 1].SecurityNameCode, ""));
+            }
+            if (tradesNew.Count > 0)
+            {
+                Trade lastExplicitTrade = tradesNew[tradesNew.Count - 1];
+                ExplicitQuoteEvent?.Invoke(new ExplicitQuote(lastExplicitTrade.SecurityNameCode, true, lastExplicitTrade.Price, true, lastExplicitTrade.Price, lastExplicitTrade.Time));
             }
         }
 

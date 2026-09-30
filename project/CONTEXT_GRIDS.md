@@ -875,3 +875,20 @@ public class GridOnIndicator : BotPanel
 - `GridTwoSides.cs` — две сетки одновременно
 - `GridBollingerScreener.cs` — скринер с сетками
 - `GridTwoSignals.cs` — каскадные сетки с TrailingUp/Down
+
+## Futures2Grid: отдельный нативный робот
+
+`Robots/MyBots/Futures2Grid/Futures2Grid.cs` реализует восстановленный Futures2
+поверх BotTabSimple/Journal. `TradeGrid` не меняется. Контракт signed/zero цен,
+order ownership и runtime управления — [ADR-THG-002](Documentation/TradeHelpGrid/ADR-0002_OSENGINE_IMPLEMENTATION.md),
+команды — [THG-OPERATOR-002](Documentation/TradeHelpGrid/OSENGINE_OPERATOR.md).
+Ручное владение и native Inventory — [THG-INVENTORY-009](Documentation/TradeHelpGrid/INVENTORY_REGISTRATION.md).
+Логическая/физическая сторона IsHedge — [THG-HEDGE-010](Documentation/TradeHelpGrid/HEDGE_MODE.md).
+Выбор уровней и durable ручные batch-команды — [THG-BATCH-011](Documentation/TradeHelpGrid/BATCH_LEVELS.md).
+Offline qualification не является разрешением live и не доказывает Tester/live parity.
+
+Opt-in удаление never-active отдельного Futures2 через native owner — [THG-EMPTY-012](Documentation/TradeHelpGrid/EMPTY_REMOVAL.md); Tester/Optimizer сохраняют экземпляр.
+
+Runtime priority и цены reached ordinary limits без перестройки grid IDs — [THG-EXECUTION-OPTIONS-013](Documentation/TradeHelpGrid/EXECUTION_OPTIONS.md), schema5 при opt-in.
+
+Сохранение per-level controls при target Shift/Widen и отказ при неоднозначной смене count — [THG-RANGE-014](Documentation/TradeHelpGrid/RANGE_STATE.md).

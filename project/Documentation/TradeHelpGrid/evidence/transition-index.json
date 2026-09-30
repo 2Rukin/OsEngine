@@ -1,0 +1,4057 @@
+{
+  "boundary": "Structural index and anchor presence only; not execution/semantic proof. Markdown is canonical for predicates/effects.",
+  "transitionRows": 363,
+  "sourceViews": [
+    "Order_callback.cs",
+    "PilotFinanceSystem.cs",
+    "TralingStop.cs",
+    "dti.cs"
+  ],
+  "rows": [
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "M01",
+      "documentLine": 49,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10477
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "M02",
+      "documentLine": 50,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10516
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "M03",
+      "documentLine": 51,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10746
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "M04",
+      "documentLine": 52,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10776
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "M05",
+      "documentLine": 53,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10842
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "M06",
+      "documentLine": 54,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10477
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "M07",
+      "documentLine": 55,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10948
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "A01",
+      "documentLine": 73,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10535
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "A02",
+      "documentLine": 74,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10540
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "A03",
+      "documentLine": 75,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10560
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "A04",
+      "documentLine": 76,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10571
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "A05",
+      "documentLine": 77,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10988
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "A06",
+      "documentLine": 78,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10579
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "A07",
+      "documentLine": 79,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10592
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "A08",
+      "documentLine": 80,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10601
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "A09",
+      "documentLine": 81,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10621
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "A10",
+      "documentLine": 82,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10646
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "A11",
+      "documentLine": 83,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10682
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "A12",
+      "documentLine": 84,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10712
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "A13",
+      "documentLine": 85,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10740
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "B01",
+      "documentLine": 109,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 26018
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "B02",
+      "documentLine": 110,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 26112
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "B03",
+      "documentLine": 111,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 26112
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "B04",
+      "documentLine": 112,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 26018
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "B05",
+      "documentLine": 113,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 26018
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "B06",
+      "documentLine": 114,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 26018
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "B07",
+      "documentLine": 115,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 26018
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "B08",
+      "documentLine": 116,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 26018
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "L01",
+      "documentLine": 127,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10746
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "L02",
+      "documentLine": 128,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10754
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "L03",
+      "documentLine": 129,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10754
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "L04",
+      "documentLine": 130,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10763
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "L05",
+      "documentLine": 131,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10764
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "L06",
+      "documentLine": 132,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 11108
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "L07",
+      "documentLine": 133,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 11119
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "L08",
+      "documentLine": 134,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 11124
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "Q01",
+      "documentLine": 150,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 8904
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "Q02",
+      "documentLine": 151,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 8904
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "Q03",
+      "documentLine": 152,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 9051
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "Q04",
+      "documentLine": 153,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 9253
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "Q05",
+      "documentLine": 154,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 11180
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "Q06",
+      "documentLine": 155,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 9059
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "Q07",
+      "documentLine": 156,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 9071
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "Q08",
+      "documentLine": 157,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 9093
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "Q09",
+      "documentLine": 158,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 11844
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "Q10",
+      "documentLine": 159,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 11115
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "Q12",
+      "documentLine": 160,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10340
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "Q11",
+      "documentLine": 161,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 9230
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "D01",
+      "documentLine": 174,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 8060
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "D02",
+      "documentLine": 175,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10633
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "D03",
+      "documentLine": 176,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10735
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "D04",
+      "documentLine": 177,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 11196
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_TRANSITIONS.md",
+      "id": "D05",
+      "documentLine": 178,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 4893
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "E01",
+      "documentLine": 38,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12188
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "E02",
+      "documentLine": 39,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12215
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "E03",
+      "documentLine": 40,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12231
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "E04",
+      "documentLine": 41,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12221
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "E05",
+      "documentLine": 42,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12249
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "E06",
+      "documentLine": 43,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12293
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "P01",
+      "documentLine": 67,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12249
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "P02",
+      "documentLine": 68,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12269
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "P03",
+      "documentLine": 69,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12405
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "P04",
+      "documentLine": 70,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 14125
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "P05",
+      "documentLine": 71,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 14222
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "P06",
+      "documentLine": 72,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 14125
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "P07",
+      "documentLine": 73,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 14125
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "P08",
+      "documentLine": 74,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 14222
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "V01",
+      "documentLine": 90,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 13382
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "V02",
+      "documentLine": 91,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 13445
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "V03",
+      "documentLine": 92,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 13445
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "V04",
+      "documentLine": 93,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 13445
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "V05",
+      "documentLine": 94,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 13963
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "V06",
+      "documentLine": 95,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 13963
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "V07",
+      "documentLine": 96,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 13963
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "V08",
+      "documentLine": 97,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 13445
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "V09",
+      "documentLine": 98,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 13445
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "V10",
+      "documentLine": 99,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 13963
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "V11",
+      "documentLine": 100,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 13847
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "X01",
+      "documentLine": 118,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12360
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "X02",
+      "documentLine": 119,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12738
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "X03",
+      "documentLine": 120,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12738
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "X04",
+      "documentLine": 121,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12383
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "X05",
+      "documentLine": 122,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12405
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "X06",
+      "documentLine": 123,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 15680
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "O01",
+      "documentLine": 135,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 15275
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "O02",
+      "documentLine": 136,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 15281
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "O03",
+      "documentLine": 137,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 15287
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "O04",
+      "documentLine": 138,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 15334
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "O05",
+      "documentLine": 139,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 15334
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "O06",
+      "documentLine": 140,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 15334
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "O07",
+      "documentLine": 141,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 15820
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "O08",
+      "documentLine": 142,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 15820
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "O09",
+      "documentLine": 143,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 15820
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "O10",
+      "documentLine": 144,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 16173
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "O11",
+      "documentLine": 145,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 15787
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "O12",
+      "documentLine": 146,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 15735
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "O13",
+      "documentLine": 147,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12632
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "Z01",
+      "documentLine": 177,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12855
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "Z02",
+      "documentLine": 178,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12923
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "Z03",
+      "documentLine": 179,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12901
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "Z04",
+      "documentLine": 180,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12911
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "Z05",
+      "documentLine": 181,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12911
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "Z06",
+      "documentLine": 182,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 16000
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "Z07",
+      "documentLine": 183,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 16258
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "I01",
+      "documentLine": 197,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12462
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "I02",
+      "documentLine": 198,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12462
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "I03",
+      "documentLine": 199,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12462
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_LEVELS_AND_ORDERS.md",
+      "id": "I04",
+      "documentLine": 200,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12462
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "H01",
+      "documentLine": 13,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 7049
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "H02",
+      "documentLine": 14,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 7049
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "H03",
+      "documentLine": 15,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 7049
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "H04",
+      "documentLine": 16,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 7087
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "H05",
+      "documentLine": 17,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 7134
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "H06",
+      "documentLine": 18,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 7165
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "H07",
+      "documentLine": 19,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 7165
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "H08",
+      "documentLine": 20,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 7165
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "H09",
+      "documentLine": 21,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 7418
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "H10",
+      "documentLine": 22,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 7049
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "H11",
+      "documentLine": 23,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 8370
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "H12",
+      "documentLine": 24,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 8447
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "H13",
+      "documentLine": 25,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 11984
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "H14",
+      "documentLine": 26,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 7280
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "S01",
+      "documentLine": 36,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 7721
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "S02",
+      "documentLine": 37,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 7721
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "S03",
+      "documentLine": 38,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 7854
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "S04",
+      "documentLine": 39,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 29691
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "S05",
+      "documentLine": 40,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 29691
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "S06",
+      "documentLine": 41,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 7524
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "S07",
+      "documentLine": 42,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 28379
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "S08",
+      "documentLine": 43,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 28379
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "S09",
+      "documentLine": 44,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 28330
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "G01",
+      "documentLine": 50,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 4922
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "G02",
+      "documentLine": 51,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 4947
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "G03",
+      "documentLine": 52,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 5066
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "G04",
+      "documentLine": 53,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 5122
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "G05",
+      "documentLine": 54,
+      "anchors": [
+        {
+          "view": "Order_callback.cs",
+          "line": 1196
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "G06",
+      "documentLine": 55,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 5000
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "G07",
+      "documentLine": 56,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 6849
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "G08",
+      "documentLine": 57,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 5170
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "G09",
+      "documentLine": 58,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 6699
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "G10",
+      "documentLine": 59,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 6699
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "G11",
+      "documentLine": 60,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 4964
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "C01",
+      "documentLine": 74,
+      "anchors": [
+        {
+          "view": "Order_callback.cs",
+          "line": 2769
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "C02",
+      "documentLine": 75,
+      "anchors": [
+        {
+          "view": "Order_callback.cs",
+          "line": 2778
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "C03",
+      "documentLine": 76,
+      "anchors": [
+        {
+          "view": "Order_callback.cs",
+          "line": 2778
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "C04",
+      "documentLine": 77,
+      "anchors": [
+        {
+          "view": "Order_callback.cs",
+          "line": 2795
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "C05",
+      "documentLine": 78,
+      "anchors": [
+        {
+          "view": "Order_callback.cs",
+          "line": 2795
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "C06",
+      "documentLine": 79,
+      "anchors": [
+        {
+          "view": "Order_callback.cs",
+          "line": 2795
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "C07",
+      "documentLine": 80,
+      "anchors": [
+        {
+          "view": "Order_callback.cs",
+          "line": 2833
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "C08",
+      "documentLine": 81,
+      "anchors": [
+        {
+          "view": "Order_callback.cs",
+          "line": 2795
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "C09",
+      "documentLine": 82,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 6138
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "C10",
+      "documentLine": 83,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 6186
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "C11",
+      "documentLine": 84,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 6186
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "C12",
+      "documentLine": 85,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 6294
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "C13",
+      "documentLine": 86,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 6219
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "C14",
+      "documentLine": 87,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 6238
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "C15",
+      "documentLine": 88,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 6598
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "C16",
+      "documentLine": 89,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 6341
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "K01",
+      "documentLine": 107,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 6312
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "K02",
+      "documentLine": 108,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 6312
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "K03",
+      "documentLine": 109,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 12016
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "K04",
+      "documentLine": 110,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 12016
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "K05",
+      "documentLine": 111,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 26425
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "K06",
+      "documentLine": 112,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 28228
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "K07",
+      "documentLine": 113,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 27992
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "K08",
+      "documentLine": 114,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 28107
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "K09",
+      "documentLine": 115,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 27992
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "K10",
+      "documentLine": 116,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 28132
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "K11",
+      "documentLine": 117,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 28178
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "K12",
+      "documentLine": 118,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 28138
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "R01",
+      "documentLine": 131,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 11889
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "R02",
+      "documentLine": 132,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 11889
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "R03",
+      "documentLine": 133,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 11889
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "R04",
+      "documentLine": 134,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 11798
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "R05",
+      "documentLine": 135,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 11798
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "R06",
+      "documentLine": 136,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 9048
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "R07",
+      "documentLine": 137,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 8769
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "R08",
+      "documentLine": 138,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 9006
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "R09",
+      "documentLine": 139,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 5211
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "T01",
+      "documentLine": 185,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 1998
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "T02",
+      "documentLine": 186,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 1998
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "T03",
+      "documentLine": 187,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 1998
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "T04",
+      "documentLine": 188,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 1998
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "T05",
+      "documentLine": 189,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 1817
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "T06",
+      "documentLine": 190,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 1817
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "T07",
+      "documentLine": 191,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 1817
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "T08",
+      "documentLine": 192,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 1817
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "T09",
+      "documentLine": 193,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 1817
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "T10",
+      "documentLine": 194,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 1817
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "T11",
+      "documentLine": 195,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 1888
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "T12",
+      "documentLine": 196,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 1904
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "F01",
+      "documentLine": 213,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 1926
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "F02",
+      "documentLine": 214,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 1926
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "F03",
+      "documentLine": 215,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 1926
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "F04",
+      "documentLine": 216,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 1926
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "F05",
+      "documentLine": 217,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 1926
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "F06",
+      "documentLine": 218,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 7075
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "F07",
+      "documentLine": 219,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 7554
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "U01",
+      "documentLine": 230,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 1306
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "U02",
+      "documentLine": 231,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 1306
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "U03",
+      "documentLine": 232,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 2088
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "U04",
+      "documentLine": 233,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 1695
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "U05",
+      "documentLine": 234,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 1735
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "U06",
+      "documentLine": 235,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 1986
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "U07",
+      "documentLine": 236,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 1686
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "U08",
+      "documentLine": 237,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 2102
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "U09",
+      "documentLine": 238,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 339
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "U10",
+      "documentLine": 239,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 551
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "U11",
+      "documentLine": 240,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 339
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "U12",
+      "documentLine": 241,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 492
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_HOST_AND_CALLBACKS.md",
+      "id": "U13",
+      "documentLine": 242,
+      "anchors": [
+        {
+          "view": "TralingStop.cs",
+          "line": 1135
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "N01",
+      "documentLine": 27,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 27420
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "N02",
+      "documentLine": 28,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 8557
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "N03",
+      "documentLine": 29,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 8601
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "N04",
+      "documentLine": 30,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 18221
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "N05",
+      "documentLine": 31,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10084
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "N06",
+      "documentLine": 32,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10161
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "N07",
+      "documentLine": 33,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 21307
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "N08",
+      "documentLine": 34,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 21289
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "N09",
+      "documentLine": 35,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 27491
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "N10",
+      "documentLine": 36,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 8557
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "N11",
+      "documentLine": 37,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 8557
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "W01",
+      "documentLine": 79,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 22550
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "W02",
+      "documentLine": 80,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 23303
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "W03",
+      "documentLine": 81,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 24570
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "W04",
+      "documentLine": 82,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 23119
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "W05",
+      "documentLine": 83,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 23441
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "W06",
+      "documentLine": 84,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 18781
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "W07",
+      "documentLine": 85,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 22931
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "W08",
+      "documentLine": 86,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 23066
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "W09",
+      "documentLine": 87,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 24480
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "W10",
+      "documentLine": 88,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 22448
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "W11",
+      "documentLine": 89,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 22601
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "W12",
+      "documentLine": 90,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 23682
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "W13",
+      "documentLine": 91,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 22841
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "W14",
+      "documentLine": 92,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 22682
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "W15",
+      "documentLine": 93,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 24112
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "W16",
+      "documentLine": 94,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 24065
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "W17",
+      "documentLine": 95,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 24399
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "W18",
+      "documentLine": 112,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 22469
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "W19",
+      "documentLine": 113,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 23977
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "W20",
+      "documentLine": 114,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 24005
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "W21",
+      "documentLine": 115,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 4349
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "W22",
+      "documentLine": 116,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 27073
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "W23",
+      "documentLine": 117,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 27146
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "W24",
+      "documentLine": 118,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 27140
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "W25",
+      "documentLine": 119,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 4903
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "W26",
+      "documentLine": 120,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 4379
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "J01",
+      "documentLine": 126,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 5359
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "J02",
+      "documentLine": 127,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 27546
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "J03",
+      "documentLine": 128,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 8492
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "J04",
+      "documentLine": 129,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 24631
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "J05",
+      "documentLine": 130,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 7075
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "J06",
+      "documentLine": 131,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 7554
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "J07",
+      "documentLine": 132,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 24337
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "J08",
+      "documentLine": 133,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 25182
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "J09",
+      "documentLine": 134,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 11502
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "J10",
+      "documentLine": 135,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 25165
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "J11",
+      "documentLine": 136,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 25213
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "J12",
+      "documentLine": 137,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 25242
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "J13",
+      "documentLine": 138,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 20126
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "J14",
+      "documentLine": 139,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 20114
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "J15",
+      "documentLine": 140,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 20234
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "J16",
+      "documentLine": 141,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 20225
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "J17",
+      "documentLine": 142,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 24486
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "J18",
+      "documentLine": 143,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 18610
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "PERSIST01",
+      "documentLine": 170,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 15188
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "PERSIST02",
+      "documentLine": 171,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 25400
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "PERSIST03",
+      "documentLine": 172,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 25454
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "PERSIST04",
+      "documentLine": 173,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 6341
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "PERSIST05",
+      "documentLine": 174,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 6036
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "PERSIST06",
+      "documentLine": 175,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 8827
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "PERSIST07",
+      "documentLine": 176,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 6732
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "PERSIST08",
+      "documentLine": 177,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 21881
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "API01",
+      "documentLine": 210,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 6174
+        },
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 9282
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "API02",
+      "documentLine": 211,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 5592
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "API03",
+      "documentLine": 212,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 6393
+        },
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 6501
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "API04",
+      "documentLine": 213,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 7319
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "API05",
+      "documentLine": 214,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 7326
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "API06",
+      "documentLine": 215,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 7360
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "API07",
+      "documentLine": 216,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 7403
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "API08",
+      "documentLine": 217,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 7444
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "API09",
+      "documentLine": 218,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 7466
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "API10",
+      "documentLine": 219,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 7480
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "API11",
+      "documentLine": 220,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 7507
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "API12",
+      "documentLine": 221,
+      "anchors": [
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 6558
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "API13",
+      "documentLine": 222,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 5777
+        },
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 10672
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "API14",
+      "documentLine": 223,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 5772
+        },
+        {
+          "view": "dti.cs",
+          "line": 5646
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "API15",
+      "documentLine": 224,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 6128
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "API16",
+      "documentLine": 225,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 6468
+        },
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 10908
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "API17",
+      "documentLine": 226,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 6508
+        },
+        {
+          "view": "dti.cs",
+          "line": 11233
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "API18",
+      "documentLine": 227,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 6514
+        },
+        {
+          "view": "dti.cs",
+          "line": 6588
+        },
+        {
+          "view": "dti.cs",
+          "line": 6555
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "API19",
+      "documentLine": 228,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 6579
+        },
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 9906
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "API20",
+      "documentLine": 229,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 6672
+        },
+        {
+          "view": "dti.cs",
+          "line": 6835
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "SYNC01",
+      "documentLine": 273,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 5283
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "SYNC02",
+      "documentLine": 274,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 5518
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "SYNC03",
+      "documentLine": 275,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 5518
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "SYNC04",
+      "documentLine": 276,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 6388
+        },
+        {
+          "view": "dti.cs",
+          "line": 6407
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "SYNC05",
+      "documentLine": 277,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10413
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "SYNC06",
+      "documentLine": 278,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 5366
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "SYNC07",
+      "documentLine": 279,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 5366
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "SYNC08",
+      "documentLine": 280,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 5366
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "SYNC09",
+      "documentLine": 281,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 5366
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "SYNC10",
+      "documentLine": 282,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 5366
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "SYNC11",
+      "documentLine": 283,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 6786
+        },
+        {
+          "view": "PilotFinanceSystem.cs",
+          "line": 9411
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "SYNC12",
+      "documentLine": 284,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 6821
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "OPT01",
+      "documentLine": 300,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 20381
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "OPT02",
+      "documentLine": 301,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 25738
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "OPT03",
+      "documentLine": 302,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 25833
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "OPT04",
+      "documentLine": 303,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10064
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "OPT05",
+      "documentLine": 304,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 25776
+        },
+        {
+          "view": "dti.cs",
+          "line": 25817
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "OPT06",
+      "documentLine": 305,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10056
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_RUNTIME_SETTINGS.md",
+      "id": "OPT07",
+      "documentLine": 306,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 20375
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EX01",
+      "documentLine": 16,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 7292
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EX02",
+      "documentLine": 17,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 11611
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EX03",
+      "documentLine": 18,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 7303
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EX04",
+      "documentLine": 19,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 7904
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EX05",
+      "documentLine": 20,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10462
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EX06",
+      "documentLine": 21,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10997
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EX07",
+      "documentLine": 22,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10776
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EX08",
+      "documentLine": 23,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10796
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EX09",
+      "documentLine": 24,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12341
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EX10",
+      "documentLine": 25,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10776
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EB01",
+      "documentLine": 41,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12557
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EB02",
+      "documentLine": 42,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12566
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EB03",
+      "documentLine": 43,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12572
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EB04",
+      "documentLine": 44,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 13613
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EB05",
+      "documentLine": 45,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 13613
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EB06",
+      "documentLine": 46,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 11049
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EB07",
+      "documentLine": 47,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 11989
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EB08",
+      "documentLine": 48,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 11989
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EB09",
+      "documentLine": 49,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 8364
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EB10",
+      "documentLine": 50,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 5030
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EB11",
+      "documentLine": 51,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 5030
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EA01",
+      "documentLine": 65,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 11632
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EA02",
+      "documentLine": 66,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 14672
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EA03",
+      "documentLine": 67,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 14672
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EA04",
+      "documentLine": 68,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 11693
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EA05",
+      "documentLine": 69,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 13057
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EA06",
+      "documentLine": 70,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 14786
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EA07",
+      "documentLine": 71,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 14781
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EC01",
+      "documentLine": 82,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 11663
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EC02",
+      "documentLine": 83,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 11683
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EC03",
+      "documentLine": 84,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 24848
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EC04",
+      "documentLine": 85,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 11129
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "EC05",
+      "documentLine": 86,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 11108
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "RT01",
+      "documentLine": 102,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10980
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "RT02",
+      "documentLine": 103,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10842
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "RT03",
+      "documentLine": 104,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10842
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "RT04",
+      "documentLine": 105,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10966
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "RT05",
+      "documentLine": 106,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 7197
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "RT06",
+      "documentLine": 107,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 11269
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "RT07",
+      "documentLine": 108,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 7991
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "RT08",
+      "documentLine": 109,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 7991
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "RT09",
+      "documentLine": 119,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10842
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "RT10",
+      "documentLine": 120,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10863
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "RT11",
+      "documentLine": 121,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10876
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "RT12",
+      "documentLine": 122,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10911
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "RT13",
+      "documentLine": 123,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 10863
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "RT14",
+      "documentLine": 124,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12305
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "RT15",
+      "documentLine": 125,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12325
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "RT16",
+      "documentLine": 126,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 12521
+        }
+      ]
+    },
+    {
+      "document": "FUTURES2_EXPIRATION_AND_ROTATION.md",
+      "id": "RT17",
+      "documentLine": 127,
+      "anchors": [
+        {
+          "view": "dti.cs",
+          "line": 11143
+        }
+      ]
+    }
+  ]
+}

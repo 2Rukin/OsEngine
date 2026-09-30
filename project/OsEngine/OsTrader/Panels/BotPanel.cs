@@ -148,10 +148,34 @@ namespace OsEngine.OsTrader.Panels
             }
         }
 
+        /// <summary>Requests asynchronous removal by this panel's single native owner.</summary>
+        /// <returns>True only when the owner accepted the request for later processing, not when deletion completed.</returns>
+        /// <remarks>No owner or multiple owners fail closed. The owner must dispatch without waiting for
+        /// the caller and revalidate exact instance membership before TryPrepareForAutomaticDeletion.
+        /// Calling this method does not replace the normal native owner deletion lifecycle.</remarks>
+        protected bool RequestAutomaticDeletion()
+        {
+            Func<BotPanel, bool> owner = AutomaticDeletionRequested;
+            return owner != null && owner.GetInvocationList().Length == 1 && owner(this);
+        }
+
+        /// <summary>Optional asynchronous removal request consumed by the single owning native host.</summary>
+        /// <remarks>The return value acknowledges queueing only. Subscribers must not synchronously
+        /// invoke the UI dispatcher or destroy the panel from its callback thread. THG-EMPTY-012.</remarks>
+        public event Func<BotPanel, bool> AutomaticDeletionRequested;
+
+        /// <summary>Rechecks eligibility and quiesces an opted-in robot immediately before owner removal.</summary>
+        /// <returns>False by default; true only after the derived robot durably stopped and disabled callbacks.</returns>
+        /// <remarks>Called by the owner on its UI dispatcher after exact instance validation. Derived
+        /// implementations serialize with trading callbacks and must not send orders or delete native resources.
+        /// Refusal or exception leaves the instance in the owner list. Manual deletion does not use this veto.</remarks>
+        public virtual bool TryPrepareForAutomaticDeletion() => false;
+
         public void Delete()
         {
             try
             {
+                DeletingEvent?.Invoke();
                 try
                 {
                     _chartUi?.Close();
@@ -2710,6 +2734,11 @@ position => position.State != PositionStateType.OpeningFail
         }
 
         public event Action<string, LogMessageType> LogMessageEvent;
+
+        /// <summary>Called synchronously before tabs, journals and connectors are cleared or deleted.</summary>
+        /// <remarks>Owners stop timers and serialize completion of current callbacks here. A thrown exception
+        /// aborts deletion through the existing logged failure path; it must not initiate trading.</remarks>
+        public event Action DeletingEvent;
 
         public event Action DeleteEvent;
 

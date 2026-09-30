@@ -51,6 +51,7 @@ namespace OsEngine.Market.Servers.Transaq
             CreateParameterBoolean(OsLocalization.Market.FullLogConnector, false); // 12
             CreateParameterButton(OsLocalization.Market.ButtonNameChangePassword); // 13
             CreateParameterBoolean(OsLocalization.Market.ReconnectingAfterNoneOrder, true); // 14
+            CreateParameterEnum("Signed FUT transport profile", "Off", new List<string> { "Off", "Standard union", "Standard FORTS" }); // 15
 
             ServerParameters[4].Comment = OsLocalization.Market.Label160;
             ServerParameters[5].Comment = OsLocalization.Market.Label193;
@@ -66,7 +67,7 @@ namespace OsEngine.Market.Servers.Transaq
         }
     }
 
-    public class TransaqServerRealization : IServerRealization
+    public partial class TransaqServerRealization : IServerRealization
     {
         #region 1 Constructor, Status, Connection
 
@@ -184,6 +185,7 @@ namespace OsEngine.Market.Servers.Transaq
 
             try
             {
+                BeginSignedSession();
                 _isLibraryInitialized = ConnectorInitialize();
 
                 // formation of the command text / формирование текста команды
@@ -194,6 +196,7 @@ namespace OsEngine.Market.Servers.Transaq
                 cmd = cmd + "<port>" + serverPort + "</port>";
                 cmd = cmd + "<milliseconds>true</milliseconds>";
                 cmd = cmd + "<push_pos_equity>" + 3 + "</push_pos_equity>";
+                if (HasSignedOrderTransport && _signedProtocol.UnionProfile) cmd += "<push_u_limits>3</push_u_limits>";
                 cmd = cmd + "<rqdelay>100</rqdelay>";
                 cmd = cmd + "</command>";
 
@@ -322,6 +325,7 @@ namespace OsEngine.Market.Servers.Transaq
             }
             finally
             {
+                DetachSignedProfileParameter();
                 _newsIsSubscribed = false;
 
                 _depths?.Clear();
@@ -337,7 +341,7 @@ namespace OsEngine.Market.Servers.Transaq
 
                 _allTicks?.Clear();
 
-                _newMessage = new ConcurrentQueue<string>();
+                // Keep captured frames: late owned fills must survive disconnect/dispose queues.
 
                 _transaqSecuritiesInString = new ConcurrentQueue<string>();
 
@@ -470,6 +474,7 @@ namespace OsEngine.Market.Servers.Transaq
 
         private void Disconnected()
         {
+            _signedProtocol.Invalidate();
             if (ServerStatus != ServerConnectStatus.Disconnect)
             {
                 SendLogMessage("Transaq client disconnected ", LogMessageType.System);
@@ -1118,6 +1123,12 @@ namespace OsEngine.Market.Servers.Transaq
 
                         if (string.IsNullOrEmpty(client.Union) && !string.IsNullOrEmpty(client.Forts_acc))
                         {
+                            if (HasSignedOrderTransport && !_signedProtocol.UnionProfile)
+                            {
+                                ConnectorSendCommand(new System.Xml.Linq.XElement("command",
+                                    new System.Xml.Linq.XAttribute("id", "get_forts_positions"),
+                                    new System.Xml.Linq.XAttribute("client", client.Id)).ToString(System.Xml.Linq.SaveOptions.DisableFormatting));
+                            }
                             command = $"<command id=\"get_client_limits\" client=\"{client.Id}\"/>";
                             string res = ConnectorSendCommand(command);
 
@@ -2159,6 +2170,7 @@ namespace OsEngine.Market.Servers.Transaq
 
         public void SendOrder(Order order)
         {
+            if (order.SignedIdentity != null) { SendSignedOrder(order); return; }
             try
             {
                 string side = order.Side == Side.Buy ? "B" : "S";
@@ -2279,6 +2291,7 @@ namespace OsEngine.Market.Servers.Transaq
 
         public bool CancelOrder(Order order)
         {
+            if (order.SignedIdentity != null) return CancelSignedOrder(order);
             try
             {
                 if (_activeOrders.Count > 0)
@@ -2320,6 +2333,11 @@ namespace OsEngine.Market.Servers.Transaq
 
         public void ChangeOrderPrice(Order order, decimal newPrice)
         {
+            if (order.SignedIdentity != null)
+            {
+                SendLogMessage("Signed TRANSAQ reprice is unsupported; use acknowledged cancel and a new persisted intent.", LogMessageType.Error);
+                return;
+            }
             try
             {
                 _rateGateChangePriceOrder.WaitToProceed();
@@ -2410,7 +2428,7 @@ namespace OsEngine.Market.Servers.Transaq
 
         #region 9 Parsing incomig data
 
-        private ConcurrentQueue<string> _newMessage = new ConcurrentQueue<string>();
+        private ConcurrentQueue<TransaqSignedProtocol.Frame> _newMessage = new ConcurrentQueue<TransaqSignedProtocol.Frame>();
 
         /// <summary>
         /// processor of data from callbacks 
@@ -2423,7 +2441,7 @@ namespace OsEngine.Market.Servers.Transaq
             {
 
                 string data = MarshalUtf8.PtrToStringUtf8(pData);
-                _newMessage.Enqueue(data);
+                _signedProtocol.Enqueue(data, DateTime.Now, _newMessage);
                 FreeMemory(pData);
 
                 return true;
@@ -2447,10 +2465,17 @@ namespace OsEngine.Market.Servers.Transaq
                 {
                     if (!_newMessage.IsEmpty)
                     {
-                        string data;
+                        TransaqSignedProtocol.Frame frame;
 
-                        if (_newMessage.TryDequeue(out data))
+                        if (_newMessage.TryDequeue(out frame))
                         {
+                            string data = frame.Xml;
+                            DispatchSignedFrame(frame);
+                            if (HasSignedOrderTransport || _signedProtocol.HasRegistrations)
+                            {
+                                data = _signedProtocol.LegacyPayload(frame);
+                                if (data.Length == 0) continue;
+                            }
                             // тяжёлые данные переносим в другую очередь разбирающуюся другим потоком
                             if (data.StartsWith("<quotes>"))
                             {
@@ -3169,7 +3194,7 @@ namespace OsEngine.Market.Servers.Transaq
 
                     if (_reconectingAfterNone)
                     {
-                        _newMessage.Enqueue("OsEngineTransaqReconnect");
+                        _signedProtocol.Enqueue("OsEngineTransaqReconnect", DateTime.Now, _newMessage);
                     }
                 }
                 else
@@ -3180,7 +3205,7 @@ namespace OsEngine.Market.Servers.Transaq
 
                     if (_reconectingAfterNone)
                     {
-                        _newMessage.Enqueue("OsEngineTransaqReconnect");
+                        _signedProtocol.Enqueue("OsEngineTransaqReconnect", DateTime.Now, _newMessage);
                     }
                 }
 

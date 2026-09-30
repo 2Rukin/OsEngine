@@ -1,0 +1,131 @@
+{
+  "type": "Documentation rational-arithmetic check; not legacy binary execution, not production test",
+  "inputs": {
+    "L": 100,
+    "U": 120,
+    "D": 5,
+    "N": 3,
+    "M": 1000,
+    "tick": 1,
+    "tickValue": 1,
+    "GOpercent": 20
+  },
+  "passed": 19,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "long levels",
+      "actual": "[Fraction(120, 1), Fraction(110, 1), Fraction(100, 1)]",
+      "expected": "[120, 110, 100]",
+      "result": "PASS"
+    },
+    {
+      "name": "long quantities",
+      "actual": "[13, 16, 16]",
+      "expected": "[13, 16, 16]",
+      "result": "PASS"
+    },
+    {
+      "name": "long costs",
+      "actual": "984",
+      "expected": "984",
+      "result": "PASS"
+    },
+    {
+      "name": "long residual",
+      "actual": "16",
+      "expected": "16",
+      "result": "PASS"
+    },
+    {
+      "name": "long conservation",
+      "actual": "1000",
+      "expected": "1000",
+      "result": "PASS"
+    },
+    {
+      "name": "short quantities",
+      "actual": "[16, 15, 14]",
+      "expected": "[16, 15, 14]",
+      "result": "PASS"
+    },
+    {
+      "name": "short costs",
+      "actual": "986",
+      "expected": "986",
+      "result": "PASS"
+    },
+    {
+      "name": "short residual",
+      "actual": "14",
+      "expected": "14",
+      "result": "PASS"
+    },
+    {
+      "name": "short conservation",
+      "actual": "1000",
+      "expected": "1000",
+      "result": "PASS"
+    },
+    {
+      "name": "long internal bounds",
+      "actual": "(100, 140)",
+      "expected": "(100, 140)",
+      "result": "PASS"
+    },
+    {
+      "name": "short internal bounds",
+      "actual": "(80, 120)",
+      "expected": "(80, 120)",
+      "result": "PASS"
+    },
+    {
+      "name": "long stop bounds",
+      "actual": "(95, 145)",
+      "expected": "(95, 145)",
+      "result": "PASS"
+    },
+    {
+      "name": "short stop bounds",
+      "actual": "(75, 125)",
+      "expected": "(75, 125)",
+      "result": "PASS"
+    },
+    {
+      "name": "auto count",
+      "actual": "41",
+      "expected": "41",
+      "result": "PASS"
+    },
+    {
+      "name": "fixed legacy carry",
+      "actual": "64/3",
+      "expected": "64/3",
+      "result": "PASS"
+    },
+    {
+      "name": "fixed actual unspent after two",
+      "actual": "856/3",
+      "expected": "856/3",
+      "result": "PASS"
+    },
+    {
+      "name": "DTF long can round below range",
+      "actual": "100",
+      "expected": "100",
+      "result": "PASS"
+    },
+    {
+      "name": "DTF short can round above range",
+      "actual": "1011/10",
+      "expected": "1011/10",
+      "result": "PASS"
+    },
+    {
+      "name": "DTF Zones long raw Accuracy then common monetary rounding",
+      "actual": "1110",
+      "expected": "1110",
+      "result": "PASS"
+    }
+  ]
+}

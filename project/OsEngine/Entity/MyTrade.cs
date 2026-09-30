@@ -23,6 +23,9 @@ namespace OsEngine.Entity
         /// </summary>
         public decimal Price;
 
+        /// <summary>Optional broker correlation and source receipt, retained through native journal persistence.</summary>
+        public SignedOrderIdentity SignedIdentity;
+
         /// <summary>
         /// Trade number
         /// </summary>
@@ -63,6 +66,8 @@ namespace OsEngine.Entity
         /// <summary>
         /// To take a line to save
         /// </summary>
+        /// <remarks>Optional signed correlation/receipt follows the legacy fields in a delimiter-safe versioned
+        /// field. It is execution evidence, not submission permission. THG-TRANSAQ-IMPLEMENTATION-006.</remarks>
         public string GetStringFofSave()
         {
             string result = "";
@@ -75,6 +80,7 @@ namespace OsEngine.Entity
             result += Side + "&";
             result += SecurityNameCode.Replace("@","%") + "&";
             result += NumberPosition + "&";
+            result += SignedOrderIdentity.Save(SignedIdentity) + "&";
 
             return result;
         }
@@ -94,6 +100,7 @@ namespace OsEngine.Entity
             Enum.TryParse(arraySave[5], out Side);
             SecurityNameCode = arraySave[6].Replace('%', '@');
             NumberPosition = arraySave[7];
+            SignedIdentity = arraySave.Length > 8 ? SignedOrderIdentity.Load(arraySave[8]) : null;
         }
 
         /// <summary>

@@ -16,7 +16,7 @@ namespace OsEngine.Entity
     /// <summary>
     /// Position
     /// </summary>
-    public class Position
+    public partial class Position
     {
         #region Constructor
 
@@ -360,6 +360,7 @@ namespace OsEngine.Entity
         {
             get
             {
+                if (Inventory != null) return Inventory.ServerName;
                 if(OpenOrders == null 
                     || OpenOrders.Count == 0
                     || OpenOrders[0] == null)
@@ -415,6 +416,7 @@ namespace OsEngine.Entity
         {
             get
             {
+                if (Inventory != null) return Inventory.Value.Entered;
                 decimal value = 0;
 
                 for (int i = 0; _openOrders != null && i < _openOrders.Count; i++)
@@ -440,6 +442,7 @@ namespace OsEngine.Entity
         {
             get
             {
+                if (Inventory != null) return Inventory.Value.Quantity;
                 if (CloseOrders == null)
                 {
                     decimal volume = 0;
@@ -531,6 +534,8 @@ namespace OsEngine.Entity
         {
             get
             {
+                if (Inventory != null) return Inventory.Value.Quantity > 0
+                    ? Inventory.Value.Cost / Inventory.Value.Quantity : Inventory.Value.LastBasis;
                 if (_openOrders == null ||
                     _openOrders.Count == 0)
                 {
@@ -659,6 +664,7 @@ namespace OsEngine.Entity
         {
             get
             {
+                if (Inventory != null) return Inventory.CreatedAt;
                 if (_timeCreate == DateTime.MinValue &&
                     _openOrders != null
                     && _openOrders.Count > 0)
@@ -679,6 +685,7 @@ namespace OsEngine.Entity
         {
             get
             {
+                if (Inventory != null && Inventory.Value.ClosedAt != default) return Inventory.Value.ClosedAt;
                 if (CloseOrders != null
                     && CloseOrders.Count != 0)
                 {
@@ -755,8 +762,16 @@ namespace OsEngine.Entity
         #region Profit calculation
 
         /// <summary>
-        /// Check the incoming order for this transaction
+        /// Applies an order observation to an existing native entry or exit of this position.
         /// </summary>
+        /// <remarks>
+        /// The caller serializes position/journal mutation and supplies a non-null observation.
+        /// Matching requires the native user number and, for opted-in signed orders, the same durable
+        /// broker reference. Signed repeated terminal reports still update transport identity and
+        /// cumulative execution evidence; this method does not invent missing trade details or reconcile
+        /// the broker account. Legacy duplicate-terminal behavior is retained. Updates can change order
+        /// and position state; unmatched observations have no order effect. THG-TRANSAQ-IMPLEMENTATION-006.
+        /// </remarks>
         public void SetOrder(Order newOrder)
         {
             Order openOrder = null;
@@ -769,9 +784,10 @@ namespace OsEngine.Entity
                         continue;
                     }
 
-                    if (_openOrders[i].NumberUser == newOrder.NumberUser)
+                    if (_openOrders[i].NumberUser == newOrder.NumberUser
+                        && SignedOrderIdentity.Same(_openOrders[i].SignedIdentity, newOrder.SignedIdentity))
                     {
-                        if ((State == PositionStateType.Done || State == PositionStateType.OpeningFail) 
+                        if (newOrder.SignedIdentity == null && (State == PositionStateType.Done || State == PositionStateType.OpeningFail)
                             &&
                             ((_openOrders[i].State == OrderStateType.Fail && newOrder.State == OrderStateType.Fail) ||
                             (_openOrders[i].State == OrderStateType.Cancel && newOrder.State == OrderStateType.Cancel)))
@@ -802,6 +818,7 @@ namespace OsEngine.Entity
                 }
 
                 openOrder.NumberMarket = newOrder.NumberMarket;
+                openOrder.SignedIdentity = newOrder.SignedIdentity;
 
                 if (string.IsNullOrEmpty(newOrder.ParentOrderNumberMarket) == false)
                 {
@@ -884,9 +901,10 @@ namespace OsEngine.Entity
                         continue;
                     }
 
-                    if (CloseOrders[i].NumberUser == newOrder.NumberUser)
+                    if (CloseOrders[i].NumberUser == newOrder.NumberUser
+                        && SignedOrderIdentity.Same(CloseOrders[i].SignedIdentity, newOrder.SignedIdentity))
                     {
-                        if (
+                        if (newOrder.SignedIdentity == null &&
                                 (
                                 (CloseOrders[i].State == OrderStateType.Fail && newOrder.State == OrderStateType.Fail) 
                                 ||
@@ -913,6 +931,7 @@ namespace OsEngine.Entity
                 }
 
                 closeOrder.NumberMarket = newOrder.NumberMarket;
+                closeOrder.SignedIdentity = newOrder.SignedIdentity;
 
                 if (string.IsNullOrEmpty(newOrder.ParentOrderNumberMarket) == false)
                 {
@@ -964,6 +983,7 @@ namespace OsEngine.Entity
                 }
             }
 
+            if (Inventory != null && Inventory.Fault.Length > 0) State = PositionStateType.ClosingSurplus;
             if (State == PositionStateType.Done
                 && CloseOrders != null)
             {
@@ -976,6 +996,7 @@ namespace OsEngine.Entity
         /// </summary>
         private void CalculateProfitToPosition()
         {
+            if (UsesSignedPrices) { SetSignedBidAsk(false, 0, false, 0); return; }
             decimal entryPrice = EntryPrice;
             decimal closePrice = ClosePrice;
 
@@ -995,8 +1016,16 @@ namespace OsEngine.Entity
         }
 
         /// <summary>
-        /// Check incoming trade for this trade
+        /// Applies an identified native fill to a matching entry or exit and recalculates position state.
         /// </summary>
+        /// <remarks>
+        /// The caller serializes position/journal mutation and supplies a non-null fill. Matching uses
+        /// venue order and instrument plus the optional signed broker reference; the matched Order owns
+        /// fill deduplication (signed trade ID and trading date). A late signed entry fill with positive
+        /// remaining exposure reopens Done or OpeningFail as Open. The fill's NumberPosition is assigned;
+        /// quantities and profit are derived from identified fills, never from an absent account row.
+        /// No broker command or account reconciliation is performed. THG-TRANSAQ-IMPLEMENTATION-006.
+        /// </remarks>
         public void SetTrade(MyTrade trade)
         {
             _myTrades = null;
@@ -1012,11 +1041,15 @@ namespace OsEngine.Entity
                         continue;
                     }
 
-                    if (curOrdOpen.NumberMarket == trade.NumberOrderParent
-                        && curOrdOpen.SecurityNameCode == trade.SecurityNameCode)
+                    if (curOrdOpen.MatchesTrade(trade))
                     {
                         trade.NumberPosition = Number.ToString();
                         curOrdOpen.SetTrade(trade);
+                        ProjectInventoryTrade(curOrdOpen, true);
+                        if (Inventory != null && Inventory.Fault.Length > 0) { State = PositionStateType.ClosingSurplus; continue; }
+                        if (trade.SignedIdentity != null && OpenVolume > 0
+                            && (State == PositionStateType.OpeningFail || State == PositionStateType.Done))
+                            State = PositionStateType.Open;
 
                         if (OpenVolume != 0 &&
                             State == PositionStateType.Opening)
@@ -1044,11 +1077,12 @@ namespace OsEngine.Entity
                         continue;
                     }
 
-                    if (curOrdClose.NumberMarket == trade.NumberOrderParent
-                        && curOrdClose.SecurityNameCode == trade.SecurityNameCode)
+                    if (curOrdClose.MatchesTrade(trade))
                     {
                         trade.NumberPosition = Number.ToString();
                         curOrdClose.SetTrade(trade);
+                        ProjectInventoryTrade(curOrdClose, false);
+                        if (Inventory != null && Inventory.Fault.Length > 0) { State = PositionStateType.ClosingSurplus; continue; }
 
                         if (OpenVolume == 0
                             && OpenActive == false && CloseActive == false)
@@ -1075,6 +1109,8 @@ namespace OsEngine.Entity
         /// </summary>
         public void SetBidAsk(decimal bid, decimal ask)
         {
+            // This legacy event cannot express quote presence; explicit consumers mark separately.
+            if (UsesSignedPrices) return;
             if (State == PositionStateType.Open
                 || State == PositionStateType.Closing
                 || State == PositionStateType.ClosingFail)
@@ -1249,14 +1285,14 @@ namespace OsEngine.Entity
 
             if(SignalTypeOpen != null)
             {
-                SignalTypeOpen = SignalTypeOpen.RemoveExcessFromSecurityName().Replace("#", "").Replace("^", "");
+                SignalTypeOpen = (UsesSignedPrices ? SignalTypeOpen : SignalTypeOpen.RemoveExcessFromSecurityName()).Replace("#", "").Replace("^", "");
             }
 
             result.Append(SignalTypeOpen + "#");
 
             if (SignalTypeClose != null)
             {
-                SignalTypeClose = SignalTypeClose.RemoveExcessFromSecurityName().Replace("#", "").Replace("^", "");
+                SignalTypeClose = (UsesSignedPrices ? SignalTypeClose : SignalTypeClose.RemoveExcessFromSecurityName()).Replace("#", "").Replace("^", "");
             }
 
             result.Append(SignalTypeClose + "#");
@@ -1280,7 +1316,7 @@ namespace OsEngine.Entity
             result.Append("#" + ProfitIsMarket);
             result.Append("#" + SecurityName);
 
-            return result;
+            return WrapInventory(result);
         }
 
         /// <summary>
@@ -1288,6 +1324,7 @@ namespace OsEngine.Entity
         /// </summary>
         public void SetDealFromString(string save)
         {
+            save = ReadInventory(save);
             string[] arraySave = save.Split('#');
 
             Enum.TryParse(arraySave[0], true, out Direction);
@@ -1435,6 +1472,7 @@ namespace OsEngine.Entity
             PositionStateType state;
             Enum.TryParse(arraySave[1], true, out state);
             State = state;
+            CheckInventoryNativeFacts();
         }
 
         public string PositionSpecification
@@ -1545,6 +1583,10 @@ namespace OsEngine.Entity
         {
             get
             {
+                if (Inventory != null)
+                    return ProfitOperationAbs * Inventory.Value.Entered * Inventory.LotMultiplier
+                        * (PriceStep > 0 && PriceStepCost > 0 ? PriceStepCost / PriceStep : 1)
+                        - SignedCommissionTotal() - Inventory.Value.ExternalFees;
                 decimal volume = 0;
 
                 for (int i = 0; _openOrders != null && i < _openOrders.Count; i++)
@@ -1649,6 +1691,7 @@ namespace OsEngine.Entity
         /// </summary>
         public decimal CommissionTotal()
         {
+            if (UsesSignedPrices) return SignedCommissionTotal();
             decimal commissionTotal = 0;
 
             if (CommissionType != CommissionType.None && CommissionValue != 0)
@@ -1733,6 +1776,7 @@ namespace OsEngine.Entity
         {
             get
             {
+                if (Inventory != null) return Inventory.PortfolioName;
                 if( OpenOrders!= null 
                     && OpenOrders.Count> 0)
                 {

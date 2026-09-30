@@ -374,29 +374,32 @@ namespace OsEngine.Journal.Internal
 
         private string GetSaveString()
         {
-            StringBuilder result = new StringBuilder();
-
-            result.Append(_commissionType + "\r\n");
-            result.Append(_commissionValue + "\r\n");
-
-            if (_startProgram == StartProgram.IsOsTrader)
+            lock (_dealsLocker)
             {
-                List<Position> deals = _deals;
+                StringBuilder result = new StringBuilder();
 
-                for (int i = 0; deals != null && i < deals.Count; i++)
+                result.Append(_commissionType + "\r\n");
+                result.Append(_commissionValue + "\r\n");
+
+                if (_startProgram == StartProgram.IsOsTrader)
                 {
-                    Position pos = deals[i];
+                    List<Position> deals = _deals;
 
-                    if (pos == null)
+                    for (int i = 0; deals != null && i < deals.Count; i++)
                     {
-                        continue;
+                        Position pos = deals[i];
+
+                        if (pos == null)
+                        {
+                            continue;
+                        }
+
+                        result.Append(deals[i].GetStringForSave() + "\r\n");
                     }
-
-                    result.Append(deals[i].GetStringForSave() + "\r\n");
                 }
-            }
 
-            return result.ToString();
+                return result.ToString();
+            }
         }
 
         public void Save()
@@ -432,6 +435,55 @@ namespace OsEngine.Journal.Internal
         private List<Position> _deals;
 
         private string _dealsLocker = "_dealsLocker";
+
+        /// <summary>Captures inventory under the journal lock; enabling the ledger has no economic effect.</summary>
+        public string CaptureInventory(Position candidate, string server, string account, decimal percentBase, DateTime at)
+        {
+            lock (_dealsLocker)
+            {
+                Position existing = _deals?.Find(p => p != null && p.Number == candidate.Number);
+                if (existing != null && !ReferenceEquals(existing, candidate))
+                    throw new InvalidOperationException("Inventory position number is already occupied.");
+                if (candidate.OpenActive || candidate.CloseActive)
+                    throw new InvalidOperationException("Drain native orders before inventory adjustment.");
+                candidate.EnableInventory(server, account, percentBase, at);
+                _needToSave = true;
+                return candidate.GetStringForSave().ToString();
+            }
+        }
+
+        /// <summary>Applies a persisted inventory adjustment without sending or publishing an execution.</summary>
+        /// <remarks>Missing positions use the owner's prepared native snapshot. Identity collisions fail before
+        /// mutation. The owner still commits its checkpoint and reconciles after this asynchronous journal save.</remarks>
+        public Position ApplyInventory(Position snapshot, PositionInventoryAdjustment adjustment)
+        {
+            Position position;
+            lock (_dealsLocker)
+            {
+                if (_deals == null) _deals = new List<Position>();
+                position = _deals.Find(p => p != null && p.Number == snapshot.Number);
+                if (position != null && (position.SignalTypeOpen != snapshot.SignalTypeOpen
+                    || position.SecurityName != snapshot.SecurityName || position.Direction != snapshot.Direction
+                    || position.NameBot != snapshot.NameBot || position.PortfolioName != snapshot.PortfolioName
+                    || position.ServerName != snapshot.ServerName))
+                    throw new InvalidOperationException("Native inventory identity collision.");
+                if (position == null)
+                {
+                    position = snapshot;
+                    position.CommissionType = CommissionType; position.CommissionValue = CommissionValue;
+                }
+                if (position.Inventory == null)
+                    position.EnableInventory(snapshot.Inventory.ServerName, snapshot.Inventory.PortfolioName,
+                        snapshot.Inventory.PercentBase, snapshot.Inventory.CreatedAt);
+                position.ApplyInventory(adjustment);
+                if (!_deals.Contains(position)) _deals.Add(position);
+                UpdateOpenPositionArray(position);
+                _openLongChanged = _openShortChanged = _closePositionChanged = true;
+                _closeLongChanged = _closeShortChanged = _lastPositionChange = _needToSave = true;
+            }
+            ProcessPosition(position);
+            return position;
+        }
 
         public void SetNewPosition(Position newPosition)
         {
@@ -628,6 +680,7 @@ namespace OsEngine.Journal.Internal
                     {
                         for (int indexCloseOrders = 0; indexCloseOrders < curPosition.CloseOrders.Count; indexCloseOrders++)
                         {
+                            if (!SignedOrderIdentity.Same(curPosition.CloseOrders[indexCloseOrders].SignedIdentity, updateOrder.SignedIdentity)) continue;
                             if (canUpdateOrderNumber == false)
                             {
                                 if (curPosition.CloseOrders[indexCloseOrders].NumberUser == updateOrder.NumberUser
@@ -661,7 +714,8 @@ namespace OsEngine.Journal.Internal
                     {
                         for (int indexOpenOrd = 0; curPosition.OpenOrders != null && indexOpenOrd < curPosition.OpenOrders.Count; indexOpenOrd++)
                         {
-                            if (curPosition.OpenOrders[indexOpenOrd] == null)
+                            if (curPosition.OpenOrders[indexOpenOrd] == null
+                                || !SignedOrderIdentity.Same(curPosition.OpenOrders[indexOpenOrd].SignedIdentity, updateOrder.SignedIdentity))
                             {
                                 continue;
                             }
@@ -702,7 +756,7 @@ namespace OsEngine.Journal.Internal
 
                         if (positionState != curPosition.State ||
                             lastPosVolume != curPosition.OpenVolume
-                            || (curPosition.OpenOrders.Count > 1 && curPosition.OpenVolume == 0) // на случай если надо восстановить позицию после файл статуса
+                            || (curPosition.OpenOrders != null && curPosition.OpenOrders.Count > 1 && curPosition.OpenVolume == 0) // на случай если надо восстановить позицию после файл статуса
                             )
                         {
                             _openLongChanged = true;
@@ -890,7 +944,7 @@ namespace OsEngine.Journal.Internal
                                 continue;
                             }
 
-                            if (closeOrder.NumberMarket == trade.NumberOrderParent)
+                            if (closeOrder.MatchesTrade(trade))
                             {
                                 isCloseOrder = true;
                                 break;
@@ -912,7 +966,7 @@ namespace OsEngine.Journal.Internal
                                 continue;
                             }
 
-                            if (openOrder.NumberMarket == trade.NumberOrderParent)
+                            if (openOrder.MatchesTrade(trade))
                             {
                                 isOpenOrder = true;
                                 break;

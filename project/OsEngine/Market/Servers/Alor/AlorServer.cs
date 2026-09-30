@@ -44,8 +44,13 @@ namespace OsEngine.Market.Servers.Alor
         }
     }
 
-    public class AlorServerRealization : IServerRealization
+    public class AlorServerRealization : IServerRealization, IExplicitAccountSource
     {
+        /// <summary>Account websocket callbacks publish actual changed rows/funds, never their cached siblings.</summary>
+        public bool HasExplicitAccountUpdates => true;
+
+        /// <summary>Source-captured incremental account facts for opt-in consumers; legacy portfolio events are unchanged.</summary>
+        public event Action<ExplicitAccount> ExplicitAccountEvent;
         #region 1 Constructor, Status, Connection
 
         public AlorServerRealization()
@@ -2023,6 +2028,7 @@ namespace OsEngine.Market.Servers.Alor
 
         private void UpDatePositionOnBoard(string data, string portfolioName)
         {
+            DateTime receivedAt = DateTime.Now;
             PositionOnBoardAlor baseMessage =
                        JsonConvert.DeserializeAnonymousType(data, new PositionOnBoardAlor());
 
@@ -2050,6 +2056,7 @@ namespace OsEngine.Market.Servers.Alor
             newPos.UnrealizedPnl = baseMessage.dailyUnrealisedPl.ToDecimal();
 
             portf.SetNewPosition(newPos);
+            ExplicitAccountEvent?.Invoke(new ExplicitAccount(portf, false, new[] { newPos }, receivedAt));
 
             if (PortfolioEvent != null)
             {
@@ -2352,6 +2359,7 @@ namespace OsEngine.Market.Servers.Alor
 
         private void UpDateMyPortfolio(string data, string portfolioName)
         {
+            DateTime receivedAt = DateTime.Now;
             AlorPortfolioSocket baseMessage =
             JsonConvert.DeserializeAnonymousType(data, new AlorPortfolioSocket());
 
@@ -2382,6 +2390,7 @@ namespace OsEngine.Market.Servers.Alor
             portf.ValueBlocked = baseMessage.portfolioLiquidationValue.ToDecimal() - baseMessage.buyingPower.ToDecimal();
            
             portf.UnrealizedPnl = baseMessage.profit.ToDecimal();
+            ExplicitAccountEvent?.Invoke(new ExplicitAccount(portf, true, Array.Empty<PositionOnBoard>(), receivedAt));
 
             if (PortfolioEvent != null)
             {

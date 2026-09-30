@@ -1,0 +1,217 @@
+{
+  "date": "2026-09-29",
+  "osengineBaseline": "088add98b728f8088fb18ff2e59c8d4113ad043c",
+  "sourceRoot": "C:\\Users\\Mi\\.codex\\TradeHelp4",
+  "sourceFiles": [
+    {
+      "path": "Strategyes/dtf.lf",
+      "bytes": 516608,
+      "sha256": "68ec0d64dba0188e6494c9f98db13c24af14fafb53c645a3eb0e38310316ab4e"
+    },
+    {
+      "path": "Strategyes/dtm.lf",
+      "bytes": 510464,
+      "sha256": "a5bee320aee9d930c245078d2f234e06505c5cdd93291f67569e01ea8ff99eea"
+    },
+    {
+      "path": "Strategyes/dti.lf",
+      "bytes": 718848,
+      "sha256": "189c6b2b024a6150585af752c3a7e6e4c73f2dea19671654b5d7668e24dd5ca5"
+    },
+    {
+      "path": "Strategyes/ts.lf",
+      "bytes": 150016,
+      "sha256": "39ee7830fc4421ba906a443363c7fdc34f49d83d517f73b1dd298410d878784d"
+    },
+    {
+      "path": "Order_callback.dll",
+      "bytes": 119296,
+      "sha256": "df24dbea529f4d0993d6235ff5e106b281a3ed94c8a8f1cc84de25ead65d4582"
+    },
+    {
+      "path": "PilotFinanceSystem.dll",
+      "bytes": 2328064,
+      "sha256": "6fd3a4d542cd344ef009fc897b184c4c91a3ffed75ea04adebcf6d4309644528"
+    },
+    {
+      "path": "TradeHelp.exe",
+      "bytes": 3328512,
+      "sha256": "d04236cc22bac91ac64ffbfe96367f8dfc61d9b8654310dd3df1326bc22f6c59"
+    },
+    {
+      "path": "Lua/Quik.Robotcraft.luac",
+      "bytes": 40497,
+      "sha256": "10e47e82f92e732ebe3a0cf6f5c12437d60344c767a50019d35200d71b07119b"
+    },
+    {
+      "path": "TralingStop.dll",
+      "bytes": 94208,
+      "sha256": "ef964adf8c51e911578542fdba71587d9e38355339c73d2bd77363ff1b38a93b"
+    }
+  ],
+  "derivedRoot": "C:\\Users\\Mi\\AppData\\Local\\Temp\\TradeHelp4-analysis",
+  "derivedViews": [
+    {
+      "path": "dtf.cs",
+      "bytes": 539408,
+      "sha256": "2a2cb72a25ea778f4cbeb85d7a120eec97519a809ad13f2e676fd6a053f012c5"
+    },
+    {
+      "path": "dtf-resolved.cs",
+      "bytes": 513067,
+      "sha256": "49a3b626bbc671168fad7cc2e9a28fc9a4742165ee28142e64461777c7637da2"
+    },
+    {
+      "path": "dtm.cs",
+      "bytes": 536242,
+      "sha256": "eda5d3b7329b446ca6d2479da70c55045a085ada839486b09f68e3a08c6d95c1"
+    },
+    {
+      "path": "dti.cs",
+      "bytes": 945580,
+      "sha256": "523f17b7db8d9b3754f30375c4237ecc0d23c78af8739163da6930a26de6ed78"
+    },
+    {
+      "path": "ts.cs",
+      "bytes": 58694,
+      "sha256": "309e2dfa61e544c68153f3e1b05de457cac034444d47967f62319470d9ec046b"
+    },
+    {
+      "path": "Order_callback.cs",
+      "bytes": 88196,
+      "sha256": "7987649a0fa6b9cf8a85b61c738b6b23aa0ee70f3d3dc76b0434bc60f314492d"
+    },
+    {
+      "path": "PilotFinanceSystem.cs",
+      "bytes": 887684,
+      "sha256": "997227e07ba57912e2110141ec930ebddb07c8650840d19161775dcbf9c3d875"
+    },
+    {
+      "path": "TradeHelp.cs",
+      "bytes": 559049,
+      "sha256": "fca7d7be6dc722fe8528a50a4fb6bbca4cc58f67ef78c5d60796530318859011"
+    },
+    {
+      "path": "TralingStop.cs",
+      "bytes": 51612,
+      "sha256": "3dd59b18c4c3ac1808138753edcb8e1a16d42b11b14f04db59373952d27e9abd"
+    }
+  ],
+  "tools": {
+    "decompiler": "ICSharpCode.Decompiler 9.1.0.7988, local Visual Studio installation",
+    "reader": {
+      "path": "decompile/Program.cs",
+      "bytes": 674,
+      "sha256": "ead1f781b132a171c26ca5856a88d2cb334c3fc34de53fa42b5484e0446e46d1"
+    },
+    "readerProject": {
+      "path": "decompile/decompile.csproj",
+      "bytes": 392,
+      "sha256": "0963ab6a3a69b4d241a83caa1c5fa355d98b0c098f48f516322cbec0bfa7bede"
+    },
+    "ilDumps": [
+      "dtf.il",
+      "dtm.il",
+      "dti.il",
+      "ts.il",
+      "Order_callback.il",
+      "PilotFinanceSystem.il"
+    ]
+  },
+  "boundary": "Static metadata/IL/C# only. No vendor runtime, credentials, account config, database or logs read. No binaries or whole decompiled views redistributed.",
+  "transitionResearch": {
+    "task": "TASK-TRADEHELP-FUTURES2-TRANSITIONS-002",
+    "artifacts": [
+      {
+        "path": "DTI.g.resources",
+        "bytes": 194693,
+        "sha256": "2a60ef90d26c64fde86dcb2eb361412e9864b2f63d3920c19cf713c3bd7ca46d"
+      },
+      {
+        "path": "dti.il",
+        "bytes": 7969044,
+        "sha256": "35326f385b6b57ed4f8cc770d28331fc5e899a87a2a6319d35bfe88d2f02f5c2"
+      },
+      {
+        "path": "extract-ui-evidence.ps1",
+        "bytes": 2232,
+        "sha256": "98f921087ecb22c59aa4c6947541d11df3460e08081947f7c286a40a3ec22690"
+      },
+      {
+        "path": "transition-evidence.py",
+        "bytes": 4725,
+        "sha256": "57ae1564353daec78f19b2ea992a9dad2d20b87955f15fc160b7d005d5b2007d"
+      }
+    ],
+    "boundary": "Passive resource/IL analysis. ui-bindings raw hash includes ResourceReader stream length prefix. No vendor runtime."
+  },
+  "signedPriceResearch": {
+    "task": "TASK-THG-SIGNED-PRICE-003",
+    "head": "088add98b728f8088fb18ff2e59c8d4113ad043c",
+    "boundary": "Native static source only; arithmetic examples are proposed contract, not engine execution. Native paths relative project/.",
+    "nativeSources": [
+      {
+        "path": "OsEngine/Entity/Order.cs",
+        "bytes": 22511,
+        "sha256": "245cc869430caf9b260a1ae742a4da8e7dc734fcafb68dc3241cd51f5f47ca7e"
+      },
+      {
+        "path": "OsEngine/Entity/Security.cs",
+        "bytes": 15232,
+        "sha256": "05567e1f0c51bfa02829f9f8a082e5860e299ee47c7992f2f56b16d2732a9431"
+      },
+      {
+        "path": "OsEngine/Entity/Position.cs",
+        "bytes": 60040,
+        "sha256": "0e6ad8f99e72e58a57ec44c03830c8901b1fdc9199e4016b0e06edb999ec0317"
+      },
+      {
+        "path": "OsEngine/OsTrader/Panels/Tab/BotTabSimple.cs",
+        "bytes": 339178,
+        "sha256": "45d143ae1025ff6afed366f863feae47c2dbd4a02e4e2c003d3268f74d959991"
+      },
+      {
+        "path": "OsEngine/OsTrader/Panels/Tab/Internal/PositionCreator.cs",
+        "bytes": 4986,
+        "sha256": "3dd890481f2d114579042ad1b91f87cf706ce7c0a0823676b673584a2d2f5b30"
+      },
+      {
+        "path": "OsEngine/Market/Connectors/ConnectorCandles.cs",
+        "bytes": 73804,
+        "sha256": "e43e96c1e4068150b8a8cd929abb6aa8804ab4bd85ef253c04ec3b393d225540"
+      },
+      {
+        "path": "OsEngine/Market/Servers/AServer.cs",
+        "bytes": 187443,
+        "sha256": "5cfe9ac05f8706005dce708c5103210ce210bb0365442859cfba8058b84b6816"
+      },
+      {
+        "path": "OsEngine/Market/Servers/Tester/TesterServer.cs",
+        "bytes": 252408,
+        "sha256": "77c1b328c4945a46728a4d0b4d591ca7785c2703b4f274b5bc336c6b08f48a77"
+      },
+      {
+        "path": "OsEngine/Market/Servers/Optimizer/OptimizerServer.cs",
+        "bytes": 123089,
+        "sha256": "113edac5d29296e961aff4f9cbc1ccfe273b01c5b563702600e99b1cf5e539b6"
+      },
+      {
+        "path": "OsEngine/Market/Connectors/OrderExecutionEmulator.cs",
+        "bytes": 15333,
+        "sha256": "83498bb58fc5e7c970b7d7c733a27b9b3a7c5efe4b22e830e05f964f0c217087"
+      }
+    ],
+    "artifacts": [
+      {
+        "path": "evidence/signed-price-cases.json",
+        "bytes": 4387,
+        "sha256": "5d7cc9fc23d8f650f0b971fe096ab34fdfeddc37c38abc90c41c60e6d2d021a3"
+      },
+      {
+        "path": "evidence/check_signed_price_cases.py",
+        "bytes": 4728,
+        "sha256": "97b96a1c4166ec6c3f128a80cdd4ec82b78509905b8443cf614b66be157b3d27"
+      }
+    ]
+  }
+}

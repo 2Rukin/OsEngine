@@ -29,6 +29,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms.Integration;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using Grid = System.Windows.Controls.Grid;
 
 namespace OsEngine.OsTrader
@@ -346,6 +347,7 @@ namespace OsEngine.OsTrader
                         botIterator++;
 
                         bot.NewTabCreateEvent += _bot_NewTabCreateEvent;
+                    bot.AutomaticDeletionRequested += QueueAutomaticDeletion;
                     }
                 }
             }
@@ -990,6 +992,7 @@ namespace OsEngine.OsTrader
                     botIterator++;
 
                     bot.NewTabCreateEvent += _bot_NewTabCreateEvent;
+                    bot.AutomaticDeletionRequested += QueueAutomaticDeletion;
                 }
 
                 if (PanelsArray.Count != 0)
@@ -2117,67 +2120,84 @@ namespace OsEngine.OsTrader
         /// </summary>
         public void DeleteRobotActive()
         {
-            try
+            try { if (PanelsArray != null && _activePanel != null) DeleteRobotCore(_activePanel); }
+            catch (Exception error) { SendNewLogMessage(error.ToString(), LogMessageType.Error); }
+        }
+
+        private readonly object _automaticDeletionLock = new object();
+        private readonly HashSet<BotPanel> _automaticDeletionPending = new HashSet<BotPanel>();
+
+        // Never wait for the UI while a requesting robot may hold its callback lock.
+        private bool QueueAutomaticDeletion(BotPanel robot)
+        {
+            Dispatcher dispatcher = _tabBotNames?.Dispatcher ?? _hostChart?.Dispatcher ?? Application.Current?.Dispatcher;
+            if (_startProgram != StartProgram.IsOsTrader || robot == null || dispatcher == null
+                || dispatcher.HasShutdownStarted || dispatcher.HasShutdownFinished) return false;
+            lock (_automaticDeletionLock)
             {
-                if (PanelsArray == null ||
-               _activePanel == null)
+                if (!_automaticDeletionPending.Add(robot)) return true;
+                try
                 {
-                    return;
-                }
-
-                if (TabsScreenerIsActive())
-                {
-                    for (int i = 0; i < _activePanel.TabsScreener.Count; i++)
+                    dispatcher.BeginInvoke(new Action(() =>
                     {
-                        if (_activePanel.TabsScreener[i].IsLoadTabs == true)
+                        try
                         {
-                            SendNewLogMessage(OsLocalization.Trader.Label183, LogMessageType.Error);
-                            return;
+                            if (TryPrepareOwnedAutomaticDeletion(robot)) DeleteRobotCore(robot);
                         }
-                    }
+                        catch (Exception error) { SendNewLogMessage(error.ToString(), LogMessageType.Error); }
+                        finally { lock (_automaticDeletionLock) _automaticDeletionPending.Remove(robot); }
+                    }));
+                    return true;
                 }
-               
-
-                _activePanel.StopPaint();
-
-                _activePanel.NewTabCreateEvent -= _bot_NewTabCreateEvent;
-
-                _activePanel.Delete();
-
-                SendNewLogMessage(OsLocalization.Trader.Label5 + _activePanel.NameStrategyUniq, LogMessageType.System);
-
-                PanelsArray.Remove(_activePanel);
-
-                if (BotDeleteEvent != null)
+                catch (Exception error)
                 {
-                    BotDeleteEvent(_activePanel);
+                    _automaticDeletionPending.Remove(robot);
+                    SendNewLogMessage(error.ToString(), LogMessageType.Error);
+                    return false;
                 }
+            }
+        }
 
-                _activePanel = null;
+        // Runs only on the owner's dispatcher. Same-name hot-update objects are not interchangeable.
+        private bool TryPrepareOwnedAutomaticDeletion(BotPanel robot)
+        {
+            if (_startProgram != StartProgram.IsOsTrader || PanelsArray == null || robot == null
+                || !PanelsArray.Any(panel => ReferenceEquals(panel, robot))
+                || PanelsArray.Any(panel => !ReferenceEquals(panel, robot) && panel.NameStrategyUniq == robot.NameStrategyUniq)
+                || _activePanel != null && !ReferenceEquals(_activePanel, robot) && _activePanel.NameStrategyUniq == robot.NameStrategyUniq
+                || robot.TabsScreener?.Any(tab => tab.IsLoadTabs) == true) return false;
+            return robot.TryPrepareForAutomaticDeletion();
+        }
 
-                Save();
-
-                if(_tabBotNames != null)
+        private void DeleteRobotCore(BotPanel robot)
+        {
+            if (robot.TabsScreener?.Any(tab => tab.IsLoadTabs) == true)
+            {
+                SendNewLogMessage(OsLocalization.Trader.Label183, LogMessageType.Error);
+                return;
+            }
+            robot.StopPaint();
+            robot.NewTabCreateEvent -= _bot_NewTabCreateEvent;
+            robot.AutomaticDeletionRequested -= QueueAutomaticDeletion;
+            robot.Delete();
+            SendNewLogMessage(OsLocalization.Trader.Label5 + robot.NameStrategyUniq, LogMessageType.System);
+            PanelsArray.Remove(robot);
+            BotDeleteEvent?.Invoke(robot);
+            if (ReferenceEquals(_activePanel, robot)) _activePanel = null;
+            Save();
+            if (_tabBotNames != null)
+            {
+                _tabBotNames.SelectionChanged -= _tabBotControl_SelectionChanged;
+                try
                 {
                     _tabBotNames.Items.Clear();
-
-                    if (PanelsArray != null && PanelsArray.Count != 0)
-                    {
-                        for (int i = 0; i < PanelsArray.Count; i++)
-                        {
-                            _tabBotNames.Items.Add(" " + PanelsArray[i].NameStrategyUniq + " ");
-                        }
-
-                        ReloadActiveBot(PanelsArray[0]);
-                    }
+                    foreach (BotPanel panel in PanelsArray) _tabBotNames.Items.Add(" " + panel.NameStrategyUniq + " ");
+                    if (_activePanel != null) _tabBotNames.SelectedItem = " " + _activePanel.NameStrategyUniq + " ";
                 }
-
-                ReloadRiskJournals();
+                finally { _tabBotNames.SelectionChanged += _tabBotControl_SelectionChanged; }
+                if (_activePanel == null && PanelsArray.Count > 0) ReloadActiveBot(PanelsArray[0]);
             }
-            catch (Exception error)
-            {
-                SendNewLogMessage(error.ToString(), LogMessageType.Error);
-            }
+            ReloadRiskJournals();
         }
 
         /// <summary>
@@ -2263,6 +2283,7 @@ namespace OsEngine.OsTrader
                 }
 
                 newRobot.NewTabCreateEvent += _bot_NewTabCreateEvent;
+                newRobot.AutomaticDeletionRequested += QueueAutomaticDeletion;
 
                 SendNewLogMessage(OsLocalization.Trader.Label9 + newRobot.NameStrategyUniq, LogMessageType.System);
 
@@ -2301,6 +2322,7 @@ namespace OsEngine.OsTrader
                 }
 
                 newRobot.NewTabCreateEvent += _bot_NewTabCreateEvent;
+                newRobot.AutomaticDeletionRequested += QueueAutomaticDeletion;
 
                 SendNewLogMessage(OsLocalization.Trader.Label9 + newRobot.NameStrategyUniq, LogMessageType.System);
 

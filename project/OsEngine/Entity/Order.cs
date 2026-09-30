@@ -64,9 +64,23 @@ namespace OsEngine.Entity
         /// </summary>
         public Side Side;
 
-        /// <summary>
-        /// Bid price
-        /// </summary>
+        /// <summary>Opt-in signed/zero price domain, fixed before submission; false retains legacy zero handling.</summary>
+        public bool UsesSignedPrice;
+
+        /// <summary>Positive price-unit denominator for signed position percentage display; not instrument collateral.</summary>
+        public decimal SignedPercentBase;
+
+        /// <summary>Optional durable broker correlation, distinct from NumberUser and NumberMarket.</summary>
+        public SignedOrderIdentity SignedIdentity;
+
+        /// <summary>Transient final-send authority; recovered orders never inherit permission to resubmit.</summary>
+        public SignedOrderDispatch SignedDispatch;
+
+        /// <summary>Matches both broker correlation and venue identity for opted-in orders; preserves legacy behavior.</summary>
+        public bool MatchesTrade(MyTrade trade) => trade != null && NumberMarket == trade.NumberOrderParent
+            && SecurityNameCode == trade.SecurityNameCode && SignedOrderIdentity.Same(SignedIdentity, trade.SignedIdentity);
+
+        /// <summary>Literal order price; UsesSignedPrice distinguishes valid zero from legacy fallback handling.</summary>
         public decimal Price;
 
         /// <summary>
@@ -344,11 +358,11 @@ namespace OsEngine.Entity
         private List<MyTrade> _trades;
 
         /// <summary>
-        /// Heck the ownership of the transaction to this order
+        /// Accepts matching venue/symbol and, for opted-in orders, durable broker correlation
         /// </summary>
         public void SetTrade(MyTrade trade)
         {
-            if (trade.NumberOrderParent != NumberMarket)
+            if (!MatchesTrade(trade))
             {
                 return;
             }
@@ -361,7 +375,8 @@ namespace OsEngine.Entity
                     {
                         continue;
                     }
-                    if (_trades[i].NumberTrade == trade.NumberTrade)
+                    if (_trades[i].NumberTrade == trade.NumberTrade
+                        && (SignedIdentity == null || _trades[i].Time.Date == trade.Time.Date))
                     {
                         return;
                     }
@@ -476,9 +491,11 @@ namespace OsEngine.Entity
         /// <summary>
         /// Take the string to save
         /// </summary>
+        /// <remarks>Signed transport identity and security class are additive trailing fields. Signed records
+        /// bypass the legacy terminal cache so later transport facts persist. THG-TRANSAQ-IMPLEMENTATION-006.</remarks>
         public StringBuilder GetStringForSave()
         {
-            if (_saveString != null)
+            if (_saveString != null && SignedIdentity == null)
             {
                 return _saveString;
             }
@@ -549,6 +566,9 @@ namespace OsEngine.Entity
 
             result.Append("@" + (ParentOrderNumberMarket ?? ""));
             result.Append("@" + (ChildOrderNumberMarket ?? ""));
+            result.Append("@" + UsesSignedPrice + "@" + SignedPercentBase.ToString(CultureInfo));
+            result.Append("@" + SignedOrderIdentity.Save(SignedIdentity));
+            result.Append("@" + Convert.ToBase64String(Encoding.UTF8.GetBytes(SecurityClassCode ?? "")));
 
             if (State == OrderStateType.Done && Volume == VolumeExecute &&
                 _trades != null && _trades.Count > 0)
@@ -564,9 +584,15 @@ namespace OsEngine.Entity
         /// <summary>
         /// Load order from incoming line
         /// </summary>
+        /// <remarks>Old records have no transport authority. Invalid versioned identity throws; callers must
+        /// reconcile rather than resubmit a recovered order. THG-TRANSAQ-IMPLEMENTATION-006.</remarks>
         public void SetOrderFromString(string saveString)
         {
             string[] saveArray = saveString.Split('@');
+            UsesSignedPrice = saveArray.Length > 26 && bool.TryParse(saveArray[26], out bool signed) && signed;
+            SignedPercentBase = saveArray.Length > 27 ? saveArray[27].ToDecimal() : 0;
+            SignedIdentity = saveArray.Length > 28 ? SignedOrderIdentity.Load(saveArray[28]) : null;
+            SecurityClassCode = saveArray.Length > 29 ? Encoding.UTF8.GetString(Convert.FromBase64String(saveArray[29])) : "";
             NumberUser = Convert.ToInt32(saveArray[0]);
 
             Enum.TryParse(saveArray[1], true, out ServerType);

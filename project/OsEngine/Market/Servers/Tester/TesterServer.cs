@@ -28,7 +28,7 @@ using Newtonsoft.Json;
 
 namespace OsEngine.Market.Servers.Tester
 {
-    public class TesterServer : IServer
+    public class TesterServer : IServer, IExplicitQuoteSource
     {
         #region Service and base settings
 
@@ -1273,7 +1273,7 @@ namespace OsEngine.Market.Servers.Tester
                 { // test with using candles / прогон на свечках
                     Candle lastCandle = security.LastCandle;
 
-                    if (order.Price == 0)
+                    if (order.Price == 0 && !order.UsesSignedPrice)
                     {
                         order.Price = lastCandle.Open;
                     }
@@ -2067,6 +2067,8 @@ namespace OsEngine.Market.Servers.Tester
             orderOnBoard.NumberUser = order.NumberUser;
             orderOnBoard.PortfolioNumber = order.PortfolioNumber;
             orderOnBoard.Price = order.Price;
+            orderOnBoard.UsesSignedPrice = order.UsesSignedPrice;
+            orderOnBoard.SignedPercentBase = order.SignedPercentBase;
             orderOnBoard.SecurityNameCode = order.SecurityNameCode;
             orderOnBoard.Side = order.Side;
             orderOnBoard.State = OrderStateType.Active;
@@ -2254,6 +2256,8 @@ namespace OsEngine.Market.Servers.Tester
             orderOnBoard.NumberUser = order.NumberUser;
             orderOnBoard.PortfolioNumber = order.PortfolioNumber;
             orderOnBoard.Price = order.Price;
+            orderOnBoard.UsesSignedPrice = order.UsesSignedPrice;
+            orderOnBoard.SignedPercentBase = order.SignedPercentBase;
             orderOnBoard.SecurityNameCode = order.SecurityNameCode;
             orderOnBoard.Side = order.Side;
             orderOnBoard.State = OrderStateType.Fail;
@@ -4701,7 +4705,7 @@ namespace OsEngine.Market.Servers.Tester
 
                     CultureInfo culture = CultureInfo;
 
-                    int countOfTrades = 0;
+                    int countOfNonZeroPrices = 0;
 
                     for (int i2 = 0; i2 < 5000; i2++)
                     {
@@ -4722,9 +4726,17 @@ namespace OsEngine.Market.Servers.Tester
                         Trade tradeN = new Trade();
                         tradeN.SetTradeFromString(lastString2);
 
-                        countOfTrades++;
-
                         decimal open = (decimal)Convert.ToDouble(tradeN.Price);
+
+                        // A literal zero is a valid signed-price observation but carries no information
+                        // about the instrument tick. Skip it while inferring metadata; the old trailing-zero
+                        // loop indexed before the start of "0" and silently removed the whole instrument.
+                        if (open == 0)
+                        {
+                            continue;
+                        }
+
+                        countOfNonZeroPrices++;
 
                         if (open.ToString(culture).Split('.').Length > 1)
                         {
@@ -4798,8 +4810,13 @@ namespace OsEngine.Market.Servers.Tester
                         }
                     }
 
-                    if (minPriceStep == 1 &&
-                        countFive == countOfTrades)
+                    if (minPriceStep == decimal.MaxValue)
+                    {
+                        minPriceStep = 1;
+                    }
+
+                    if (minPriceStep == 1 && countOfNonZeroPrices > 0 &&
+                        countFive == countOfNonZeroPrices)
                     {
                         minPriceStep = 5;
                     }
@@ -6004,6 +6021,8 @@ namespace OsEngine.Market.Servers.Tester
                 NewBidAskIncomeEvent((decimal)candle.Close, (decimal)candle.Close, GetSecurityForName(nameSecurity, ""));
             }
 
+            ExplicitQuoteEvent?.Invoke(new ExplicitQuote(nameSecurity, true, candle.Close, true, candle.Close, candle.TimeStart));
+
             _candleManager.SetNewCandleInSeries(candle, nameSecurity, timeFrame);
 
         }
@@ -6034,6 +6053,7 @@ namespace OsEngine.Market.Servers.Tester
             {
                 NewMarketDepthEvent(marketDepth);
             }
+            ExplicitQuoteEvent?.Invoke(ExplicitQuote.FromDepth(marketDepth));
         }
 
         public event Action<MarketDepth> NewMarketDepthEvent;
@@ -6138,6 +6158,11 @@ namespace OsEngine.Market.Servers.Tester
             {
                 NewBidAskIncomeEvent((decimal)tradesNew[tradesNew.Count - 1].Price, (decimal)tradesNew[tradesNew.Count - 1].Price, GetSecurityForName(tradesNew[tradesNew.Count - 1].SecurityNameCode, ""));
             }
+            if (tradesNew.Count > 0)
+            {
+                Trade lastExplicitTrade = tradesNew[tradesNew.Count - 1];
+                ExplicitQuoteEvent?.Invoke(new ExplicitQuote(lastExplicitTrade.SecurityNameCode, true, lastExplicitTrade.Price, true, lastExplicitTrade.Price, lastExplicitTrade.Time));
+            }
         }
 
         private List<Trade>[] _allTrades;
@@ -6158,6 +6183,9 @@ namespace OsEngine.Market.Servers.Tester
         }
 
         public event Action<Trade> NewTradeEvent;
+
+        /// <summary>Presence-aware synthetic quotes on the tester event clock; zero remains literal.</summary>
+        public event Action<ExplicitQuote> ExplicitQuoteEvent;
 
         public event Action<decimal, decimal, Security> NewBidAskIncomeEvent;
 

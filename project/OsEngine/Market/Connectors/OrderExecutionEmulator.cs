@@ -145,6 +145,8 @@ namespace OsEngine.Market.Connectors
             newOrder.Volume = order.Volume;
             newOrder.VolumeExecute = order.VolumeExecute;
             newOrder.Price = order.Price;
+            newOrder.UsesSignedPrice = order.UsesSignedPrice;
+            newOrder.SignedPercentBase = order.SignedPercentBase;
             newOrder.TypeOrder = order.TypeOrder;
             newOrder.OrderTypeTime = order.OrderTypeTime;
 
@@ -242,13 +244,16 @@ namespace OsEngine.Market.Connectors
 
             lock (_executorLocker)
             {
+                decimal executionAsk = order.UsesSignedPrice ? _explicitAsk : _bestSell;
+                decimal executionBid = order.UsesSignedPrice ? _explicitBid : _bestBuy;
+                if (order.UsesSignedPrice && (order.Side == Side.Buy ? !_explicitHasAsk : !_explicitHasBid)) return false;
                 if (order.TypeOrder == OrderPriceType.Market)
                 {
                     if (order.Side == Side.Buy)
                     {
-                        decimal price = _bestSell;
+                        decimal price = executionAsk;
 
-                        if (price == 0)
+                        if (price == 0 && !order.UsesSignedPrice)
                         {
                             price = order.Price;
                         }
@@ -268,9 +273,9 @@ namespace OsEngine.Market.Connectors
                     }
                     else if (order.Side == Side.Sell)
                     {
-                        decimal price = _bestBuy;
+                        decimal price = executionBid;
 
-                        if (price == 0)
+                        if (price == 0 && !order.UsesSignedPrice)
                         {
                             price = order.Price;
                         }
@@ -292,13 +297,13 @@ namespace OsEngine.Market.Connectors
                 else //if (order.TypeOrder == OrderPriceType.Limit)
                 {
                     if (order.Side == Side.Buy &&
-                        order.Price >= _bestSell && _bestSell != 0)
+                        order.Price >= executionAsk && (order.UsesSignedPrice || executionAsk != 0))
                     {
                         decimal price;
 
                         if (isFirstTime)
                         {
-                            price = _bestSell;
+                            price = executionAsk;
                         }
                         else
                         {
@@ -319,13 +324,13 @@ namespace OsEngine.Market.Connectors
                         return true;
                     }
                     else if (order.Side == Side.Sell &&
-                             order.Price <= _bestBuy && _bestBuy != 0)
+                             order.Price <= executionBid && (order.UsesSignedPrice || executionBid != 0))
                     {
                         decimal price;
 
                         if (isFirstTime)
                         {
-                            price = _bestBuy;
+                            price = executionBid;
                         }
                         else
                         {
@@ -359,6 +364,8 @@ namespace OsEngine.Market.Connectors
             newOrder.Volume = order.Volume;
             newOrder.VolumeExecute = order.Volume;
             newOrder.Price = order.Price;
+            newOrder.UsesSignedPrice = order.UsesSignedPrice;
+            newOrder.SignedPercentBase = order.SignedPercentBase;
             newOrder.TimeCreate = order.TimeCreate;
             newOrder.TypeOrder = order.TypeOrder;
             newOrder.OrderTypeTime = order.OrderTypeTime;
@@ -413,6 +420,8 @@ namespace OsEngine.Market.Connectors
             newOrder.Volume = order.Volume;
             newOrder.VolumeExecute = 0;
             newOrder.Price = order.Price;
+            newOrder.UsesSignedPrice = order.UsesSignedPrice;
+            newOrder.SignedPercentBase = order.SignedPercentBase;
 
             if(order.TimeCreate == DateTime.MinValue)
             {
@@ -450,6 +459,27 @@ namespace OsEngine.Market.Connectors
         public void ProcessTime(DateTime time)
         {
             _serverTime = time;
+        }
+
+        private bool _explicitHasBid;
+        private bool _explicitHasAsk;
+        private decimal _explicitBid;
+        private decimal _explicitAsk;
+
+        /// <summary>Updates signed-order quotes without changing legacy emulator quote semantics.</summary>
+        /// <remarks>Missing sides invalidate execution. Caller supplies a fresh, identity-matched source snapshot.</remarks>
+        public void ProcessExplicitQuote(OsEngine.Market.Servers.ExplicitQuote quote)
+        {
+            lock (_executorLocker)
+            {
+                _explicitHasBid = quote.HasBid; _explicitBid = quote.Bid;
+                _explicitHasAsk = quote.HasAsk; _explicitAsk = quote.Ask;
+                _serverTime = quote.Time;
+                if (quote.HasBid && quote.HasAsk && quote.Bid > quote.Ask)
+                { _explicitHasBid = false; _explicitHasAsk = false; }
+                for (int i = 0; ordersOnBoard != null && i < ordersOnBoard.Count; i++)
+                    if (ordersOnBoard[i].UsesSignedPrice && CheckExecution(false, ordersOnBoard[i])) i--;
+            }
         }
 
         public void ProcessBidAsk(decimal sell, decimal buy)

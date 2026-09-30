@@ -1443,7 +1443,7 @@ namespace OsEngine.Market.Connectors
         /// </summary>
         private void ConnectorBot_NewMyTradeEvent(MyTrade trade)
         {
-            if (_myServer.ServerStatus != ServerConnectStatus.Connect)
+            if (_myServer.ServerStatus != ServerConnectStatus.Connect && trade.SignedIdentity == null)
             {
                 return;
             }
@@ -2010,6 +2010,15 @@ namespace OsEngine.Market.Connectors
             {
                 SendNewLogMessage(error.ToString(), LogMessageType.Error);
             }
+        }
+
+        /// <summary>Forwards an explicit quote to signed emulator orders after instrument matching.</summary>
+        /// <remarks>The caller owns freshness and invalidates missing sides on disconnect. Legacy quotes are unchanged.</remarks>
+        public void ProcessSignedQuote(OsEngine.Market.Servers.ExplicitQuote quote)
+        {
+            if (quote == null || quote.Instrument != SecurityName) return;
+            bool paper = EmulatorIsOn || _myServer?.ServerType == ServerType.Finam;
+            _emulator?.ProcessExplicitQuote(paper ? quote : new OsEngine.Market.Servers.ExplicitQuote(quote.Instrument, false, 0, false, 0, quote.Time));
         }
 
         /// <summary>

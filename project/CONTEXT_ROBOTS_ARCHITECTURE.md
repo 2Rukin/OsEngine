@@ -547,3 +547,25 @@ decimal last = sma.DataSeries[0].Last;
 - `CONTEXT_INDICATORS.md` — написание и использование индикаторов
 - `CONTEXT_DIVIDENDS.md` — использование дивидендов в роботах
 - `CONTEXT_PAIRS_AND_FUTURES.md` — парный арбитраж, фьючерсы, контанго
+
+
+## Opt-in запрос удаления через владельца
+
+`BotPanel.RequestAutomaticDeletion()` передаёт точный экземпляр единственному
+подписчику `AutomaticDeletionRequested`. `true` означает очередь запроса, а не
+завершённое удаление. Без владельца или при нескольких подписчиках возвращает
+false. Унаследованный `TryPrepareForAutomaticDeletion()` по умолчанию отказывает.
+
+`OsTraderMaster` подписывается в обычных load/import/create путях. В Trader он
+асинхронно отправляет запрос на UI dispatcher, повторно проверяет reference в
+PanelsArray, отсутствие name alias/hot-update clone и загрузки screener. Затем
+вызывает подготовку робота и общий native путь удаления: Delete, список, keeper,
+BotDeleteEvent, risk journals и UI selection. Удаление фонового экземпляра не
+переключает другой active panel. Обычное ручное DeleteRobotActive не использует
+новый veto; его lifecycle сохранён. Hot-update без owner adoption не получает
+неявного удаления по имени. Tester/Optimizer автоматическое удаление не используют.
+
+Derived робот обязан сериализовать подготовку со своими callbacks, сохранить
+stop до необратимого действия и остановить callbacks до true. Вызов BotPanel.Delete
+сам по себе не удаляет запись из keeper. Первый потребитель и точная граница
+managed evidence: [THG-EMPTY-012](Documentation/TradeHelpGrid/EMPTY_REMOVAL.md).

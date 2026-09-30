@@ -1,0 +1,553 @@
+{
+  "sourceBinary": "Strategyes/dti.lf",
+  "resource": "DTI.g.resources",
+  "resourceSha256": "2a60ef90d26c64fde86dcb2eb361412e9864b2f63d3920c19cf713c3bd7ca46d",
+  "extraction": "ildasm managed resource extraction; ResourceReader.GetResourceData only, no Value deserialization or XAML loading",
+  "tokenBoundary": "UTF-8 byte-string presence, substring match; not a BAML tree, resolved Binding, visibility or runtime UI test",
+  "entries": [
+    {
+      "name": "view/settingsdtfdialog.baml",
+      "type": "ResourceTypeCode.Stream",
+      "rawBytes": 11665,
+      "rawSha256": "c6eb950e6f6a00e7dcc06b36df2a98830c7f702d60085f30fed40e4f8d979791",
+      "tokens": [
+        {
+          "text": "Money",
+          "present": true
+        },
+        {
+          "text": "Up",
+          "present": true
+        },
+        {
+          "text": "Down",
+          "present": true
+        },
+        {
+          "text": "GO",
+          "present": true
+        },
+        {
+          "text": "ZonesCount",
+          "present": true
+        },
+        {
+          "text": "Comission",
+          "present": true
+        },
+        {
+          "text": "Output",
+          "present": true
+        },
+        {
+          "text": "SellFormat",
+          "present": true
+        },
+        {
+          "text": "StopAfterExit",
+          "present": true
+        },
+        {
+          "text": "PreSendOrders",
+          "present": true
+        },
+        {
+          "text": "PreSendOrdersPercent",
+          "present": true
+        },
+        {
+          "text": "TrendType",
+          "present": true
+        },
+        {
+          "text": "SellRule",
+          "present": false
+        },
+        {
+          "text": "OrderType",
+          "present": false
+        },
+        {
+          "text": "SetMarkup",
+          "present": false
+        },
+        {
+          "text": "SellAll",
+          "present": false
+        },
+        {
+          "text": "StartExpirate",
+          "present": false
+        },
+        {
+          "text": "AddExpirateTicker",
+          "present": false
+        },
+        {
+          "text": "CancelExpirate",
+          "present": false
+        },
+        {
+          "text": "PreSendOrderEnable",
+          "present": false
+        },
+        {
+          "text": "PreSendOrdersType",
+          "present": false
+        },
+        {
+          "text": "ExitAfterAcross",
+          "present": false
+        },
+        {
+          "text": "UseBlockEnter",
+          "present": false
+        },
+        {
+          "text": "BlockEnterAlways",
+          "present": false
+        },
+        {
+          "text": "DirectionalIntegrity",
+          "present": false
+        },
+        {
+          "text": "WidenRange",
+          "present": false
+        },
+        {
+          "text": "EnablePriorityOrder",
+          "present": false
+        },
+        {
+          "text": "EnabledOrderThresholdLimited",
+          "present": false
+        },
+        {
+          "text": "ForbidLong",
+          "present": false
+        },
+        {
+          "text": "ForbidShort",
+          "present": false
+        },
+        {
+          "text": "SpeedMode",
+          "present": false
+        },
+        {
+          "text": "ArbitrageType",
+          "present": false
+        }
+      ]
+    },
+    {
+      "name": "view/strategyviewdtf.baml",
+      "type": "ResourceTypeCode.Stream",
+      "rawBytes": 34061,
+      "rawSha256": "3c61b32943af712ef50be0b3188a34cf5bc2b17617c8891b717cdb8f011210f1",
+      "tokens": [
+        {
+          "text": "Money",
+          "present": true
+        },
+        {
+          "text": "Up",
+          "present": true
+        },
+        {
+          "text": "Down",
+          "present": true
+        },
+        {
+          "text": "GO",
+          "present": false
+        },
+        {
+          "text": "ZonesCount",
+          "present": true
+        },
+        {
+          "text": "Comission",
+          "present": true
+        },
+        {
+          "text": "Output",
+          "present": false
+        },
+        {
+          "text": "SellFormat",
+          "present": false
+        },
+        {
+          "text": "StopAfterExit",
+          "present": true
+        },
+        {
+          "text": "PreSendOrders",
+          "present": true
+        },
+        {
+          "text": "PreSendOrdersPercent",
+          "present": true
+        },
+        {
+          "text": "TrendType",
+          "present": false
+        },
+        {
+          "text": "SellRule",
+          "present": true
+        },
+        {
+          "text": "OrderType",
+          "present": true
+        },
+        {
+          "text": "SetMarkup",
+          "present": true
+        },
+        {
+          "text": "SellAll",
+          "present": true
+        },
+        {
+          "text": "StartExpirate",
+          "present": true
+        },
+        {
+          "text": "AddExpirateTicker",
+          "present": true
+        },
+        {
+          "text": "CancelExpirate",
+          "present": true
+        },
+        {
+          "text": "PreSendOrderEnable",
+          "present": true
+        },
+        {
+          "text": "PreSendOrdersType",
+          "present": false
+        },
+        {
+          "text": "ExitAfterAcross",
+          "present": false
+        },
+        {
+          "text": "UseBlockEnter",
+          "present": false
+        },
+        {
+          "text": "BlockEnterAlways",
+          "present": false
+        },
+        {
+          "text": "DirectionalIntegrity",
+          "present": false
+        },
+        {
+          "text": "WidenRange",
+          "present": false
+        },
+        {
+          "text": "EnablePriorityOrder",
+          "present": false
+        },
+        {
+          "text": "EnabledOrderThresholdLimited",
+          "present": false
+        },
+        {
+          "text": "ForbidLong",
+          "present": false
+        },
+        {
+          "text": "ForbidShort",
+          "present": false
+        },
+        {
+          "text": "SpeedMode",
+          "present": false
+        },
+        {
+          "text": "ArbitrageType",
+          "present": false
+        }
+      ]
+    },
+    {
+      "name": "view/settingsdialog.baml",
+      "type": "ResourceTypeCode.Stream",
+      "rawBytes": 9618,
+      "rawSha256": "f793bf7fe34d812c8a97fe35a60ccb3f620c1a53330220842a52afbcbb8f7c98",
+      "tokens": [
+        {
+          "text": "Money",
+          "present": true
+        },
+        {
+          "text": "Up",
+          "present": true
+        },
+        {
+          "text": "Down",
+          "present": true
+        },
+        {
+          "text": "GO",
+          "present": true
+        },
+        {
+          "text": "ZonesCount",
+          "present": true
+        },
+        {
+          "text": "Comission",
+          "present": true
+        },
+        {
+          "text": "Output",
+          "present": false
+        },
+        {
+          "text": "SellFormat",
+          "present": false
+        },
+        {
+          "text": "StopAfterExit",
+          "present": false
+        },
+        {
+          "text": "PreSendOrders",
+          "present": false
+        },
+        {
+          "text": "PreSendOrdersPercent",
+          "present": false
+        },
+        {
+          "text": "TrendType",
+          "present": true
+        },
+        {
+          "text": "SellRule",
+          "present": false
+        },
+        {
+          "text": "OrderType",
+          "present": false
+        },
+        {
+          "text": "SetMarkup",
+          "present": false
+        },
+        {
+          "text": "SellAll",
+          "present": false
+        },
+        {
+          "text": "StartExpirate",
+          "present": false
+        },
+        {
+          "text": "AddExpirateTicker",
+          "present": false
+        },
+        {
+          "text": "CancelExpirate",
+          "present": false
+        },
+        {
+          "text": "PreSendOrderEnable",
+          "present": false
+        },
+        {
+          "text": "PreSendOrdersType",
+          "present": false
+        },
+        {
+          "text": "ExitAfterAcross",
+          "present": false
+        },
+        {
+          "text": "UseBlockEnter",
+          "present": true
+        },
+        {
+          "text": "BlockEnterAlways",
+          "present": false
+        },
+        {
+          "text": "DirectionalIntegrity",
+          "present": false
+        },
+        {
+          "text": "WidenRange",
+          "present": false
+        },
+        {
+          "text": "EnablePriorityOrder",
+          "present": false
+        },
+        {
+          "text": "EnabledOrderThresholdLimited",
+          "present": false
+        },
+        {
+          "text": "ForbidLong",
+          "present": false
+        },
+        {
+          "text": "ForbidShort",
+          "present": false
+        },
+        {
+          "text": "SpeedMode",
+          "present": true
+        },
+        {
+          "text": "ArbitrageType",
+          "present": true
+        }
+      ]
+    },
+    {
+      "name": "view/strategyview.baml",
+      "type": "ResourceTypeCode.Stream",
+      "rawBytes": 36085,
+      "rawSha256": "df254492cbedf891174c83a94df5e1c288795c5177a2014ced241ded7e89bba1",
+      "tokens": [
+        {
+          "text": "Money",
+          "present": true
+        },
+        {
+          "text": "Up",
+          "present": true
+        },
+        {
+          "text": "Down",
+          "present": true
+        },
+        {
+          "text": "GO",
+          "present": true
+        },
+        {
+          "text": "ZonesCount",
+          "present": true
+        },
+        {
+          "text": "Comission",
+          "present": true
+        },
+        {
+          "text": "Output",
+          "present": false
+        },
+        {
+          "text": "SellFormat",
+          "present": false
+        },
+        {
+          "text": "StopAfterExit",
+          "present": true
+        },
+        {
+          "text": "PreSendOrders",
+          "present": true
+        },
+        {
+          "text": "PreSendOrdersPercent",
+          "present": true
+        },
+        {
+          "text": "TrendType",
+          "present": false
+        },
+        {
+          "text": "SellRule",
+          "present": true
+        },
+        {
+          "text": "OrderType",
+          "present": false
+        },
+        {
+          "text": "SetMarkup",
+          "present": true
+        },
+        {
+          "text": "SellAll",
+          "present": true
+        },
+        {
+          "text": "StartExpirate",
+          "present": true
+        },
+        {
+          "text": "AddExpirateTicker",
+          "present": true
+        },
+        {
+          "text": "CancelExpirate",
+          "present": true
+        },
+        {
+          "text": "PreSendOrderEnable",
+          "present": true
+        },
+        {
+          "text": "PreSendOrdersType",
+          "present": true
+        },
+        {
+          "text": "ExitAfterAcross",
+          "present": true
+        },
+        {
+          "text": "UseBlockEnter",
+          "present": true
+        },
+        {
+          "text": "BlockEnterAlways",
+          "present": true
+        },
+        {
+          "text": "DirectionalIntegrity",
+          "present": true
+        },
+        {
+          "text": "WidenRange",
+          "present": true
+        },
+        {
+          "text": "EnablePriorityOrder",
+          "present": true
+        },
+        {
+          "text": "EnabledOrderThresholdLimited",
+          "present": true
+        },
+        {
+          "text": "ForbidLong",
+          "present": true
+        },
+        {
+          "text": "ForbidShort",
+          "present": true
+        },
+        {
+          "text": "SpeedMode",
+          "present": false
+        },
+        {
+          "text": "ArbitrageType",
+          "present": false
+        }
+      ]
+    }
+  ]
+}

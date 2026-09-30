@@ -1,0 +1,94 @@
+{
+  "schema": "THG-Historical-Qualification-v1",
+  "task": "TASK-THG-SRU6-015",
+  "date": "2026-09-30",
+  "head": "088add98b728f8088fb18ff2e59c8d4113ad043c",
+  "entryManifestSha256": "21cf59f762702520d41143bbda9042815eda19ddd4cbc83759f1725b63ad5f6b",
+  "sourceAudit": {
+    "file": "C:\\Qscalp\\SRU6.txt",
+    "sha256": "435EA400FFCC45CD3215BE0806F660368A024D1C2942B8EED8AA8E3D2FED1F7B",
+    "rows": 3130667,
+    "days": 174,
+    "firstDay": "2026-03-16",
+    "lastDay": "2026-09-17",
+    "sevenFieldErrors": 0,
+    "timestampDecreases": 0,
+    "zeroPrices": 0,
+    "negativePrices": 0,
+    "qshVersion4SingleStreamHeaders": 513
+  },
+  "finalRuns": [
+    {
+      "scenario": "native-zero-loader",
+      "status": "PASS",
+      "rows": 3,
+      "securityLoaded": true,
+      "priceStep": 1,
+      "errors": 0,
+      "resultSha256": "E630351986C07CA5170EB185798845AC393850FF67EA47F168DBCB14978094ED"
+    },
+    {
+      "scenario": "native-signed-cross-zero-txt",
+      "status": "PASS",
+      "sourceSha256": "833E562F99091394A5607FB395DF4F4D204C9CB458FA58842F896D4A0240721D",
+      "rows": 12,
+      "tickCallbacks": 24,
+      "perTabRows": [12, 12],
+      "exactInputDelivery": true,
+      "reachedReplayEnd": true,
+      "orders": 12,
+      "fills": 12,
+      "allOrdersUseSignedPrice": true,
+      "nativeLedgerMatch": true,
+      "negativeZeroAndFifthDecimalOrderPrices": true,
+      "negativeZeroAndFifthDecimalFillPrices": true,
+      "errors": 0,
+      "resultSha256": "7D52E30355578E633402A25B9E9E530A08E495646D440F030F099F4B28D193FA"
+    },
+    {
+      "scenario": "native-sru6-txt-2026-03-16",
+      "status": "PASS",
+      "inputSha256": "832D94EA0FBB32F556686FD485A4BB51FD19C2658DE4D79555392BF8D4EDA504",
+      "rows": 240,
+      "tickCallbacks": 480,
+      "perTabRows": [240, 240],
+      "exactInputDelivery": true,
+      "reachedReplayEnd": true,
+      "orders": 6,
+      "fills": 6,
+      "nativeLedgerMatch": true,
+      "finalState": "Stopped",
+      "openQuantity": 0,
+      "errors": 0,
+      "resultSha256": "1AFAC09ED353E16E319D51649453329BD01FC58B0984ADB7B628B2D85A12FE29"
+    },
+    {
+      "scenario": "native-sru6-qsh-quotes-2026-03-16-five-minutes",
+      "status": "PASS",
+      "sourceSha256": "B8EF60E23E4D889D604EC747D48D4348927FBEE3065613FC682ACC90D9981CA9",
+      "replayStart": "2026-03-16T03:55:24.026",
+      "replayEnd": "2026-03-16T04:00:24.026",
+      "clockCallbacks": 313152,
+      "depthCallbacks": 2,
+      "perTabDepthCallbacks": [1, 1],
+      "reachedReplayEnd": true,
+      "orders": 2,
+      "fills": 2,
+      "nativeLedgerMatch": true,
+      "errors": 0,
+      "resultSha256": "5BDF8374536664CF628EB3E767334A6958D9B4F75E792E3DA6F0BB104B8B442E"
+    }
+  ],
+  "fullDayQshAttempt": {
+    "status": "NOT_PASS_TIMEOUT",
+    "timeoutSeconds": 180,
+    "clockCallbacks": 9979435,
+    "depthCallbacks": 2224,
+    "terminalEvent": false
+  },
+  "verification": {
+    "managedAssertions": "935/935 PASS",
+    "solutionBuild": "PASS; 0 errors; 17 existing warnings plus NU1900 vulnerability-feed warning"
+  },
+  "boundary": "Offline native Tester only. Full-fill model; no queue, synchronized Deals plus Quotes, partial fills, process restart, live connector, broker, credentials or profitability claim."
+}

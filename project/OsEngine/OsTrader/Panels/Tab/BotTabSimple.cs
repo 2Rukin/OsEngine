@@ -34,7 +34,7 @@ namespace OsEngine.OsTrader.Panels.Tab
     /// <summary>
     /// Trading tab
     /// </summary>
-    public class BotTabSimple : IIBotTab
+    public partial class BotTabSimple : IIBotTab
     {
         #region Constructor
 
@@ -6180,7 +6180,7 @@ namespace OsEngine.OsTrader.Panels.Tab
                     + "Position num: " + position.Number.ToString()
                     , LogMessageType.Trade);
 
-                if (position.OpenOrders[0].SecurityNameCode.EndsWith(" TestPaper"))
+                if (position.SecurityName.EndsWith(" TestPaper"))
                 {
                     _connector.OrderExecute(newOrder, true);
                 }
@@ -6328,7 +6328,7 @@ namespace OsEngine.OsTrader.Panels.Tab
                    + "Position num: " + position.Number.ToString()
                    , LogMessageType.Trade);
 
-                if (position.OpenOrders[0].SecurityNameCode.EndsWith(" TestPaper"))
+                if (position.SecurityName.EndsWith(" TestPaper"))
                 {
                     _connector.OrderExecute(newOrder, true);
                 }
@@ -6433,7 +6433,7 @@ namespace OsEngine.OsTrader.Panels.Tab
                 }
                 position.AddNewCloseOrder(closeOrder);
 
-                if (position.OpenOrders[0].SecurityNameCode.EndsWith(" TestPaper"))
+                if (position.SecurityName.EndsWith(" TestPaper"))
                 {
                     _connector.OrderExecute(closeOrder, true);
                 }
@@ -6528,7 +6528,7 @@ namespace OsEngine.OsTrader.Panels.Tab
 
                 position.AddNewCloseOrder(closeOrder);
 
-                if (position.OpenOrders[0].SecurityNameCode.EndsWith(" TestPaper"))
+                if (position.SecurityName.EndsWith(" TestPaper"))
                 {
                     _connector.OrderExecute(closeOrder, true);
                 }
@@ -6924,6 +6924,8 @@ namespace OsEngine.OsTrader.Panels.Tab
         /// <param name="position">position</param>
         private void ManualReloadStopsAndProfitToPosition(Position position)
         {
+            // Signed strategy owns its explicit reservation and protection lifecycle.
+            if (position != null && position.UsesSignedPrices) return;
             try
             {
                 if (position == null ||
@@ -7351,8 +7353,9 @@ namespace OsEngine.OsTrader.Panels.Tab
                 return;
             }
 
-            positions = PositionsAll.FindAll(position => position != null && position.State == PositionStateType.ClosingSurplus ||
-                position.OpenVolume < 0);
+            // Explicit inventory faults require their owner's reconciliation, not legacy automatic repair.
+            positions = PositionsAll.FindAll(position => position != null && position.Inventory == null
+                && (position.State == PositionStateType.ClosingSurplus || position.OpenVolume < 0));
 
             if (positions.Count == 0)
             {
@@ -7791,7 +7794,7 @@ namespace OsEngine.OsTrader.Panels.Tab
 
                 for (int i = 0; deal.CloseOrders != null && i < deal.CloseOrders.Count; i++)
                 {
-                    if (order.NumberUser == deal.CloseOrders[i].NumberUser && ManualPositionSupport.DoubleExitIsOn)
+                    if (order.NumberUser == deal.CloseOrders[i].NumberUser && !deal.UsesSignedPrices && ManualPositionSupport.DoubleExitIsOn)
                     {
                         CloseAtMarket(deal, deal.OpenVolume);
                     }
@@ -7960,7 +7963,7 @@ namespace OsEngine.OsTrader.Panels.Tab
                         + position.PositionSpecification, LogMessageType.Trade);
                     }
 
-                    if (ManualPositionSupport.DoubleExitIsOn &&
+                    if (!position.UsesSignedPrices && ManualPositionSupport.DoubleExitIsOn &&
                         position.CloseOrders.Count < 5)
                     {
                         ManualPositionSupport.TryEmergencyClosePosition(this, position);

@@ -381,7 +381,7 @@ namespace OsEngine.Journal
                 }
 
                 List<Position> dealsToDay = deals.FindAll(
-                    position => position.OpenOrders[0].TimeCreate.Day == DateTime.Now.Day
+                    position => (position.Inventory != null ? position.TimeCreate : position.OpenOrders[0].TimeCreate).Day == DateTime.Now.Day
                     );
 
                 decimal profit = 0;
@@ -520,7 +520,7 @@ namespace OsEngine.Journal
                     {
                         Order closeOrder = closingOrders[j];
 
-                        if (closeOrder == null)
+                        if (closeOrder == null || !SignedOrderIdentity.Same(closeOrder.SignedIdentity, order.SignedIdentity))
                         {
                             continue;
                         }
@@ -558,7 +558,7 @@ namespace OsEngine.Journal
                 return null;
             }
 
-            for (int i = positions.Count - 1; i > -1 && i > positions.Count - 100; i--)
+            for (int i = positions.Count - 1; i > -1 && (order.SignedIdentity != null || i > positions.Count - 100); i--)
             {
                 Position positionCurrent = positions[i];
 
@@ -578,7 +578,7 @@ namespace OsEngine.Journal
                 {
                     Order openOrder = openOrders[j];
 
-                    if (openOrder == null)
+                    if (openOrder == null || !SignedOrderIdentity.Same(openOrder.SignedIdentity, order.SignedIdentity))
                     {
                         continue;
                     }
@@ -611,7 +611,7 @@ namespace OsEngine.Journal
                 {
                     Order closeOrder = closingOrders[j];
 
-                    if (closeOrder == null)
+                    if (closeOrder == null || !SignedOrderIdentity.Same(closeOrder.SignedIdentity, order.SignedIdentity))
                     {
                         continue;
                     }
@@ -698,6 +698,18 @@ namespace OsEngine.Journal
             {
                 SendNewLogMessage(error.ToString(), LogMessageType.Error);
             }
+        }
+
+        /// <summary>Captures a stable native boundary for a later durable ownership request.</summary>
+        public string CaptureInventory(Position candidate, string server, string account, decimal percentBase, DateTime at)
+        {
+            return _positionController.CaptureInventory(candidate, server, account, percentBase, at);
+        }
+
+        /// <summary>Publishes a durable ownership adjustment without creating a broker order or MyTrade.</summary>
+        public Position ApplyInventory(Position snapshot, PositionInventoryAdjustment adjustment)
+        {
+            return _positionController.ApplyInventory(snapshot, adjustment);
         }
 
         public void SetNewDeal(Position position)

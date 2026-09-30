@@ -23,7 +23,7 @@ using System.Linq;
 
 namespace OsEngine.Market.Servers
 {
-    public abstract class AServer : IServer
+    public abstract class AServer : IServer, IExplicitQuoteSource, IExplicitAccountSource, ISignedOrderSource
     {
         protected AServer()
         {
@@ -72,6 +72,8 @@ namespace OsEngine.Market.Servers
                     _serverRealization.MyOrderEvent -= _serverRealization_MyOrderEvent;
                     _serverRealization.MyTradeEvent -= _serverRealization_MyTradeEvent;
                     _serverRealization.PortfolioEvent -= _serverRealization_PortfolioEvent;
+                    if (_serverRealization is IExplicitAccountSource accountSource) accountSource.ExplicitAccountEvent -= RealizationExplicitAccount;
+                    if (_serverRealization is IExplicitQuoteSource quoteSource) quoteSource.ExplicitQuoteEvent -= RealizationExplicitQuote;
                     _serverRealization.SecurityEvent -= _serverRealization_SecurityEvent;
                     _serverRealization.LogMessageEvent -= SendLogMessage;
                     _serverRealization.ForceCheckOrdersAfterReconnectEvent -= _serverRealization_ForceCheckOrdersAfterReconnect;
@@ -164,6 +166,8 @@ namespace OsEngine.Market.Servers
             set
             {
                 _serverConnectStatus = ServerConnectStatus.Disconnect;
+                if (_serverRealization is IExplicitAccountSource priorAccountSource) priorAccountSource.ExplicitAccountEvent -= RealizationExplicitAccount;
+                if (_serverRealization is IExplicitQuoteSource priorQuoteSource) priorQuoteSource.ExplicitQuoteEvent -= RealizationExplicitQuote;
                 _serverRealization = value;
                 _serverRealization.NewTradesEvent += ServerRealization_NewTradesEvent;
                 _serverRealization.ConnectEvent += _serverRealization_Connected;
@@ -172,6 +176,8 @@ namespace OsEngine.Market.Servers
                 _serverRealization.MyOrderEvent += _serverRealization_MyOrderEvent;
                 _serverRealization.MyTradeEvent += _serverRealization_MyTradeEvent;
                 _serverRealization.PortfolioEvent += _serverRealization_PortfolioEvent;
+                if (_serverRealization is IExplicitAccountSource accountSource) accountSource.ExplicitAccountEvent += RealizationExplicitAccount;
+                if (_serverRealization is IExplicitQuoteSource quoteSource) quoteSource.ExplicitQuoteEvent += RealizationExplicitQuote;
                 _serverRealization.SecurityEvent += _serverRealization_SecurityEvent;
                 _serverRealization.LogMessageEvent += SendLogMessage;
                 _serverRealization.ForceCheckOrdersAfterReconnectEvent += _serverRealization_ForceCheckOrdersAfterReconnect;
@@ -1520,6 +1526,106 @@ namespace OsEngine.Market.Servers
 
         #region Thread 2. Data forwarding operations
 
+        // One finite native receive pass, shared by the worker and synthetic parser/Journal fixtures.
+        private bool DispatchPrivateData()
+        {
+            if (IsDeleted || _ordersHub == null) return false;
+            bool workDone = false;
+
+            if (!_ordersToSend.IsEmpty)
+            {
+                workDone = true;
+                Order order;
+                while (_ordersToSend.TryDequeue(out order))
+                {
+                    if (TestValue_CanSendOrdersUp)
+                    {
+                        if (NewOrderIncomeEvent != null)
+                        {
+                            NewOrderIncomeEvent(order);
+                        }
+
+                        _ordersHub.SetOrderFromApi(order);
+
+                        for (int i = 0; i < _myTrades.Count; i++)
+                        {
+                            if (order.MatchesTrade(_myTrades[i]))
+                            {
+                                _myTradesToSend.Enqueue(_myTrades[i]);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!_myTradesToSend.IsEmpty)
+            {
+                workDone = true;
+                MyTrade myTrade;
+
+                while (_myTradesToSend.TryDequeue(out myTrade))
+                {
+                    if (TestValue_CanSendOrdersUp
+                        && TestValue_CanSendMyTradesUp)
+                    {
+                        if (NewMyTradeEvent != null)
+                        {
+                            NewMyTradeEvent(myTrade);
+                        }
+
+                        _ordersHub.SetMyTradeFromApi(myTrade);
+
+                        bool isInArray = false;
+
+                        for (int i = 0; i < _myTrades.Count; i++)
+                        {
+                            if (_myTrades[i].NumberTrade == myTrade.NumberTrade
+                                && SignedOrderIdentity.Same(_myTrades[i].SignedIdentity, myTrade.SignedIdentity)
+                                && (myTrade.SignedIdentity == null || _myTrades[i].Time.Date == myTrade.Time.Date))
+                            {
+                                isInArray = true;
+                                break;
+                            }
+                        }
+
+                        if (isInArray == false)
+                        {
+                            _myTrades.Add(myTrade);
+                        }
+
+                        while (_myTrades.Count > 1000)
+                        {
+                            _myTrades.RemoveAt(0);
+                        }
+
+                        _needToBeepOnTrade = true;
+                    }
+                }
+            }
+
+            while (_explicitAccounts.TryDequeue(out ExplicitAccount explicitAccount))
+            {
+                workDone = true;
+                ExplicitAccountEvent?.Invoke(explicitAccount);
+            }
+
+            if (!_portfolioToSend.IsEmpty)
+            {
+                workDone = true;
+                List<Portfolio> portfolio;
+
+                while (_portfolioToSend.TryDequeue(out portfolio))
+                {
+                    if (PortfoliosChangeEvent != null)
+                    {
+                        PortfoliosChangeEvent(portfolio);
+                    }
+                }
+            }
+
+            return workDone;
+        }
+
         private async void HighPriorityDataThreadArea()
         {
             while (true)
@@ -1537,90 +1643,7 @@ namespace OsEngine.Market.Servers
                         continue;
                     }
 
-                    bool workDone = false;
-
-                    if (!_ordersToSend.IsEmpty)
-                    {
-                        workDone = true;
-                        Order order;
-                        while (_ordersToSend.TryDequeue(out order))
-                        {
-                            if (TestValue_CanSendOrdersUp)
-                            {
-                                if (NewOrderIncomeEvent != null)
-                                {
-                                    NewOrderIncomeEvent(order);
-                                }
-
-                                _ordersHub.SetOrderFromApi(order);
-
-                                for (int i = 0; i < _myTrades.Count; i++)
-                                {
-                                    if (_myTrades[i].NumberOrderParent == order.NumberMarket)
-                                    {
-                                        _myTradesToSend.Enqueue(_myTrades[i]);
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    if (!_myTradesToSend.IsEmpty)
-                    {
-                        workDone = true;
-                        MyTrade myTrade;
-
-                        while (_myTradesToSend.TryDequeue(out myTrade))
-                        {
-                            if (TestValue_CanSendOrdersUp
-                                && TestValue_CanSendMyTradesUp)
-                            {
-                                if (NewMyTradeEvent != null)
-                                {
-                                    NewMyTradeEvent(myTrade);
-                                }
-
-                                _ordersHub.SetMyTradeFromApi(myTrade);
-
-                                bool isInArray = false;
-
-                                for (int i = 0; i < _myTrades.Count; i++)
-                                {
-                                    if (_myTrades[i].NumberTrade == myTrade.NumberTrade)
-                                    {
-                                        isInArray = true;
-                                        break;
-                                    }
-                                }
-
-                                if (isInArray == false)
-                                {
-                                    _myTrades.Add(myTrade);
-                                }
-
-                                while (_myTrades.Count > 1000)
-                                {
-                                    _myTrades.RemoveAt(0);
-                                }
-
-                                _needToBeepOnTrade = true;
-                            }
-                        }
-                    }
-
-                    if (!_portfolioToSend.IsEmpty)
-                    {
-                        workDone = true;
-                        List<Portfolio> portfolio;
-
-                        while (_portfolioToSend.TryDequeue(out portfolio))
-                        {
-                            if (PortfoliosChangeEvent != null)
-                            {
-                                PortfoliosChangeEvent(portfolio);
-                            }
-                        }
-                    }
+                    bool workDone = DispatchPrivateData();
 
                     if (workDone == false)
                     {
@@ -1652,6 +1675,8 @@ namespace OsEngine.Market.Servers
                     }
 
                     bool workDone = false;
+
+                    workDone = DispatchExplicitQuotes();
 
                     if (!_tradesToSend.IsEmpty)
                     {
@@ -2275,6 +2300,49 @@ namespace OsEngine.Market.Servers
         /// portfolios changed event
         /// </summary>
         public event Action<List<Portfolio>> PortfoliosChangeEvent;
+
+        /// <summary>Source-captured updates for consumers that cannot use the mutable legacy portfolio list.</summary>
+        public event Action<ExplicitAccount> ExplicitAccountEvent;
+
+        /// <summary>Realization-provided signed transport capability; registration is not submission permission.</summary>
+        public bool HasSignedOrderTransport => _serverRealization is ISignedOrderSource source && source.HasSignedOrderTransport;
+        /// <summary>Current source generation, without downstream timestamp renewal.</summary>
+        public string SignedOrderSession => (_serverRealization as ISignedOrderSource)?.SignedOrderSession ?? "";
+        /// <summary>Registers durable journal ownership for a capable realization.</summary>
+        public void RegisterSignedOrder(Order order)
+        {
+            if (_serverRealization is not ISignedOrderSource source) throw new InvalidOperationException("Signed identity transport unavailable.");
+            source.RegisterSignedOrder(order);
+        }
+
+        private bool DispatchExplicitQuotes()
+        {
+            if (IsDeleted) return false;
+            bool workDone = false;
+            foreach (KeyValuePair<string, ExplicitQuote> explicitPair in _explicitQuotes)
+            {
+                if (_explicitQuotes.TryRemove(explicitPair.Key, out ExplicitQuote explicitQuote))
+                {
+                    workDone = true;
+                    ExplicitQuoteEvent?.Invoke(explicitQuote);
+                }
+            }
+
+            return workDone;
+        }
+
+        private void RealizationExplicitQuote(ExplicitQuote quote)
+        { if (!IsDeleted) _explicitQuotes[quote.Instrument] = quote; }
+
+        /// <summary>Only an explicitly instrumented realization can attest actual account update presence.</summary>
+        public bool HasExplicitAccountUpdates => _serverRealization is IExplicitAccountSource source && source.HasExplicitAccountUpdates;
+
+        private void RealizationExplicitAccount(ExplicitAccount account)
+        {
+            if (!IsDeleted && HasExplicitAccountUpdates && ExplicitAccountEvent != null) _explicitAccounts.Enqueue(account);
+        }
+
+        private readonly ConcurrentQueue<ExplicitAccount> _explicitAccounts = new ConcurrentQueue<ExplicitAccount>();
 
         #endregion
 
@@ -3400,6 +3468,11 @@ namespace OsEngine.Market.Servers
                     ServerTime = myDepth.Time;
                 }
 
+                if (ExplicitQuoteEvent != null && !HasSignedOrderTransport)
+                {
+                    _explicitQuotes[myDepth.SecurityNameCode] = ExplicitQuote.FromDepth(myDepth);
+                }
+
                 if ((myDepth.Asks == null ||
                       myDepth.Asks.Count == 0)
                      &&
@@ -3514,6 +3587,11 @@ namespace OsEngine.Market.Servers
         /// <summary>
         /// best bid or ask changed for the instrument
         /// </summary>
+        /// <summary>Presence-aware depth snapshots dispatched on the normal market-data sender thread.</summary>
+        public event Action<ExplicitQuote> ExplicitQuoteEvent;
+
+        private readonly ConcurrentDictionary<string, ExplicitQuote> _explicitQuotes = new ConcurrentDictionary<string, ExplicitQuote>();
+
         public event Action<decimal, decimal, Security> NewBidAskIncomeEvent;
 
         /// <summary>
@@ -3865,6 +3943,18 @@ namespace OsEngine.Market.Servers
             {
                 if (order.OrderSendType == OrderSendType.Execute)
                 {
+                    if (order.Order.SignedIdentity != null && (IsDeleted || !HasSignedOrderTransport
+                        || string.IsNullOrEmpty(SignedOrderSession) || order.Order.SignedDispatch == null))
+                    {
+                        if (order.Order.SignedDispatch == null)
+                        {
+                            Order suppressed = Transaq.TransaqSignedProtocol.Copy(order.Order);
+                            suppressed.State = OrderStateType.LostAfterActive;
+                            _ordersToSend.Enqueue(suppressed);
+                        }
+                        else order.Order.SignedDispatch.CancelBeforeSend();
+                        return;
+                    }
                     ServerRealization.SendOrder(order.Order);
                 }
                 else if (order.OrderSendType == OrderSendType.Cancel)
@@ -4141,6 +4231,7 @@ namespace OsEngine.Market.Servers
         /// </summary>
         public void CancelOrder(Order order)
         {
+            if (order.SignedDispatch?.CancelBeforeSend() == true) return;
             try
             {
                 if (UserSetOrderOnCancel != null)
