@@ -30,7 +30,8 @@ namespace OsEngine.Robots.MyBots
     /// not finished candles. Off pauses entries; exits remain managed and bounds are not automatic stops.
     /// Commands/callbacks serialize on adapter Sync. Live checkpoints use a separate directory and require
     /// explicit reconciliation after restart; Tester/Optimizer reset on TestingStart and start on the first
-    /// quote when On. Disposal releases subscriptions/timer and dispatches window closure. Shared engine
+    /// quote with available instrument metadata when On. Missing metadata leaves preparation pending,
+    /// without a plan or implicit live start. Disposal releases subscriptions/timer and dispatches window closure. Shared engine
     /// reuse does not establish native replay or live qualification of this host. THG-SIMPLE-017.</remarks>
     [Bot("Futures2GridSimple")]
     public sealed class Futures2GridSimple : BotPanel
@@ -45,6 +46,7 @@ namespace OsEngine.Robots.MyBots
         private OptimizerServer _optimizer;
         private string _configuration = "";
         private string _error = "";
+        private string _preparationMessage = "";
         private bool _simulationStarted;
         private bool _disposed;
         private Window _window;
@@ -70,7 +72,7 @@ namespace OsEngine.Robots.MyBots
             _adapter = new Futures2NativeAdapter(_tab, TabsSimple[1], store, _live, WriteLog);
             _adapter.BeforeDecision = BeforeDecision;
             Button("Preview and status", ShowIndividualSettingsDialog, "Grid");
-            Button("Apply configuration", ApplyConfiguration, "Grid");
+            Button("Apply configuration", () => ApplyConfiguration(), "Grid");
             Button("Start or resume", Start, "Grid");
             Button("Pause entries", Pause, "Grid");
             Button("Emergency flatten", () => { SetOff(); _adapter.Engine.Flatten("Operator emergency flatten"); }, "Safety");
@@ -127,22 +129,35 @@ namespace OsEngine.Robots.MyBots
             ZoneMarkups = S("Zone markup overrides"), ZoneLots = S("Zone lot overrides"),
             Funds = D("Funds limit"), Collateral = D("Collateral per lot")
         };
-        private Futures2Plan Plan()
+        private Futures2Plan Plan(Security security)
         {
-            Futures2Plan plan = Settings().Build(_tab.Security);
+            Futures2Plan plan = Settings().Build(security);
             plan.EndpointIdentity = _adapter.EndpointIdentity(0); plan.PaperExecution = _adapter.IsPaper(0);
             return plan;
         }
-        private void ApplyConfiguration()
+        private Security ReadySecurity()
         {
-            Futures2Plan plan = Plan();
+            Security security = _tab.Security;
+            if (security != null) { _preparationMessage = ""; return security; }
+            string message = string.IsNullOrWhiteSpace(_tab.Connector?.SecurityName)
+                ? "На первой вкладке робота не выбран инструмент. Откройте настройки подключения первой вкладки и выберите инструмент."
+                : "Инструмент первой вкладки выбран, но его описание ещё не получено. Дождитесь подключения/загрузки данных и повторите Apply configuration или Start or resume.";
+            if (_preparationMessage != message) { _preparationMessage = message; WriteLog(message); }
+            return null;
+        }
+        private bool ApplyConfiguration()
+        {
+            Security security = ReadySecurity();
+            if (security == null) return false;
+            Futures2Plan plan = Plan(security);
             string configuration = JsonSerializer.Serialize(Settings());
             Futures2Checkpoint data = _adapter.Engine.Data;
             // Do not create another grid version for repeated Apply or a recovered identical snapshot.
             Futures2Plan previous = data.PendingPlan ?? (data.ActivePlan.Length > 0 ? data.Plans[data.ActivePlan] : null);
-            if (previous != null && SamePlan(previous, plan)) { _configuration = configuration; return; }
+            if (previous != null && SamePlan(previous, plan)) { _configuration = configuration; return true; }
             _adapter.Engine.Configure(plan, new Futures2Policy(), plan.Reserved, 0, true);
             _configuration = configuration;
+            return true;
         }
         private static bool SamePlan(Futures2Plan left, Futures2Plan right)
             => left.EndpointIdentity == right.EndpointIdentity && left.PaperExecution == right.PaperExecution
@@ -151,8 +166,9 @@ namespace OsEngine.Robots.MyBots
         private void Start()
         {
             UpdateAdapterSettings();
+            if (ReadySecurity() == null) return;
             if (!_adapter.SignedOrdersEnabled) throw new InvalidOperationException("Select signed order capability for the live instrument and connector.");
-            ApplyConfiguration();
+            if (!ApplyConfiguration()) return;
             if (_adapter.Engine.Data.PendingPlan != null)
             {
                 if (!_adapter.CanConfirmNativeState) throw new InvalidOperationException("Reconcile native/account state before resuming.");
@@ -169,10 +185,12 @@ namespace OsEngine.Robots.MyBots
                 try
                 {
                     if (_adapter.Engine.Data.ActivePlan.Length > 0 && JsonSerializer.Serialize(Settings()) != _configuration)
-                        ApplyConfiguration();
+                    {
+                        if (!ApplyConfiguration()) { Pause(); return; }
+                    }
                     if (S("Regime") == "Off") { if (_adapter.Engine.Data.ActivePlan.Length > 0) _adapter.Engine.Pause(); }
                     else if (_live && _adapter.Engine.Data.ActivePlan.Length > 0) Start();
-                    else if (!_live && _adapter.Quotes.ContainsKey(0)) { _adapter.Reconcile(false); Start(); }
+                    else if (!_live && _adapter.Quotes.ContainsKey(0) && ReadySecurity() != null) { _adapter.Reconcile(false); Start(); }
                 }
                 catch
                 {
@@ -200,7 +218,8 @@ namespace OsEngine.Robots.MyBots
                 _adapter.Engine.Pause();
             if (!_live && S("Regime") == "On" && !_simulationStarted && _adapter.Quotes.ContainsKey(0))
             {
-                ApplyConfiguration(); _adapter.Reconcile(false); Start();
+                if (!ApplyConfiguration()) return;
+                _adapter.Reconcile(false); Start();
             }
         }
         private void Rearm()
@@ -235,7 +254,7 @@ namespace OsEngine.Robots.MyBots
             lock (_adapter.Sync)
             {
                 if (_disposed) return;
-                _adapter.ResetSimulation(); _configuration = ""; _error = ""; _simulationStarted = false;
+                _adapter.ResetSimulation(); _configuration = ""; _error = ""; _preparationMessage = ""; _simulationStarted = false;
             }
         }
         private void ReplayTime(DateTime time) { if (!_disposed) _adapter.AdvanceReplay(time); }
@@ -265,11 +284,17 @@ namespace OsEngine.Robots.MyBots
                 StringBuilder text = new StringBuilder();
                 text.AppendLine(data.State + " | " + data.Reason + " | emergency=" + data.Emergency);
                 if (_error.Length > 0) text.AppendLine("Last command rejected: " + _error);
+                if (!string.IsNullOrEmpty(_preparationMessage)) text.AppendLine("Подготовка: " + _preparationMessage);
                 text.AppendLine("Configure the first tab only. Bounds are levels, not automatic stops. Zone 1 = lowest price.");
                 text.Append(_adapter.DescribeNativeState());
                 text.AppendLine("Active=" + data.ActivePlan + " | pending=" + data.PendingPlan?.Id + " | capital=" + data.Capital);
                 if (data.ActivePlan.Length > 0) AppendPlan(text, "Accepted", data.Plans[data.ActivePlan]);
-                try { AppendPlan(text, "Preview (not yet accepted)", Plan()); }
+                try
+                {
+                    Security security = _tab.Security;
+                    if (security == null) text.AppendLine("Preview: ожидание инструмента первой вкладки и его параметров (шага цены и объёма).");
+                    else AppendPlan(text, "Preview (not yet accepted)", Plan(security));
+                }
                 catch (Exception error) { text.AppendLine("Preview rejected: " + error.Message); }
                 foreach (Futures2Intent intent in data.Book.Intents.TakeLast(50))
                     text.AppendLine(intent.Id + " " + (intent.Entry ? "ENTRY" : "EXIT") + " " + intent.State + " "

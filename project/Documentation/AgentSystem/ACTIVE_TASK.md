@@ -1,66 +1,57 @@
 # Authoritative active task state
 
-**ID:** `TASK-THG-SIMPLE-017`
+**ID:** `TASK-THG-SIMPLE-READINESS-018`
 **Статус:** `COMPLETE`
 **Фаза:** `TERMINAL`
 **Ветка:** `docs/order-flow-production-roadmap`
-**Baseline HEAD:** `41b240332d140337fc4b5c5c44ae35a96e1939a1`
-**Entry dirty boundary:** only project/OsEngine/bin/Debug/OsEngine.dll and .exe;
-existing output is preserved or rebuilt, never restored to older binaries.
-**Completed transition IDs:** `ENTRY_BASELINE_VERIFIED`, `REUSE_RESEARCH`, `SIMPLE_IMPLEMENTATION`, `MAIN_BUILD`, `SOLUTION_BUILD`, `MANAGED_CASES`, `PRIMARY`, `FIX`, `VALIDATION_1`, `TERMINAL_CLEAN`
+**Baseline HEAD:** `127137fa318fbac93f57425da59079defcdcc5b5`
+**Entry dirty boundary:** clean.
+**Completed transition IDs:** `ENTRY_BASELINE_VERIFIED`, `NULL_SECURITY_PATH_CONFIRMED`, `READINESS_FIX`, `ISOLATED_SOLUTION_BUILD`, `MANAGED_CASES`, `PRIMARY_CLEAN_CLEAN`, `INSTALL_DEFAULT_OUTPUT`
 **Next transition ID:** `OWNER_UI_CHECK`
 
 ## Frozen scope
 
-Add ordinary native robot Futures2GridSimple: manual inclusive lower/upper
-bounds, exact grid step, common markup and quantity with optional per-zone
-overrides. Long/Short, signed/zero prices through five decimal places, runtime
-cancel-confirm configuration and existing Futures2 ownership/recovery. Reuse
-controller/native adapter/store; keep full Futures2Grid behavior compatible.
-Separate checkpoint namespace, compact parameters and status view. Add offline
-regression cases and current registered operator/design documentation.
+User reported Simple Apply -> Plan -> Build(null) throwing before any plan/order
+is created. Handle unavailable first-tab instrument metadata as a visible
+preparation state in Simple Apply/Start/simulation initialization. Keep strict
+builder validation, native readiness/reconciliation and connector configuration
+unchanged. No fallback to second tab, fabricated instrument or automatic live
+start. Add managed host regression cases and update THG-SIMPLE-017.
 
-Main is the only writer. Read-only codebase research completed; independent
-production and documentation scoped reviews follow the implementation checkpoint.
+The source of the user's null metadata (unselected instrument versus connector
+readiness) is not yet established; clarification requested. Code shows either
+can occur. Main is sole writer, independent research/reviews read-only.
 
 ## Verification status
 
-- Main build --no-restore: PASS, 0 errors / 16 existing warnings.
-- Full solution --no-restore: PASS, 0 errors / 1 existing NU1900 warning in the
-  final incremental build (unavailable NuGet vulnerability feed); initial full
-  build had 28 existing warnings and no errors.
-- Managed TradeHelpGrid suite --no-build: PASS, 1026/1026 assertions (91 new).
-- Source/test diff whitespace PASS; new guide links PASS; agent validator
-  PASS109/109 after correcting the active-state headings.
-- Independent production and documentation: PRIMARY -> FIX -> VALIDATION_1 ->
-  CLEAN/CLEAN. THG-SIMPLE-P01 closed: after Off reconfiguration, the next host
-  pass restores exit management without permitting entries. Regression covers
-  four synthetic live/simulation-flag and pause-before/after combinations.
-  THG-SIMPLE-DOC-01/02 closed: target tick-rounding and exact TickValue fallback.
-  No native/UI/live evidence claimed; default suite uses managed fixtures.
+Owner closed the running application. Default main build subsequently PASS:
+dotnet build OsEngine/OsEngine.csproj --no-restore -p:CopyRetryCount=0,
+0 errors / 16 existing warnings. Updated EXE/DLL installed to OsEngine/bin/Debug.
+The former MSB3021 file-lock blocker is resolved; application was not launched.
 
-Build production and solution; run managed TradeHelpGrid component cases, agent
-validator and diff checks. No credentials, broker session, real orders, application
-or native test-stand launch. User subsequently authorized rebuilding the application,
-committing the completed Simple implementation and pushing the current branch.
-Existing historic/native evidence belongs to Futures2Grid and is not claimed as
-qualification of the new host.
+- Isolated solution: PASS0errors/29warnings using
+  dotnet build OsEngine.sln --no-restore -p:OutDir=%TEMP%/Futures2Simple-readiness-018/.
+  Warnings:28 existing plus one resource-copy retry from shared output.
+- dotnet %TEMP%/Futures2Simple-readiness-018/OsEngine.TradeHelpGrid.Tests.dll:
+  PASS1047/1047, including21 new readiness assertions.
+- Production/docs independent PRIMARY both CLEAN, no findings. XML, guide links
+  and diff whitespace PASS. No actual user session reproduction claimed.
+- No broker/native/UI execution, credentials or configuration-file reads.
 
-OBSERVABILITY: REQUIRED — preview, accepted/pending plan, state/reason, native
-intent quantities and IDs, recovery diagnostics and standard logging implemented.
-MODE PARITY: REQUIRED — common decision engine; live recovery versus simulation
-reset/autostart must be explicit. Physical UI and connector evidence OWNER-RUN.
+OBSERVABILITY: REQUIRED — readable deduplicated preparation message and status.
+MODE PARITY: REQUIRED — simulations wait for metadata; live still explicit start.
+No credentials/config files, native sessions, broker operations or app launch.
+User subsequently authorized commit and ordinary push of this completed fix.
 
 ## Blockers
 
-No implementation blocker. Physical UI/native replay/live are OWNER-RUN and
-are not prerequisites for the authorized managed implementation scope.
+No implementation or installation blocker. User mode/selection still unknown;
+physical UI/live evidence remains OWNER-RUN.
 
 ## Next action
 
-Open the rebuilt project/OsEngine/bin/Debug/OsEngine.exe, create Futures2GridSimple,
-configure only its first tab and follow THG-SIMPLE-017. Physical native replay/UI
-and live qualification remain explicit owner scenarios. The publication commit
-contains the reviewed source, tests, documentation and rebuilt main executable/DLL.
-Publication targets origin/docs/order-flow-production-roadmap using ordinary push;
-Git HEAD/upstream records the resulting commit and synchronization state.
+Owner may launch OsEngine/bin/Debug/OsEngine.exe and retry first-tab instrument
+selection / Apply. Source/test semantics remain frozen; isolated1047/1047 and
+CLEAN/CLEAN evidence reused. The publication commit includes the reviewed fix,
+tests, documentation and rebuilt EXE/DLL. Publication targets
+origin/docs/order-flow-production-roadmap; Git HEAD/upstream records the result.

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using OsEngine.Entity;
+using OsEngine.Logging;
 using OsEngine.OsTrader.Grids.Futures2;
 using OsEngine.OsTrader.Panels.Tab;
 using OsEngine.Robots;
@@ -18,7 +19,7 @@ namespace OsEngine.TradeHelpGrid.Tests
     {
         internal static void Run()
         {
-            Geometry(); Invalid(); Reconfigure(); PausedReconfiguration(); Recovery(); Discovery();
+            Geometry(); Invalid(); Reconfigure(); PausedReconfiguration(); SecurityReadiness(); Recovery(); Discovery();
         }
         private static Security Security() => new Security { Name = "SIMPLE", PriceStep = 0.00001m, PriceStepCost = 0.00001m,
             Lot = 1, DecimalsVolume = 0, VolumeStep = 1, MinTradeAmount = 1, MinTradeAmountType = MinTradeAmountType.Contract };
@@ -174,6 +175,73 @@ namespace OsEngine.TradeHelpGrid.Tests
                     Program.Equal(0.00002m, actions[0].Intent.Price, "Simple paused exit retains original markup");
                     Program.Equal(Futures2State.PausedEntries, engine.Data.State, "Simple Off remains entry-paused after exit decision");
                 }
+        }
+        private static void SecurityReadiness()
+        {
+            foreach (bool liveHost in new[] { false, true })
+            {
+                BotTabSimple first = AdapterCases.Tab("SIMPLE", out FixtureServerProxy spy);
+                BotTabSimple second = AdapterCases.Tab("RESERVE", out FixtureServerProxy unused);
+                using Futures2NativeAdapter adapter = new Futures2NativeAdapter(first, second, null, false, _ => { });
+                Futures2GridSimple robot = (Futures2GridSimple)AdapterCases.Empty(typeof(Futures2GridSimple));
+                AdapterCases.Set(robot, "_adapter", adapter); AdapterCases.Set(robot, "_tab", first); AdapterCases.Set(robot, "_live", liveHost);
+                AdapterCases.Set(robot, "_configuration", ""); AdapterCases.Set(robot, "_error", ""); AdapterCases.Set(robot, "_preparationMessage", "");
+                Dictionary<string, IIStrategyParameter> parameters = new Dictionary<string, IIStrategyParameter>
+                {
+                    ["Regime"] = new StrategyParameterString("Regime", "Off", new List<string> { "Off", "On" }),
+                    ["Direction"] = new StrategyParameterString("Direction", "Long", new List<string> { "Long", "Short" }),
+                    ["Signed order capability selected"] = new StrategyParameterBool("Signed", true),
+                    ["Zone markup overrides"] = new StrategyParameterString("Markup overrides", ""),
+                    ["Zone lot overrides"] = new StrategyParameterString("Lot overrides", "")
+                };
+                Dictionary<string, decimal> numbers = new Dictionary<string, decimal>
+                {
+                    ["Lower bound"] = -0.00010m, ["Upper bound"] = 0.00010m, ["Grid step"] = 0.00005m,
+                    ["Markup per zone"] = 0.00002m, ["Lots per zone"] = 2, ["Funds limit"] = 1000,
+                    ["Collateral per lot"] = 7, ["External net"] = 0
+                };
+                foreach (KeyValuePair<string, decimal> number in numbers)
+                    parameters[number.Key] = new StrategyParameterDecimal(number.Key, number.Value, -1000, 1000, 0.00001m);
+                AdapterCases.Set(robot, "_settings", parameters);
+                List<string> messages = new List<string>(); int errors = 0;
+                robot.LogMessageEvent += (message, type) => { messages.Add(message); if (type == LogMessageType.Error) errors++; };
+                Security selected = spy.Security; spy.Security = null; first.Security = null;
+                AdapterCases.Set(first.Connector, "_securityName", "");
+                string before = JsonSerializer.Serialize(adapter.Engine.Data);
+                bool applied = true;
+                Action apply = () => applied = (bool)AdapterCases.Call(robot, "ApplyConfiguration");
+                AdapterCases.Call(robot, "Run", apply); AdapterCases.Call(robot, "Run", apply);
+                Program.Check(!applied && messages.Count == 1 && messages[0].Contains("не выбран"), "Simple missing selection gives one readable preparation message");
+                Program.Equal(before, JsonSerializer.Serialize(adapter.Engine.Data), "Simple missing selection changes no accepted campaign or orders");
+                AdapterCases.Set(first.Connector, "_securityName", "SIMPLE");
+                AdapterCases.Call(robot, "Run", apply); AdapterCases.Call(robot, "Run", apply);
+                Program.Check(!applied && messages.Count == 2 && messages[1].Contains("ещё не получено"), "Simple selected-but-unavailable metadata gets distinct deduplicated message");
+                AdapterCases.Call(robot, "Run", (Action)(() => AdapterCases.Call(robot, "Start")));
+                Program.Equal("Off", ((StrategyParameterString)parameters["Regime"]).ValueString, "Simple unavailable Start does not arm trading");
+                Program.Equal(before, JsonSerializer.Serialize(adapter.Engine.Data), "Simple missing metadata leaves original checkpoint intact");
+                ((StrategyParameterString)parameters["Regime"]).ValueString = "On";
+                adapter.Quotes[0] = Program.Quotes(-0.00010m, -0.00009m, funds: 1000)[0];
+                AdapterCases.Call(robot, "BeforeDecision");
+                Program.Equal(before, JsonSerializer.Serialize(adapter.Engine.Data), "Simple initial quote without metadata waits without fault, reconciliation or submit");
+                spy.Security = selected;
+                if (liveHost)
+                {
+                    AdapterCases.Call(robot, "BeforeDecision");
+                    Program.Equal("", adapter.Engine.Data.ActivePlan, "Simple metadata arrival never auto-starts live host");
+                    AdapterCases.Call(robot, "Run", apply);
+                    Program.Check(applied && adapter.Engine.Data.State == Futures2State.Ready, "Simple explicit Apply succeeds after metadata becomes available");
+                }
+                else
+                {
+                    AdapterCases.Call(robot, "BeforeDecision");
+                    Program.Equal(Futures2State.Active, adapter.Engine.Data.State, "Simple armed simulation resumes preparation after metadata arrival");
+                }
+                Program.Equal(0, errors, "Simple absent instrument is not an Error stack trace");
+                Program.Check(adapter.Engine.Data.ActivePlan.Length > 0 && adapter.Engine.Data.Book.Intents.Count == 0,
+                    "Simple readiness preparation alone submits no orders");
+                Program.Check(!((string)typeof(Futures2GridSimple).GetField("_preparationMessage", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(robot)).Any(),
+                    "Simple successful preparation clears wait diagnostic");
+            }
         }
         private static void Discovery()
         {
